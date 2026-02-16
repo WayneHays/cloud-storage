@@ -5,15 +5,5 @@ spring:
     url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:cloud-storage-db}
     username: ${POSTGRES_USER:cloud-storage-user}
     password: ${POSTGRES_PASSWORD:Qscfrt28}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
+  profiles:
+    default: dev
