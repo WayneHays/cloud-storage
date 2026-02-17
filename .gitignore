@@ -65,3 +65,5 @@ Desktop.ini
 .env
 .env.local
 .env.*.local
+
+.gitattributes
