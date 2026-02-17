@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AuthController.class)
 class AuthControllerTest {
-    private static final String URL_REGISTER = "/api/auth/register";
+    private static final String URL_REGISTER = "/api/auth/sign-up";
 
     @Autowired
     private MockMvc mockMvc;

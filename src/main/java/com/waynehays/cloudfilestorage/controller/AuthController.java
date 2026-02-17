@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final UserService userService;
 
-    @PostMapping("/register")
+    @PostMapping("/sign-up")
     public ResponseEntity<UserDto> register(@RequestBody @Valid RegistrationDto dto) {
         return new ResponseEntity<>(userService.register(dto), HttpStatus.CREATED);
     }
