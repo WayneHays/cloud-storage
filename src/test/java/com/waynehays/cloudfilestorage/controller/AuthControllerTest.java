@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.controller;
 
 import com.waynehays.cloudfilestorage.config.SecurityConfig;
-import com.waynehays.cloudfilestorage.dto.request.RegistrationDto;
+import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.UserService;
@@ -40,9 +40,9 @@ class AuthControllerTest {
     @DisplayName("Should register user when valid request")
     void shouldRegisterUser_whenValidData() throws Exception {
         // given
-        RegistrationDto request = new RegistrationDto("name", "password");
+        SignUpRequest request = new SignUpRequest("name", "password");
         UserDto response = new UserDto("name");
-        when(userService.register(any(RegistrationDto.class))).thenReturn(response);
+        when(userService.signUp(any(SignUpRequest.class))).thenReturn(response);
 
         // when & then
         mockMvc.perform(post(URL_REGISTER)
@@ -56,9 +56,9 @@ class AuthControllerTest {
     @DisplayName("Should return 409 when duplicate username")
     void shouldReturnConflict_whenDuplicateUsername() throws Exception {
         // given
-        RegistrationDto request = new RegistrationDto("name", "password");
+        SignUpRequest request = new SignUpRequest("name", "password");
 
-        when(userService.register(any(RegistrationDto.class)))
+        when(userService.signUp(any(SignUpRequest.class)))
                 .thenThrow(new UserAlreadyExistsException("Username already taken", null));
 
         // when & then
@@ -73,7 +73,7 @@ class AuthControllerTest {
     @DisplayName("Should return 400 when invalid data")
     void shouldReturnBadRequest_whenInvalidData() throws Exception {
         // given
-        RegistrationDto request = new RegistrationDto("ab", "123");
+        SignUpRequest request = new SignUpRequest("ab", "123");
 
         // when & then
         mockMvc.perform(post(URL_REGISTER)

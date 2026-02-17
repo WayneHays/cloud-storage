@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service;
 
-import com.waynehays.cloudfilestorage.dto.request.RegistrationDto;
+import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
@@ -21,7 +21,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
-    public UserDto register(RegistrationDto dto) {
+    public UserDto signUp(SignUpRequest dto) {
         User user = User.builder()
                 .username(dto.username())
                 .password(passwordEncoder.encode(dto.password()))

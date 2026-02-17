@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service;
 
-import com.waynehays.cloudfilestorage.dto.request.RegistrationDto;
+import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
@@ -37,11 +37,11 @@ class UserServiceTest {
     @InjectMocks
     private UserServiceImpl service;
 
-    private RegistrationDto registrationDto;
+    private SignUpRequest signUpRequest;
 
     @BeforeEach
     void setUp() {
-        registrationDto = new RegistrationDto("username", "password");
+        signUpRequest = new SignUpRequest("username", "password");
     }
 
     @Test
@@ -50,12 +50,12 @@ class UserServiceTest {
         // given
         User user = new User(1L, "name", "password");
         UserDto userDto = new UserDto("name");
-        when(passwordEncoder.encode(registrationDto.password())).thenReturn("hashedpassword");
+        when(passwordEncoder.encode(signUpRequest.password())).thenReturn("hashedpassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 
         // when
-        UserDto result = service.register(registrationDto);
+        UserDto result = service.signUp(signUpRequest);
 
         // then
         assertThat(result).isNotNull();
@@ -75,7 +75,7 @@ class UserServiceTest {
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         // when & then
-        assertThatThrownBy(() -> service.register(registrationDto))
+        assertThatThrownBy(() -> service.signUp(signUpRequest))
                 .isInstanceOf(UserAlreadyExistsException.class)
                 .hasMessageContaining("Username already taken");
     }
