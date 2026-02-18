@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,6 +33,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message = e.getMessage();
         log.info(message, e);
         return new ResponseEntity<>(new ErrorDto(message), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException e) {
+        String message = "Invalid credentials";
+        log.info(message, e);
+        return new ResponseEntity<>(new ErrorDto(message), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
