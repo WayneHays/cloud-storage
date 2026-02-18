@@ -7,3 +7,6 @@ spring:
     password: ${POSTGRES_PASSWORD:Qscfrt28}
   profiles:
     default: dev
+
+
+

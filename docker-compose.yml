@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: postgres-windows
+    container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -10,6 +10,32 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cloud-file-storage-net
+  redis:
+    image: redis:8.6.0
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - cloud-file-storage-net
+  redis-insight:
+    image: redis/redisinsight:3.0
+    container_name: redisinsight
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis-insight:/data
+    networks:
+      - cloud-file-storage-net
 
 volumes:
+  redis-insight:
   postgres_data:
+
+networks:
+  cloud-file-storage-net:
+    driver: bridge
