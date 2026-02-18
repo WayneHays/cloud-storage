@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16
     container_name: postgres
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,6 +16,7 @@ services:
   redis:
     image: redis:8.6.0
     container_name: redis
+    restart: always
     ports:
       - "6379:6379"
     networks:
@@ -31,10 +33,26 @@ services:
       - redis-insight:/data
     networks:
       - cloud-file-storage-net
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    container_name: minio
+    restart: always
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio:/data
+    networks:
+      - cloud-file-storage-net
 
 volumes:
   redis-insight:
   postgres_data:
+  minio:
 
 networks:
   cloud-file-storage-net:
