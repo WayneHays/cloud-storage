@@ -6,7 +6,6 @@ import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -37,12 +36,7 @@ class UserServiceTest {
     @InjectMocks
     private UserServiceImpl service;
 
-    private SignUpRequest signUpRequest;
-
-    @BeforeEach
-    void setUp() {
-        signUpRequest = new SignUpRequest("username", "password");
-    }
+    private SignUpRequest signUpRequest = new SignUpRequest("username", "password");
 
     @Test
     @DisplayName("Should successfully register new user")
