@@ -33,6 +33,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-session-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-liquibase'
 	implementation 'org.mapstruct:mapstruct:1.6.3'
+	implementation 'io.minio:minio:8.6.0'
 
 	compileOnly 'org.projectlombok:lombok'
 
