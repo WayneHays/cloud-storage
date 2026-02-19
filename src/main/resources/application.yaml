@@ -1,12 +1,5 @@
 spring:
   application:
     name: cloud-file-storage
-  datasource:
-    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:cloud-storage-db}
-    username: ${POSTGRES_USER:cloud-storage-user}
-    password: ${POSTGRES_PASSWORD:Qscfrt28}
   profiles:
     default: dev
-
-
-

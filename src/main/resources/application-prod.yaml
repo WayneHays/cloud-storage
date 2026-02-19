@@ -1,7 +1,19 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
+minio:
+  security:
+    url: ${MINIO_URL}
+    accessKey: ${MINIO_ACCESS_KEY}
+    secretKey: ${MINIO_SECRET_KEY}
+  storage:
+    bucketName: ${MINIO_BUCKET_NAME}
 logging:
   level:
     root: info
+
