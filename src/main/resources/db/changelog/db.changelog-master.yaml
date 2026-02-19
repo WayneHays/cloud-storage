@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changelogs/001_create_users_table.yaml
   - include:
       file: db/changelog/changelogs/002_create_files_info_table.yaml
+  - include:
+      file: db/changelog/changelogs/003_add_folder_column_to_files_info.yaml
