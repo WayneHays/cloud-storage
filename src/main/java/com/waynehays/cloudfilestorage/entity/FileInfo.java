@@ -23,29 +23,29 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "files", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "name"}))
+@Table(name = "files_info", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "name"}))
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class File {
+public class FileInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 260)
     private String name;
 
-    @Column(name = "storage_key", nullable = false)
+    @Column(name = "storage_key", nullable = false, length = 260)
     private String storageKey;
 
     @Column(nullable = false)
     private Long size;
 
-    @Column(name = "content_type", nullable = false)
+    @Column(name = "content_type", nullable = false, length = 100)
     private String contentType;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -53,7 +53,7 @@ public class File {
     private User user;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
