@@ -23,7 +23,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "files_info", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "name"}))
+@Table(name = "files_info", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "folder", "name"}))
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -35,6 +35,9 @@ public class FileInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 400)
+    private String folder;
 
     @Column(nullable = false, length = 260)
     private String name;
