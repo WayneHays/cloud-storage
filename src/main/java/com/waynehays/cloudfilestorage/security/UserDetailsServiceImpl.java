@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service;
+package com.waynehays.cloudfilestorage.security;
 
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
@@ -17,9 +17,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username).orElseThrow(
                 () -> new UsernameNotFoundException("User with username " + username + " not found"));
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .build();
+        return new CustomUserDetails(
+                user.getId(),
+                user.getUsername(),
+                user.getPassword()
+        );
     }
 }
