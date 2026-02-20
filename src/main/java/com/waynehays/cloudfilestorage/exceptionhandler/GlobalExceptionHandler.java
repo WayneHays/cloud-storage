@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.exceptionhandler;
 
-import com.waynehays.cloudfilestorage.dto.response.ErrorDto;
+import com.waynehays.cloudfilestorage.dto.ErrorDto;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
