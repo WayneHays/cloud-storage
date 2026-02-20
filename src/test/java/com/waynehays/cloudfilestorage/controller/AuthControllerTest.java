@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.controller;
 
 import com.waynehays.cloudfilestorage.config.SecurityConfig;
-import com.waynehays.cloudfilestorage.dto.request.SignInRequest;
-import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
+import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.UserService;
 import org.junit.jupiter.api.DisplayName;

@@ -1,14 +1,13 @@
 package com.waynehays.cloudfilestorage.controller;
 
-import com.waynehays.cloudfilestorage.dto.request.SignInRequest;
-import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
+import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
 import com.waynehays.cloudfilestorage.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
