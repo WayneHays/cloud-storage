@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto.response;
+package com.waynehays.cloudfilestorage.dto;
 
 public record ErrorDto(
         String message
