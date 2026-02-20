@@ -10,7 +10,7 @@ import java.nio.file.InvalidPathException;
 import java.util.regex.Pattern;
 
 @Component
-public class FilePathValidatorImpl implements FilePathValidator {
+public class UploadPathValidatorImpl implements UploadPathValidator {
     private static final Pattern ALLOWED_CHARACTERS_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
     private static final String MSG_NOT_BLANK = "Filename cannot be blank";
     private static final String MSG_EMPTY_PARTS = "Path contains empty parts";
