@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: change-folder-column-name-to-directory
+      author: waynehays
+      changes:
+        - renameColumn:
+            tableName: files_info
+            oldColumnName: folder
+            newColumnName: directory
+            columnDataType: varchar(400)

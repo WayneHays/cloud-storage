@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: make-folder-column-nullable
+      author: waynehays
+      changes:
+        - dropNotNullConstraint:
+            tableName: files_info
+            columnName: folder
+            columnDataType: varchar(400)

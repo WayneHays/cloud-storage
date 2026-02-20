@@ -36,8 +36,8 @@ public class FileInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 400)
-    private String folder;
+    @Column(length = 400)
+    private String directory;
 
     @Column(nullable = false, length = 260)
     private String name;
