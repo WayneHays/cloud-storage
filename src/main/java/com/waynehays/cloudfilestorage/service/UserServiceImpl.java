@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service;
 
-import com.waynehays.cloudfilestorage.dto.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
