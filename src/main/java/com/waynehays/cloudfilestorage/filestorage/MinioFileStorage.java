@@ -20,6 +20,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MinioFileStorage implements FileStorage {
+    private static final String ERROR_GET = "Failed to get object with key: ";
+
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
 
@@ -39,21 +41,20 @@ public class MinioFileStorage implements FileStorage {
 
     @Override
     public Optional<InputStream> get(String key) {
-        InputStream inputStream;
-
-        try {
-            inputStream = minioClient.getObject(GetObjectArgs.builder()
-                    .bucket(properties.bucketName())
-                    .object(key)
-                    .build());
-            return Optional.of(inputStream);
+        try (InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(properties.bucketName())
+                        .object(key)
+                        .build()
+        )) {
+            return Optional.of(stream);
         } catch (ErrorResponseException e) {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new FileStorageException("Failed to get object with key: " + key, e);
+            throw new FileStorageException(ERROR_GET + key, e);
         } catch (Exception e) {
-            throw new FileStorageException("Failed to get object with key: " + key, e);
+            throw new FileStorageException(ERROR_GET + key, e);
         }
     }
 
