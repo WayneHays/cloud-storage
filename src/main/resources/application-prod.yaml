@@ -6,13 +6,17 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  servlet:
+    multipart:
+      max-file-size: 1GB
+      max-request-size: 1GB
 minio:
   security:
     url: ${MINIO_URL}
     accessKey: ${MINIO_ACCESS_KEY}
     secretKey: ${MINIO_SECRET_KEY}
   storage:
-    bucketName: ${MINIO_BUCKET_NAME}
+    bucketName: user-files
 logging:
   level:
     root: info

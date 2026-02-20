@@ -10,7 +10,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
 minio:
   security:
     url: http://localhost:9000
@@ -18,7 +21,6 @@ minio:
     secretKey: minioadmin123
   storage:
     bucketName: dev-bucket
-
 logging:
   level:
     root: info
