@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.unit.service;
+package com.waynehays.cloudfilestorage.unit.service.fileserviceimpl;
 
 import com.waynehays.cloudfilestorage.dto.files.FileData;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
@@ -12,7 +12,7 @@ import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
-import com.waynehays.cloudfilestorage.service.FileServiceImpl;
+import com.waynehays.cloudfilestorage.service.fileservice.fileuploader.FileUploaderImpl;
 import com.waynehays.cloudfilestorage.validator.UploadPathValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FileServiceImplTest {
+class FileUploaderImplTest {
     private static final Long USER_ID = 123L;
     private static final String USERNAME = "test-user";
 
@@ -89,7 +89,7 @@ class FileServiceImplTest {
     private FileInfoMapper fileInfoMapper;
 
     @InjectMocks
-    private FileServiceImpl fileService;
+    private FileUploaderImpl fileUploader;
 
     private MultipartFile mockFile;
     private User mockUser;
@@ -155,7 +155,7 @@ class FileServiceImplTest {
         @DisplayName("Should successfully upload file")
         void shouldSuccessfullyUploadFile() {
             // when
-            ResourceDto result = fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            ResourceDto result = fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             assertThat(result).isNotNull().isEqualTo(mockResourceDto);
@@ -178,7 +178,7 @@ class FileServiceImplTest {
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(fileStorage).put(
@@ -217,7 +217,7 @@ class FileServiceImplTest {
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
-            fileService.uploadFile(USER_ID, EMPTY_DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, EMPTY_DIRECTORY, mockFile);
 
             // then
             verify(fileStorage).put(
@@ -253,7 +253,7 @@ class FileServiceImplTest {
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(fileStorage).put(
@@ -273,7 +273,7 @@ class FileServiceImplTest {
         @DisplayName("Should use getReferenceById for user")
         void shouldUseGetReferenceByIdForUser() {
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(userRepository).getReferenceById(USER_ID);
@@ -284,7 +284,7 @@ class FileServiceImplTest {
         @DisplayName("Should call validator with correct params")
         void shouldCallValidatorWithCorrectParams() {
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(uploadPathValidator).validate(mockFile.getOriginalFilename(), DIRECTORY);
@@ -294,7 +294,7 @@ class FileServiceImplTest {
         @DisplayName("Should call handler with correct params")
         void shouldCallHandlerWithCorrectParams() {
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(multipartFileDataExtractor).extract(mockFile, DIRECTORY);
@@ -304,7 +304,7 @@ class FileServiceImplTest {
         @DisplayName("Should save to database before MinIO")
         void shouldSaveToDatabaseBeforeMinIO() {
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             InOrder inOrder = inOrder(fileInfoRepository, fileStorage);
@@ -324,7 +324,7 @@ class FileServiceImplTest {
             ArgumentCaptor<FileInfo> fileInfoCaptor = ArgumentCaptor.forClass(FileInfo.class);
 
             // when
-            fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
             verify(fileInfoRepository).save(fileInfoCaptor.capture());
@@ -356,7 +356,7 @@ class FileServiceImplTest {
                     .thenThrow(new DataIntegrityViolationException(MSG_DUPLICATE_KEY));
 
             // when & then
-            assertThatThrownBy(() -> fileService.uploadFile(USER_ID, DIRECTORY, mockFile))
+            assertThatThrownBy(() -> fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile))
                     .isInstanceOf(FileAlreadyExistsException.class)
                     .hasMessageContaining(MSG_FILE_ALREADY_EXISTS);
         }
@@ -370,7 +370,7 @@ class FileServiceImplTest {
 
             // when
             try {
-                fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+                fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
             } catch (FileAlreadyExistsException ignored) {
             }
 
@@ -411,7 +411,7 @@ class FileServiceImplTest {
                             anyString());
 
             // when & then
-            assertThatThrownBy(() -> fileService.uploadFile(USER_ID, DIRECTORY, mockFile))
+            assertThatThrownBy(() -> fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile))
                     .isInstanceOf(FileStorageException.class)
                     .hasMessageContaining(MSG_FAILED_SAVE_STORAGE);
         }
@@ -429,7 +429,7 @@ class FileServiceImplTest {
 
             // when
             try {
-                fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+                fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
             } catch (FileStorageException ignored) {
             }
 
@@ -451,7 +451,7 @@ class FileServiceImplTest {
 
             // when
             try {
-                fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+                fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
             } catch (FileStorageException ignored) {
             }
 

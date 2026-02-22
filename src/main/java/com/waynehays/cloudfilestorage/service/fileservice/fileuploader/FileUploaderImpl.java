@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service;
+package com.waynehays.cloudfilestorage.service.fileservice.fileuploader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;
@@ -14,35 +14,31 @@ import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import com.waynehays.cloudfilestorage.validator.UploadPathValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
-import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
-public class FileServiceImpl implements FileService {
+public class FileUploaderImpl implements FileUploader {
     private static final String MSG_FILE_ALREADY_EXISTS = "File already exists: ";
     private static final String MSG_SAVING_TO_STORAGE_FAILED = "Failed to save file to storage: ";
 
     private final FileStorage fileStorage;
-    private final FileInfoRepository fileInfoRepository;
+    private final UploadPathValidator validator;
+    private final MultipartFileDataExtractor extractor;
     private final UserRepository userRepository;
-    private final UploadPathValidator uploadPathValidator;
-    private final MultipartFileDataExtractor multipartFileDataExtractor;
+    private final FileInfoRepository fileInfoRepository;
     private final FileInfoMapper fileInfoMapper;
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
-        uploadPathValidator.validate(file.getOriginalFilename(), directory);
+        validator.validate(file.getOriginalFilename(), directory);
 
-        FileData fileData = multipartFileDataExtractor.extract(file, directory);
+        FileData fileData = extractor.extract(file, directory);
         User user = userRepository.getReferenceById(userId);
         String storageKey = generateStorageKey(userId, fileData.directory(), fileData.extension());
         FileInfo fileInfo = createFileInfo(fileData, storageKey, user);
@@ -70,31 +66,6 @@ public class FileServiceImpl implements FileService {
             fileInfoRepository.delete(saved);
             throw new FileStorageException(MSG_SAVING_TO_STORAGE_FAILED + fileData.filename(), e);
         }
-    }
-
-    @Override
-    public void deleteFile(Long userId, String directory, String filename) {
-
-    }
-
-    @Override
-    public ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory) {
-        return null;
-    }
-
-    @Override
-    public InputStream downloadFile(Long userId, String directory, String filename) {
-        return null;
-    }
-
-    @Override
-    public ResourceDto getFileInfo(Long userId, String directory, String filename) {
-        return null;
-    }
-
-    @Override
-    public List<ResourceDto> searchFiles(Long userId, String query) {
-        return List.of();
     }
 
     private String generateStorageKey(Long userId, String directory, String extension) {

@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service;
+package com.waynehays.cloudfilestorage.service.fileservice;
 
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import org.springframework.web.multipart.MultipartFile;
