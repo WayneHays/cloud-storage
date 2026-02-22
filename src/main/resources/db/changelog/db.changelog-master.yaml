@@ -8,4 +8,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/changelogs/004_make_folder_column_nullable_in_files_info.yaml
   - include:
-      file: db/changelog/changelogs/005_add_user_id_column_to_files_info.yaml
+      file: db/changelog/changelogs/005_rename_folder_column_to_directory_in_files_info.yaml

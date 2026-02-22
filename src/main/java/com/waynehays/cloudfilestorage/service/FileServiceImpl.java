@@ -46,7 +46,7 @@ public class FileServiceImpl implements FileService {
         String originalFilename = file.getOriginalFilename();
         uploadPathValidator.validate(originalFilename, directory);
 
-        FileData fileData = multipartFileDataExtractor.handle(file, directory);
+        FileData fileData = multipartFileDataExtractor.extract(file, directory);
         User user = userRepository.getReferenceById(userId);
 
         String storageKey = generateStorageKey(userId, fileData.directory(), fileData.extension());

@@ -61,15 +61,10 @@ public class MinioFileStorage implements FileStorage {
     @Override
     public void move(String sourceKey, String targetKey) {
         try {
-            minioClient.copyObject(CopyObjectArgs.builder()
-                    .bucket(properties.bucketName())
-                    .object(targetKey)
-                    .source(CopySource.builder()
-                            .bucket(properties.bucketName())
-                            .object(sourceKey)
-                            .build())
-                    .build());
-            delete(sourceKey);
+            copyObject(sourceKey, targetKey);
+            deleteSourceWithRollback(sourceKey, targetKey);
+        } catch (FileStorageException e) {
+            throw e;
         } catch (Exception e) {
             throw new FileStorageException("Failed to move object from %s to %s".formatted(sourceKey, targetKey), e);
         }
@@ -84,6 +79,34 @@ public class MinioFileStorage implements FileStorage {
                     .build());
         } catch (Exception e) {
             throw new FileStorageException("Failed to delete object with key: " + key, e);
+        }
+    }
+
+    private void copyObject(String sourceKey, String targetKey) throws Exception {
+        minioClient.copyObject(CopyObjectArgs.builder()
+                .bucket(properties.bucketName())
+                .object(targetKey)
+                .source(CopySource.builder()
+                        .bucket(properties.bucketName())
+                        .object(sourceKey)
+                        .build())
+                .build());
+    }
+
+    private void deleteSourceWithRollback(String sourceKey, String targetKey) {
+        try {
+            delete(sourceKey);
+        } catch (Exception deleteException) {
+            rollbackCopy(targetKey);
+            throw new FileStorageException("Failed to delete source after copy: " + sourceKey, deleteException);
+        }
+    }
+
+    private void rollbackCopy(String targetKey) {
+        try {
+            delete(targetKey);
+        } catch (Exception rollbackException) {
+            log.error("Failed to rollback copy during move: {}", rollbackException.getMessage());
         }
     }
 }
