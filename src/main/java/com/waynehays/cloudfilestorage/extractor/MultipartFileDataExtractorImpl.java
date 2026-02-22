@@ -18,7 +18,7 @@ public class MultipartFileDataExtractorImpl implements MultipartFileDataExtracto
     private static final String ROOT_DIRECTORY = "";
 
     @Override
-    public FileData handle(MultipartFile file, String directory) {
+    public FileData extract(MultipartFile file, String directory) {
         String originalFilename = file.getOriginalFilename();
         String normalized = FilenameUtils.separatorsToUnix(originalFilename);
         String filename = FilenameUtils.getName(normalized);

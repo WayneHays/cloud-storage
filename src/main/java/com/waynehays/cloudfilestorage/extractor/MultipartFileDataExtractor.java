@@ -5,5 +5,5 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface MultipartFileDataExtractor {
 
-    FileData handle(MultipartFile file, String directory);
+    FileData extract(MultipartFile file, String directory);
 }
