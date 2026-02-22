@@ -1,14 +1,15 @@
-package com.waynehays.cloudfilestorage.service.fileservice;
+package com.waynehays.cloudfilestorage.service.file;
 
+import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
-import com.waynehays.cloudfilestorage.service.fileservice.filedeleter.FileDeleter;
-import com.waynehays.cloudfilestorage.service.fileservice.fileuploader.FileUploader;
+import com.waynehays.cloudfilestorage.service.file.deleter.FileDeleter;
+import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloader;
+import com.waynehays.cloudfilestorage.service.file.uploader.FileUploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.List;
 
 @Slf4j
@@ -17,6 +18,7 @@ import java.util.List;
 public class FileServiceImpl implements FileService {
     private final FileUploader fileUploader;
     private final FileDeleter fileDeleter;
+    private final FileDownloader fileDownloader;
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
@@ -29,12 +31,12 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory) {
-        return null;
+    public FileDownloadDto downloadFile(Long userId, String path) {
+        return fileDownloader.download(userId, path);
     }
 
     @Override
-    public InputStream downloadFile(Long userId, String directory, String filename) {
+    public ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory) {
         return null;
     }
 

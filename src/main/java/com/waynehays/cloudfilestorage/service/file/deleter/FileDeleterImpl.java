@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.fileservice.deleter;
+package com.waynehays.cloudfilestorage.service.file.deleter;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.entity.FileInfo;

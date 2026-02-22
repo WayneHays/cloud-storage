@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.fileservice.uploader;
+package com.waynehays.cloudfilestorage.service.file.uploader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;

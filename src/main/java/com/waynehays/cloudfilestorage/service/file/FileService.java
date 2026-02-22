@@ -1,9 +1,9 @@
-package com.waynehays.cloudfilestorage.service.fileservice;
+package com.waynehays.cloudfilestorage.service.file;
 
+import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.List;
 
 public interface FileService {
@@ -12,9 +12,9 @@ public interface FileService {
 
     void deleteFile(Long userId, String directory, String filename);
 
-    ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory);
+    FileDownloadDto downloadFile(Long userId, String path);
 
-    InputStream downloadFile(Long userId, String directory, String filename);
+    ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory);
 
     ResourceDto getFileInfo(Long userId, String directory, String filename);
 

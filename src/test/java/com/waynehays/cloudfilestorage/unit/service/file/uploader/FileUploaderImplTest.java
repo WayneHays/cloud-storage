@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.unit.service.fileserviceimpl;
+package com.waynehays.cloudfilestorage.unit.service.file.uploader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;
@@ -8,13 +8,13 @@ import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.extractor.MultipartFileDataExtractor;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
+import com.waynehays.cloudfilestorage.parser.multipartfiledataparser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
-import com.waynehays.cloudfilestorage.service.fileservice.fileuploader.FileUploaderImpl;
-import com.waynehays.cloudfilestorage.validator.UploadPathValidator;
+import com.waynehays.cloudfilestorage.service.file.uploader.FileUploaderImpl;
+import com.waynehays.cloudfilestorage.validator.PathValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -81,10 +81,10 @@ class FileUploaderImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private UploadPathValidator uploadPathValidator;
+    private PathValidator pathValidator;
 
     @Mock
-    private MultipartFileDataExtractor multipartFileDataExtractor;
+    private MultipartFileDataParser multipartFileDataParser;
 
     @Mock
     private FileInfoMapper fileInfoMapper;
@@ -147,7 +147,7 @@ class FileUploaderImplTest {
         @BeforeEach
         void setUp() {
             when(userRepository.getReferenceById(USER_ID)).thenReturn(mockUser);
-            lenient().when(multipartFileDataExtractor.extract(mockFile, DIRECTORY)).thenReturn(mockFileData);
+            lenient().when(multipartFileDataParser.extract(mockFile, DIRECTORY)).thenReturn(mockFileData);
             lenient().when(fileInfoRepository.save(any(FileInfo.class))).thenReturn(mockFileInfo);
             when(fileInfoMapper.toResourceDto(mockFileInfo)).thenReturn(mockResourceDto);
         }
@@ -160,8 +160,8 @@ class FileUploaderImplTest {
 
             // then
             assertThat(result).isNotNull().isEqualTo(mockResourceDto);
-            verify(uploadPathValidator).validate(anyString(), eq(DIRECTORY));
-            verify(multipartFileDataExtractor).extract(mockFile, DIRECTORY);
+            verify(pathValidator).validateUploadPath(anyString(), eq(DIRECTORY));
+            verify(multipartFileDataParser).extract(mockFile, DIRECTORY);
             verify(userRepository).getReferenceById(USER_ID);
             verify(fileInfoRepository).save(any(FileInfo.class));
             verify(fileStorage).put(
@@ -209,11 +209,11 @@ class FileUploaderImplTest {
                     .inputStream(inputStream)
                     .build();
 
-            when(multipartFileDataExtractor.extract(mockFile, EMPTY_DIRECTORY))
+            when(multipartFileDataParser.extract(mockFile, EMPTY_DIRECTORY))
                     .thenReturn(fileDataNoDir);
             doNothing()
-                    .when(uploadPathValidator)
-                    .validate(anyString(), eq(EMPTY_DIRECTORY));
+                    .when(pathValidator)
+                    .validateUploadPath(anyString(), eq(EMPTY_DIRECTORY));
 
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -249,7 +249,7 @@ class FileUploaderImplTest {
                     .inputStream(inputStream)
                     .build();
 
-            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY))
+            when(multipartFileDataParser.extract(mockFile, DIRECTORY))
                     .thenReturn(fileDataNoExt);
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -288,7 +288,7 @@ class FileUploaderImplTest {
             fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
-            verify(uploadPathValidator).validate(mockFile.getOriginalFilename(), DIRECTORY);
+            verify(pathValidator).validateUploadPath(mockFile.getOriginalFilename(), DIRECTORY);
         }
 
         @Test
@@ -298,7 +298,7 @@ class FileUploaderImplTest {
             fileUploader.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
-            verify(multipartFileDataExtractor).extract(mockFile, DIRECTORY);
+            verify(multipartFileDataParser).extract(mockFile, DIRECTORY);
         }
 
         @Test
@@ -346,7 +346,7 @@ class FileUploaderImplTest {
         @BeforeEach
         void setUp() {
             when(userRepository.getReferenceById(USER_ID)).thenReturn(mockUser);
-            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY)).thenReturn(mockFileData);
+            when(multipartFileDataParser.extract(mockFile, DIRECTORY)).thenReturn(mockFileData);
         }
 
         @Test
@@ -394,7 +394,7 @@ class FileUploaderImplTest {
         void setUp() {
             when(userRepository.getReferenceById(USER_ID))
                     .thenReturn(mockUser);
-            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY))
+            when(multipartFileDataParser.extract(mockFile, DIRECTORY))
                     .thenReturn(mockFileData);
             when(fileInfoRepository.save(any(FileInfo.class)))
                     .thenReturn(mockFileInfo);
