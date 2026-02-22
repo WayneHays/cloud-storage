@@ -5,8 +5,8 @@ import com.waynehays.cloudfilestorage.dto.files.FileData;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.exception.EmptyFileException;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.extractor.MultipartFileDataExtractor;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
@@ -29,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
     private static final String MSG_FILE_ALREADY_EXISTS = "File already exists: ";
+    private static final String MSG_SAVING_TO_STORAGE_FAILED = "Failed to save file to storage: ";
 
     private final FileStorage fileStorage;
     private final FileInfoRepository fileInfoRepository;
@@ -39,27 +40,35 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new EmptyFileException("File to upload is empty");
-        }
-
-        String originalFilename = file.getOriginalFilename();
-        uploadPathValidator.validate(originalFilename, directory);
+        uploadPathValidator.validate(file.getOriginalFilename(), directory);
 
         FileData fileData = multipartFileDataExtractor.extract(file, directory);
         User user = userRepository.getReferenceById(userId);
-
         String storageKey = generateStorageKey(userId, fileData.directory(), fileData.extension());
-        fileStorage.put(fileData.inputStream(), storageKey, fileData.size(), fileData.contentType());
-
         FileInfo fileInfo = createFileInfo(fileData, storageKey, user);
 
+        FileInfo saved = trySaveToDatabase(fileInfo);
+        trySaveToStorage(fileData, storageKey, saved);
+
+        return fileInfoMapper.toResourceDto(saved);
+    }
+
+    private FileInfo trySaveToDatabase(FileInfo fileInfo) {
+        FileInfo saved;
         try {
-            FileInfo saved = fileInfoRepository.save(fileInfo);
-            return fileInfoMapper.toResourceDto(saved);
+            saved = fileInfoRepository.save(fileInfo);
         } catch (DataIntegrityViolationException e) {
-            fileStorage.delete(storageKey);
-            throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + fileData.filename());
+            throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + fileInfo.getName());
+        }
+        return saved;
+    }
+
+    private void trySaveToStorage(FileData fileData, String storageKey, FileInfo saved) {
+        try {
+            fileStorage.put(fileData.inputStream(), storageKey, fileData.size(), fileData.contentType());
+        } catch (Exception e) {
+            fileInfoRepository.delete(saved);
+            throw new FileStorageException(MSG_SAVING_TO_STORAGE_FAILED + fileData.filename(), e);
         }
     }
 

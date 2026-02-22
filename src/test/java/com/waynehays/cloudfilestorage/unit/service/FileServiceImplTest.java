@@ -5,8 +5,8 @@ import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.exception.EmptyFileException;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.extractor.MultipartFileDataExtractor;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
@@ -36,6 +36,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -63,9 +65,10 @@ class FileServiceImplTest {
     private static final String SEPARATOR = "/";
     private static final String DOT = ".";
 
-    private static final String MSG_EMPTY_FILE = "File to upload is empty";
     private static final String MSG_FILE_ALREADY_EXISTS = "File already exists";
     private static final String MSG_DUPLICATE_KEY = "Duplicate key";
+    private static final String MSG_MINIO_ERROR = "MinIO error";
+    private static final String MSG_FAILED_SAVE_STORAGE = "Failed to save file to storage";
 
     @Mock
     private FileStorage fileStorage;
@@ -134,18 +137,17 @@ class FileServiceImplTest {
         );
 
         lenient().when(mockFile.getOriginalFilename()).thenReturn(FILENAME);
-        when(mockFile.isEmpty()).thenReturn(false);
     }
 
     @Nested
-    @DisplayName("UploadFile - Success cases")
+    @DisplayName("uploadFile - Success scenarios")
     class UploadFileSuccessTests {
 
         @BeforeEach
         void setUp() {
             when(userRepository.getReferenceById(USER_ID)).thenReturn(mockUser);
             lenient().when(multipartFileDataExtractor.extract(mockFile, DIRECTORY)).thenReturn(mockFileData);
-            when(fileInfoRepository.save(any(FileInfo.class))).thenReturn(mockFileInfo);
+            lenient().when(fileInfoRepository.save(any(FileInfo.class))).thenReturn(mockFileInfo);
             when(fileInfoMapper.toResourceDto(mockFileInfo)).thenReturn(mockResourceDto);
         }
 
@@ -160,12 +162,12 @@ class FileServiceImplTest {
             verify(uploadPathValidator).validate(anyString(), eq(DIRECTORY));
             verify(multipartFileDataExtractor).extract(mockFile, DIRECTORY);
             verify(userRepository).getReferenceById(USER_ID);
+            verify(fileInfoRepository).save(any(FileInfo.class));
             verify(fileStorage).put(
                     any(InputStream.class),
                     anyString(),
                     eq(SIZE),
                     eq(CONTENT_TYPE));
-            verify(fileInfoRepository).save(any(FileInfo.class));
             verify(fileInfoMapper).toResourceDto(mockFileInfo);
         }
 
@@ -206,7 +208,11 @@ class FileServiceImplTest {
                     .inputStream(inputStream)
                     .build();
 
-            when(multipartFileDataExtractor.extract(mockFile, EMPTY_DIRECTORY)).thenReturn(fileDataNoDir);
+            when(multipartFileDataExtractor.extract(mockFile, EMPTY_DIRECTORY))
+                    .thenReturn(fileDataNoDir);
+            doNothing()
+                    .when(uploadPathValidator)
+                    .validate(anyString(), eq(EMPTY_DIRECTORY));
 
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -242,7 +248,8 @@ class FileServiceImplTest {
                     .inputStream(inputStream)
                     .build();
 
-            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY)).thenReturn(fileDataNoExt);
+            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY))
+                    .thenReturn(fileDataNoExt);
             ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
@@ -285,7 +292,7 @@ class FileServiceImplTest {
 
         @Test
         @DisplayName("Should call handler with correct params")
-        void shouldCallExtractorWithCorrectParams() {
+        void shouldCallHandlerWithCorrectParams() {
             // when
             fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
 
@@ -294,19 +301,20 @@ class FileServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should save to MinIO before database")
-        void shouldSaveToMinioBeforeDatabase() {
+        @DisplayName("Should save to database before MinIO")
+        void shouldSaveToDatabaseBeforeMinIO() {
             // when
             fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
 
             // then
-            InOrder inOrder = inOrder(fileStorage, fileInfoRepository);
+            InOrder inOrder = inOrder(fileInfoRepository, fileStorage);
+            inOrder.verify(fileInfoRepository)
+                    .save(any(FileInfo.class));
             inOrder.verify(fileStorage).put(
                     any(InputStream.class),
                     anyString(),
                     eq(SIZE),
                     eq(CONTENT_TYPE));
-            inOrder.verify(fileInfoRepository).save(any(FileInfo.class));
         }
 
         @Test
@@ -327,41 +335,6 @@ class FileServiceImplTest {
             assertThat(capturedFileInfo.getSize()).isEqualTo(SIZE);
             assertThat(capturedFileInfo.getContentType()).isEqualTo(CONTENT_TYPE);
             assertThat(capturedFileInfo.getUser()).isEqualTo(mockUser);
-        }
-    }
-
-    @Nested
-    @DisplayName("uploadFile - Validation failures")
-    class UploadFileValidationTests {
-
-        @Test
-        @DisplayName("Should throw EmptyFileException when file is empty")
-        void shouldThrowEmptyFileExceptionWhenFileIsEmpty() {
-            // given
-            when(mockFile.isEmpty()).thenReturn(true);
-
-            // when & then
-            assertThatThrownBy(() -> fileService.uploadFile(USER_ID, DIRECTORY, mockFile))
-                    .isInstanceOf(EmptyFileException.class)
-                    .hasMessageContaining(MSG_EMPTY_FILE);
-        }
-
-        @Test
-        @DisplayName("Should not call validator when file is empty")
-        void shouldNotCallValidatorWhenFileIsEmpty() {
-            // given
-            when(mockFile.isEmpty()).thenReturn(true);
-
-            // when
-            try {
-                fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
-            } catch (EmptyFileException ignored) {
-            }
-
-            // Assert
-            verify(uploadPathValidator, never()).validate(anyString(), anyString());
-            verify(multipartFileDataExtractor, never()).extract(any(), anyString());
-            verify(fileStorage, never()).put(any(), anyString(), anyLong(), anyString());
         }
     }
 
@@ -389,13 +362,11 @@ class FileServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should rollback MinIO on duplicate")
-        void shouldRollbackMinioOnDuplicate() {
+        @DisplayName("Should not call MinIO on duplicate")
+        void shouldNotCallMinioOnDuplicate() {
             // given
             when(fileInfoRepository.save(any(FileInfo.class)))
                     .thenThrow(new DataIntegrityViolationException(MSG_DUPLICATE_KEY));
-
-            ArgumentCaptor<String> storageKeyCaptor = ArgumentCaptor.forClass(String.class);
 
             // when
             try {
@@ -404,25 +375,84 @@ class FileServiceImplTest {
             }
 
             // then
-            verify(fileStorage).put(
-                    any(InputStream.class),
-                    storageKeyCaptor.capture(),
-                    eq(SIZE),
-                    eq(CONTENT_TYPE));
-            verify(fileStorage).delete(storageKeyCaptor.getValue());
+            verify(fileInfoRepository).save(any(FileInfo.class));
+            verify(fileStorage, never()).put(
+                    any(),
+                    anyString(),
+                    anyLong(),
+                    anyString());
+            verify(fileInfoMapper, never()).toResourceDto(any(FileInfo.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("uploadFile - Storage errors")
+    class UploadFileStorageErrorTests {
+
+        @BeforeEach
+        void setUp() {
+            when(userRepository.getReferenceById(USER_ID))
+                    .thenReturn(mockUser);
+            when(multipartFileDataExtractor.extract(mockFile, DIRECTORY))
+                    .thenReturn(mockFileData);
+            when(fileInfoRepository.save(any(FileInfo.class)))
+                    .thenReturn(mockFileInfo);
         }
 
         @Test
-        @DisplayName("Should not call mapper on duplicate")
-        void shouldNotCallMapperOnDuplicate() {
+        @DisplayName("Should throw FileStorageException on MinIO error")
+        void shouldThrowFileStorageExceptionOnMinioError() {
             // given
-            when(fileInfoRepository.save(any(FileInfo.class)))
-                    .thenThrow(new DataIntegrityViolationException(MSG_DUPLICATE_KEY));
+            doThrow(new RuntimeException(MSG_MINIO_ERROR))
+                    .when(fileStorage)
+                    .put(any(InputStream.class),
+                            anyString(),
+                            anyLong(),
+                            anyString());
+
+            // when & then
+            assertThatThrownBy(() -> fileService.uploadFile(USER_ID, DIRECTORY, mockFile))
+                    .isInstanceOf(FileStorageException.class)
+                    .hasMessageContaining(MSG_FAILED_SAVE_STORAGE);
+        }
+
+        @Test
+        @DisplayName("Should rollback database on MinIO error")
+        void shouldRollbackDatabaseOnMinioError() {
+            // given
+            doThrow(new RuntimeException(MSG_MINIO_ERROR))
+                    .when(fileStorage)
+                    .put(any(InputStream.class),
+                            anyString(),
+                            anyLong(),
+                            anyString());
 
             // when
             try {
                 fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
-            } catch (FileAlreadyExistsException ignored) {
+            } catch (FileStorageException ignored) {
+            }
+
+            // then
+            verify(fileInfoRepository).save(any(FileInfo.class));
+            verify(fileInfoRepository).delete(mockFileInfo);
+        }
+
+        @Test
+        @DisplayName("Should not call mapper on MinIO error")
+        void shouldNotCallMapperOnMinioError() {
+            // given
+            doThrow(new RuntimeException(MSG_MINIO_ERROR))
+                    .when(fileStorage)
+                    .put(any(InputStream.class),
+                            anyString(),
+                            anyLong(),
+                            anyString());
+
+            // when
+            try {
+                fileService.uploadFile(USER_ID, DIRECTORY, mockFile);
+            } catch (FileStorageException ignored) {
             }
 
             // then
