@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.fileservice.fileuploader;
+package com.waynehays.cloudfilestorage.service.fileservice.uploader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;
@@ -7,12 +7,12 @@ import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.extractor.MultipartFileDataExtractor;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
+import com.waynehays.cloudfilestorage.parser.multipartfiledataparser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
-import com.waynehays.cloudfilestorage.validator.UploadPathValidator;
+import com.waynehays.cloudfilestorage.validator.PathValidator;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,15 +28,15 @@ public class FileUploaderImpl implements FileUploader {
     private static final String MSG_SAVING_TO_STORAGE_FAILED = "Failed to save file to storage: ";
 
     private final FileStorage fileStorage;
-    private final UploadPathValidator validator;
-    private final MultipartFileDataExtractor extractor;
+    private final PathValidator pathValidator;
+    private final MultipartFileDataParser extractor;
     private final UserRepository userRepository;
     private final FileInfoRepository fileInfoRepository;
     private final FileInfoMapper fileInfoMapper;
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
-        validator.validate(file.getOriginalFilename(), directory);
+        pathValidator.validateUploadPath(file.getOriginalFilename(), directory);
 
         FileData fileData = extractor.extract(file, directory);
         User user = userRepository.getReferenceById(userId);

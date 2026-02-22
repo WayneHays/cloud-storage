@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.fileservice.filedeleter;
+package com.waynehays.cloudfilestorage.service.fileservice.deleter;
 
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 

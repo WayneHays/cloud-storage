@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.fileservice.filedeleter;
+package com.waynehays.cloudfilestorage.service.fileservice.deleter;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class FileDeleterImpl implements FileDeleter {
-    private static final String MSG_FILE_NOT_FOUND = "File not found: ";
+    private static final String MSG_FILE_INFO_NOT_FOUND_IN_DATABASE = "File not found: ";
     private static final String MSG_FAILED_TO_DELETE_FROM_STORAGE = "Failed to delete file from storage";
     private static final String MSG_FAILED_TO_DELETE_FROM_DB = "Failed to delete file info from database";
 
@@ -31,7 +31,7 @@ public class FileDeleterImpl implements FileDeleter {
     private FileInfo findFileInfo(Long userId, String directory, String filename) throws FileNotFoundException {
         return fileInfoRepository.findByUserIdAndDirectoryAndName(userId, directory, filename)
                 .orElseThrow(() -> new FileNotFoundException(
-                        MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename));
+                        MSG_FILE_INFO_NOT_FOUND_IN_DATABASE + directory + Constants.PATH_SEPARATOR + filename));
     }
 
     private void tryDeleteFromDatabase(FileInfo fileInfo) {

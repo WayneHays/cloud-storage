@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.unit.extractor;
+package com.waynehays.cloudfilestorage.unit.parser;
 
 import com.waynehays.cloudfilestorage.dto.files.FileData;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.extractor.MultipartFileDataExtractorImpl;
+import com.waynehays.cloudfilestorage.parser.multipartfiledataparser.MultipartFileDataParserImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class MultipartFileDataExtractorImplTest {
+class MultipartFileDataParserImplTest {
 
-    private final MultipartFileDataExtractorImpl multipartFileDataExtractor = new MultipartFileDataExtractorImpl();
+    private final MultipartFileDataParserImpl multipartFileDataExtractor = new MultipartFileDataParserImpl();
     private MultipartFile file;
 
     @Nested
