@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service;
+package com.waynehays.cloudfilestorage.unit.service;
 
 import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
@@ -6,6 +6,7 @@ import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
+import com.waynehays.cloudfilestorage.service.UserServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

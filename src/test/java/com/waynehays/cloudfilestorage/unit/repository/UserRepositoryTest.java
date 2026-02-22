@@ -1,6 +1,7 @@
-package com.waynehays.cloudfilestorage.repository;
+package com.waynehays.cloudfilestorage.unit.repository;
 
 import com.waynehays.cloudfilestorage.entity.User;
+import com.waynehays.cloudfilestorage.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

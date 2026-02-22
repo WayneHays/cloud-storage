@@ -1,6 +1,7 @@
-package com.waynehays.cloudfilestorage.controller;
+package com.waynehays.cloudfilestorage.unit.controller;
 
 import com.waynehays.cloudfilestorage.config.SecurityConfig;
+import com.waynehays.cloudfilestorage.controller.UserController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

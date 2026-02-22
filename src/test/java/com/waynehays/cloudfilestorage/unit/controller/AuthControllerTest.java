@@ -1,6 +1,7 @@
-package com.waynehays.cloudfilestorage.controller;
+package com.waynehays.cloudfilestorage.unit.controller;
 
 import com.waynehays.cloudfilestorage.config.SecurityConfig;
+import com.waynehays.cloudfilestorage.controller.AuthController;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
