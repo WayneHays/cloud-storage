@@ -55,8 +55,8 @@ public class FileServiceImpl implements FileService {
         FileInfo fileInfo = createFileInfo(fileData, storageKey, user);
 
         try {
-            fileInfoRepository.save(fileInfo);
-            return fileInfoMapper.toResourceDto(fileInfo);
+            FileInfo saved = fileInfoRepository.save(fileInfo);
+            return fileInfoMapper.toResourceDto(saved);
         } catch (DataIntegrityViolationException e) {
             fileStorage.delete(storageKey);
             throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + fileData.filename());
