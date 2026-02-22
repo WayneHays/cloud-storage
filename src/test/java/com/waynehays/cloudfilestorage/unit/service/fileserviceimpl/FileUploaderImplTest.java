@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.service.fileserviceimpl;
 
+import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
@@ -62,8 +63,8 @@ class FileUploaderImplTest {
     private static final String EMPTY_DIRECTORY = "";
 
     private static final String STORAGE_KEY = "123/documents/uuid.txt";
-    private static final String SEPARATOR = "/";
-    private static final String DOT = ".";
+    private static final String SEPARATOR = Constants.PATH_SEPARATOR;
+    private static final String DOT = Constants.EXTENSION_SEPARATOR;
 
     private static final String MSG_FILE_ALREADY_EXISTS = "File already exists";
     private static final String MSG_DUPLICATE_KEY = "Duplicate key";

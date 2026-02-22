@@ -1,6 +1,7 @@
 package com.waynehays.cloudfilestorage.service.fileservice;
 
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.service.fileservice.filedeleter.FileDeleter;
 import com.waynehays.cloudfilestorage.service.fileservice.fileuploader.FileUploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
     private final FileUploader fileUploader;
+    private final FileDeleter fileDeleter;
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
@@ -23,7 +25,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void deleteFile(Long userId, String directory, String filename) {
-
+        fileDeleter.delete(userId, directory, filename);
     }
 
     @Override
