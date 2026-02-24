@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.parser.multipartfiledataparser;
 
+import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.FileData;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
@@ -14,10 +15,10 @@ import java.io.InputStream;
 public class MultipartFileDataParserImpl implements MultipartFileDataParser {
     private static final String MSG_FAILED_READ_FILE = "Failed to read file stream";
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    private static final String ROOT_DIRECTORY = "";
+    ;
 
     @Override
-    public FileData extract(MultipartFile file, String directory) {
+    public FileData parse(MultipartFile file, String directory) {
         String originalFilename = file.getOriginalFilename();
         String normalized = PathUtils.normalizeSeparators(originalFilename);
         String filename = PathUtils.extractFilename(normalized);
@@ -58,7 +59,7 @@ public class MultipartFileDataParserImpl implements MultipartFileDataParser {
 
     private String normalizeDirectory(String directory) {
         if (directory == null) {
-            return ROOT_DIRECTORY;
+            return Constants.ROOT_DIRECTORY;
         }
         String normalized = PathUtils.normalizeSeparators(directory.trim());
         return PathUtils.stripSeparators(normalized);

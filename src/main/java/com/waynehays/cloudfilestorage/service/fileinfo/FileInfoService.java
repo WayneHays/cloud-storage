@@ -1,0 +1,17 @@
+package com.waynehays.cloudfilestorage.service.fileinfo;
+
+import com.waynehays.cloudfilestorage.dto.files.FileData;
+import com.waynehays.cloudfilestorage.entity.FileInfo;
+
+public interface FileInfoService {
+
+    FileInfo save(Long userId, FileData fileData, String storageKey);
+
+    String deleteFileInfoAndReturnStorageKey(Long userId, String directory, String filename);
+
+    FileInfo findFileInfo(Long userId, String directory, String filename);
+
+    void deleteFile(Long userId, String directory, String filename);
+
+    FileInfo moveFileInfo(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey);
+}

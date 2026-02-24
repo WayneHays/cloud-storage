@@ -8,10 +8,10 @@ import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.filestorage.FileStorage;
+import com.waynehays.cloudfilestorage.filestorage.MinioFileStorage;
 import com.waynehays.cloudfilestorage.parser.querypathparser.QueryPathParserImpl;
-import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloaderImpl;
+import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +26,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +36,8 @@ import static org.mockito.Mockito.when;
 class FileDownloaderImplTest {
     private static final Long USER_ID = 1L;
     private static final String DIRECTORY = "docs";
-    private static final String FILENAME = "file.txt";
+    private static final String FILENAME = "file";
+    private static final String EXTENSION = ".txt";
     private static final String STORAGE_KEY = "123/docs/uuid.txt";
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
@@ -41,10 +45,10 @@ class FileDownloaderImplTest {
     private static final String CONTENT_TYPE = "text/plain";
 
     @Mock
-    private FileStorage fileStorage;
+    private MinioFileStorage fileStorage;
 
     @Mock
-    private FileInfoRepository fileInfoRepository;
+    private FileInfoServiceImpl fileInfoService;
 
     @Mock
     private QueryPathParserImpl queryPathParser;
@@ -53,14 +57,15 @@ class FileDownloaderImplTest {
     private FileDownloaderImpl fileDownloader;
 
     private User mockUser;
-    private FileInfo mockFileInfo;
     private InputStream mockInputStream;
 
     @BeforeEach
     void setUp() {
         mockUser = createMockUser();
-        mockFileInfo = createMockFileInfo();
+        FileInfo mockFileInfo = createMockFileInfo();
         mockInputStream = new ByteArrayInputStream(new byte[]{1, 2, 3});
+        lenient().when(fileInfoService.findFileInfo(anyLong(), anyString(), anyString()))
+                .thenReturn(mockFileInfo);
     }
 
     @Test
@@ -71,8 +76,6 @@ class FileDownloaderImplTest {
         ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
 
         when(queryPathParser.parse(path)).thenReturn(parsedPath);
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.of(mockFileInfo));
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.of(mockInputStream));
 
         // when
@@ -84,7 +87,7 @@ class FileDownloaderImplTest {
         assertThat(result.size()).isEqualTo(FILE_SIZE);
 
         verify(queryPathParser).parse(path);
-        verify(fileInfoRepository).findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME);
+        verify(fileInfoService).findFileInfo(USER_ID, DIRECTORY, FILENAME);
         verify(fileStorage).get(STORAGE_KEY);
     }
 
@@ -111,8 +114,6 @@ class FileDownloaderImplTest {
         ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
 
         when(queryPathParser.parse(path)).thenReturn(parsedPath);
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
@@ -128,8 +129,6 @@ class FileDownloaderImplTest {
         ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
 
         when(queryPathParser.parse(path)).thenReturn(parsedPath);
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.of(mockFileInfo));
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.empty());
 
         // when & then
@@ -146,14 +145,12 @@ class FileDownloaderImplTest {
         ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
 
         when(queryPathParser.parse(path)).thenReturn(parsedPath);
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.of(mockFileInfo));
-        when(fileStorage.get(STORAGE_KEY)).thenThrow(new RuntimeException("MinIO error"));
+        when(fileStorage.get(STORAGE_KEY)).thenThrow(new FileStorageException("Failed to get object with key: " + STORAGE_KEY));
 
         // when & then
         assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
                 .isInstanceOf(FileStorageException.class)
-                .hasMessageContaining("Failed to download file");
+                .hasMessageContaining("Failed to get object with key: " + STORAGE_KEY);
     }
 
     private User createMockUser() {

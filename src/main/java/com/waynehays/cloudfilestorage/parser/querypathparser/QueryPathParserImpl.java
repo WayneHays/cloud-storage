@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.parser.querypathparser;
 
+import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class QueryPathParserImpl implements QueryPathParser {
-    private static final String ROOT_DIRECTORY = "";
 
     private final PathValidator pathValidator;
 
@@ -20,7 +20,7 @@ public class QueryPathParserImpl implements QueryPathParser {
         pathValidator.validateDirectoryPath(queryPath);
 
         if (StringUtils.isBlank(queryPath)) {
-            return directoryPath(ROOT_DIRECTORY);
+            return directoryPath(Constants.ROOT_DIRECTORY);
         }
         String normalizedPath = PathUtils.normalizeSeparators(queryPath.trim());
 

@@ -37,7 +37,7 @@ class MultipartFileDataParserImplTest {
             String directory = "documents";
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.originalFilename()).isEqualTo("file.txt");
@@ -55,7 +55,7 @@ class MultipartFileDataParserImplTest {
             String directory = "documents";
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.filename()).isEqualTo("file.txt");
@@ -69,7 +69,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("archive.tar.gz", 10L, "text");
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.originalFilename()).isEqualTo("archive.tar.gz");
@@ -84,7 +84,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("README", 10L, "text");
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.extension()).isEmpty();
@@ -96,7 +96,7 @@ class MultipartFileDataParserImplTest {
             // given
             file = createMock("test", 10L, null);
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.contentType()).isEqualTo("application/octet-stream");
@@ -109,7 +109,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("test", 10L, "test");
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.contentType()).isEqualTo("test");
@@ -123,7 +123,7 @@ class MultipartFileDataParserImplTest {
             when(file.getInputStream()).thenThrow(new FileStorageException(null, null));
 
             // when & then
-            assertThrows(FileStorageException.class, () -> multipartFileDataExtractor.extract(file, null));
+            assertThrows(FileStorageException.class, () -> multipartFileDataExtractor.parse(file, null));
         }
     }
 
@@ -139,7 +139,7 @@ class MultipartFileDataParserImplTest {
             String directory = "documents";
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.directory()).isEqualTo("documents/work/projects");
@@ -153,7 +153,7 @@ class MultipartFileDataParserImplTest {
             String directory = "";
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.directory()).isEqualTo("folder");
@@ -166,7 +166,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("folder/file.txt", 1, null);
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.directory()).isEqualTo("folder");
@@ -179,7 +179,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("", 1, null);
             String directory = "documents";
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.directory()).isEqualTo(directory);
@@ -193,7 +193,7 @@ class MultipartFileDataParserImplTest {
             String directory = "";
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, directory);
+            FileData result = multipartFileDataExtractor.parse(file, directory);
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -206,7 +206,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("", 1, null);
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -232,7 +232,7 @@ class MultipartFileDataParserImplTest {
         @MethodSource("provideSuccessNormalization")
         void givenFileAndDirectory_whenExtract_thenSuccess(String directory) throws IOException {
             file = createMock(null, 1, null);
-            assertThat(multipartFileDataExtractor.extract(file, directory).directory()).isEqualTo("documents");
+            assertThat(multipartFileDataExtractor.parse(file, directory).directory()).isEqualTo("documents");
         }
 
         @Test
@@ -242,7 +242,7 @@ class MultipartFileDataParserImplTest {
             file = createMock("folder\\file.txt", 1, null);
 
             // when
-            FileData result = multipartFileDataExtractor.extract(file, null);
+            FileData result = multipartFileDataExtractor.parse(file, null);
 
             // then
             assertThat(result.originalFilename()).isEqualTo("folder\\file.txt");
