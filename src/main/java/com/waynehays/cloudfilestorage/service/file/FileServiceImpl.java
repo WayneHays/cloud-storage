@@ -4,6 +4,7 @@ import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.file.deleter.FileDeleter;
 import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloader;
+import com.waynehays.cloudfilestorage.service.file.mover.FileMover;
 import com.waynehays.cloudfilestorage.service.file.uploader.FileUploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class FileServiceImpl implements FileService {
     private final FileUploader fileUploader;
     private final FileDeleter fileDeleter;
     private final FileDownloader fileDownloader;
+    private final FileMover fileMover;
 
     @Override
     public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
@@ -36,8 +38,8 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory) {
-        return null;
+    public ResourceDto moveFile(Long userId, String directoryFrom, String directoryTo) {
+        return fileMover.move(userId, directoryFrom, directoryTo);
     }
 
     @Override
