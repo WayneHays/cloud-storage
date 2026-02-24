@@ -7,4 +7,5 @@ import lombok.NoArgsConstructor;
 public final class Constants {
     public static final String PATH_SEPARATOR = "/";
     public static final String EXTENSION_SEPARATOR = ".";
+    public static final String ROOT_DIRECTORY = "";
 }

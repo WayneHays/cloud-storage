@@ -3,7 +3,7 @@ package com.waynehays.cloudfilestorage.controller;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
-import com.waynehays.cloudfilestorage.service.UserService;
+import com.waynehays.cloudfilestorage.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
