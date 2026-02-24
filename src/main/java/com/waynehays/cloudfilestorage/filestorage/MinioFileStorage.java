@@ -20,7 +20,12 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MinioFileStorage implements FileStorage {
-    private static final String ERROR_GET = "Failed to get object with key: ";
+    private static final String MSG_FAILED_GET = "Failed to get object with key: ";
+    private static final String MSG_FAILED_PUT = "Failed to put object with key: ";
+    private static final String MSG_FAILED_MOVE = "Failed to move object from %s to %s";
+    private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
+    private static final String MSG_FAILED_DELETE_AFTER_COPY = "Failed to delete source after copy: ";
+    private static final String LOG_FAILED_ROLLBACK_COPY = "Failed to rollback copy during move: {}";
 
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
@@ -35,26 +40,27 @@ public class MinioFileStorage implements FileStorage {
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
-            throw new FileStorageException("Failed to put object with key: " + key, e);
+            throw new FileStorageException(MSG_FAILED_PUT + key, e);
         }
     }
 
     @Override
     public Optional<InputStream> get(String key) {
-        try (InputStream stream = minioClient.getObject(
-                GetObjectArgs.builder()
-                        .bucket(properties.bucketName())
-                        .object(key)
-                        .build()
-        )) {
+        try {
+            InputStream stream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(properties.bucketName())
+                            .object(key)
+                            .build()
+            );
             return Optional.of(stream);
         } catch (ErrorResponseException e) {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new FileStorageException(ERROR_GET + key, e);
+            throw new FileStorageException(MSG_FAILED_GET + key, e);
         } catch (Exception e) {
-            throw new FileStorageException(ERROR_GET + key, e);
+            throw new FileStorageException(MSG_FAILED_GET + key, e);
         }
     }
 
@@ -62,12 +68,11 @@ public class MinioFileStorage implements FileStorage {
     public void move(String sourceKey, String targetKey) {
         try {
             copyObject(sourceKey, targetKey);
-            deleteSourceWithRollback(sourceKey, targetKey);
-        } catch (FileStorageException e) {
-            throw e;
         } catch (Exception e) {
-            throw new FileStorageException("Failed to move object from %s to %s".formatted(sourceKey, targetKey), e);
+            rollbackCopy(targetKey);
+            throw new FileStorageException(MSG_FAILED_MOVE.formatted(sourceKey, targetKey), e);
         }
+        deleteSourceWithRollback(sourceKey, targetKey);
     }
 
     @Override
@@ -78,7 +83,7 @@ public class MinioFileStorage implements FileStorage {
                     .object(key)
                     .build());
         } catch (Exception e) {
-            throw new FileStorageException("Failed to delete object with key: " + key, e);
+            throw new FileStorageException(MSG_FAILED_DELETE + key, e);
         }
     }
 
@@ -98,7 +103,7 @@ public class MinioFileStorage implements FileStorage {
             delete(sourceKey);
         } catch (Exception deleteException) {
             rollbackCopy(targetKey);
-            throw new FileStorageException("Failed to delete source after copy: " + sourceKey, deleteException);
+            throw new FileStorageException(MSG_FAILED_DELETE_AFTER_COPY + sourceKey, deleteException);
         }
     }
 
@@ -106,7 +111,7 @@ public class MinioFileStorage implements FileStorage {
         try {
             delete(targetKey);
         } catch (Exception rollbackException) {
-            log.error("Failed to rollback copy during move: {}", rollbackException.getMessage());
+            log.error(LOG_FAILED_ROLLBACK_COPY, rollbackException.getMessage());
         }
     }
 }

@@ -32,11 +32,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -325,7 +325,9 @@ class MinioFileStorageTest {
             assertThatThrownBy(() -> minioFileStorage.move(sourceKey, targetKey))
                     .isInstanceOf(FileStorageException.class)
                     .hasMessageContaining("Failed to move object from %s to %s".formatted(sourceKey, targetKey));
-            verify(minioClient, never()).removeObject(any(RemoveObjectArgs.class));
+            verify(minioClient).removeObject(argThat(args ->
+                    args.object().equals(targetKey)
+            ));
         }
 
         @Test
