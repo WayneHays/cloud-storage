@@ -1,6 +1,12 @@
 package com.waynehays.cloudfilestorage.exceptionhandler;
 
 import com.waynehays.cloudfilestorage.dto.ErrorDto;
+import com.waynehays.cloudfilestorage.exception.EmptyFileException;
+import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
+import com.waynehays.cloudfilestorage.exception.FileStorageException;
+import com.waynehays.cloudfilestorage.exception.InvalidFilenameException;
+import com.waynehays.cloudfilestorage.exception.InvalidPathException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -26,6 +32,44 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                             WebRequest request) {
         log.debug("Validation params for method failed");
         return new ResponseEntity<>(new ErrorDto("Validation failed"), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorDto> handleInvalidPathException(InvalidPathException e) {
+        log.info("Attempt to upload file with invalid path", e);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidFilenameException.class)
+    public ResponseEntity<ErrorDto> handleInvalidFilenameException(InvalidFilenameException e) {
+        log.info("Attempt to upload file with invalid filename", e);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(FileAlreadyExistsException.class)
+    public ResponseEntity<ErrorDto> handleFileAlreadyExists(FileAlreadyExistsException e) {
+        log.info("Attempt to upload duplicate file", e);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(EmptyFileException.class)
+    public ResponseEntity<ErrorDto> handleEmptyFile(EmptyFileException e) {
+        log.info("Attempt to upload empty file", e);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(FileNotFoundException.class)
+    public ResponseEntity<ErrorDto> handleFileNotFound(FileNotFoundException e) {
+        log.warn("File not found: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorDto> handleFileStorageException(FileStorageException e) {
+        log.error("File storage error: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorDto("Failed to process file operation"));
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
