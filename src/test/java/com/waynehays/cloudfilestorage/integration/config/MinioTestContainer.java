@@ -1,5 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.config;
 
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -23,6 +25,20 @@ public class MinioTestContainer {
                 .withEnv(ENV_ROOT_PASSWORD, ROOT_PASSWORD)
                 .withCommand(COMMAND);
         MINIO.start();
+        createBucket();
+    }
+
+    private static void createBucket() {
+        try (MinioClient minioClient = MinioClient.builder()
+                .endpoint(getUrl())
+                .credentials(ROOT_USER, ROOT_PASSWORD)
+                .build()) {
+            minioClient.makeBucket(MakeBucketArgs.builder()
+                    .bucket(BUCKET_NAME)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create test bucket", e);
+        }
     }
 
     public static String getUrl() {
