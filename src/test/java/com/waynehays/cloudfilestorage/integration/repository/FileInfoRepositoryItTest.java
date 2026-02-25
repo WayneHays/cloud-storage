@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.integration.repository;
 
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryTest;
+import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryItTest;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +14,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class FileInfoRepositoryTest extends AbstractRepositoryTest {
+class FileInfoRepositoryItTest extends AbstractRepositoryItTest {
     private static final String DIRECTORY = "docs";
     private static final String FILENAME = "file.txt";
     private static final String STORAGE_KEY = "user-1-files/docs/file.txt";

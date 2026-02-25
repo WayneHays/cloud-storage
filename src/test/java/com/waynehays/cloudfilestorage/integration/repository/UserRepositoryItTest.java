@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryTest;
+import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryItTest;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryTest extends AbstractRepositoryTest {
+class UserRepositoryItTest extends AbstractRepositoryItTest {
     private static final String USERNAME = "test-name";
     private static final String PASSWORD = "password";
 
@@ -42,7 +42,7 @@ class UserRepositoryTest extends AbstractRepositoryTest {
     }
 
     @Test
-    @DisplayName("Should return emply when not found")
+    @DisplayName("Should return empty when not found")
     void shouldReturnEmpty_whenNotFound() {
         // when
         Optional<User> result = userRepository.findByUsername("not exists");

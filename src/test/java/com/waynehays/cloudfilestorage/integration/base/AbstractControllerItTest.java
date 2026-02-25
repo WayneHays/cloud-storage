@@ -3,13 +3,15 @@ package com.waynehays.cloudfilestorage.integration.base;
 import com.waynehays.cloudfilestorage.integration.config.MinioTestContainer;
 import com.waynehays.cloudfilestorage.integration.config.PostgresTestContainer;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 @ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public abstract class AbstractControllerTest {
+@AutoConfigureMockMvc
+@SpringBootTest()
+public abstract class AbstractControllerItTest {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
