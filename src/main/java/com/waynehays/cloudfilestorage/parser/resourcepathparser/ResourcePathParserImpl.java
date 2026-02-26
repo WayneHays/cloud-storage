@@ -1,7 +1,7 @@
-package com.waynehays.cloudfilestorage.parser.querypathparser;
+package com.waynehays.cloudfilestorage.parser.resourcepathparser;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import com.waynehays.cloudfilestorage.validator.PathValidator;
@@ -11,12 +11,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class QueryPathParserImpl implements QueryPathParser {
+public class ResourcePathParserImpl implements ResourcePathParser {
 
     private final PathValidator pathValidator;
 
     @Override
-    public ParsedPath parse(String queryPath) {
+    public ResourcePath parse(String queryPath) {
         pathValidator.validateQueryPath(queryPath);
 
         if (StringUtils.isBlank(queryPath)) {
@@ -31,10 +31,10 @@ public class QueryPathParserImpl implements QueryPathParser {
         String directory = PathUtils.removeTrailingSeparator(PathUtils.extractParentPath(normalizedPath));
         String fileName = PathUtils.extractFilename(normalizedPath);
 
-        return new ParsedPath(directory, fileName, ResourceType.FILE);
+        return new ResourcePath(directory, fileName, ResourceType.FILE);
     }
 
-    private ParsedPath pathToDirectory(String path) {
-        return new ParsedPath(path, null, ResourceType.DIRECTORY);
+    private ResourcePath pathToDirectory(String path) {
+        return new ResourcePath(path, null, ResourceType.DIRECTORY);
     }
 }

@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.unit.parser;
 
-import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.exception.InvalidPathException;
-import com.waynehays.cloudfilestorage.parser.querypathparser.QueryPathParserImpl;
+import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParserImpl;
 import com.waynehays.cloudfilestorage.validator.PathValidatorImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,13 +25,13 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class QueryPathParserImplTest {
+class ResourcePathParserImplTest {
 
     @Mock
     private PathValidatorImpl pathValidator;
 
     @InjectMocks
-    private QueryPathParserImpl queryPathParser;
+    private ResourcePathParserImpl queryPathParser;
 
     @BeforeEach
     void setUp() {
@@ -46,7 +46,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse null path as root directory")
         void shouldParseNullPathAsRootDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse(null);
+            ResourcePath result = queryPathParser.parse(null);
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -62,7 +62,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse empty string as root directory")
         void shouldParseEmptyStringAsRootDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("");
+            ResourcePath result = queryPathParser.parse("");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -77,7 +77,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse whitespace-only path as root directory")
         void shouldParseWhitespaceOnlyPathAsRootDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("   ");
+            ResourcePath result = queryPathParser.parse("   ");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -89,7 +89,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse directory path with trailing slash")
         void shouldParseDirectoryPathWithTrailingSlash() {
             // when
-            ParsedPath result = queryPathParser.parse("folder1/folder2/");
+            ResourcePath result = queryPathParser.parse("folder1/folder2/");
 
             // then
             assertThat(result.directory()).isEqualTo("folder1/folder2");
@@ -102,7 +102,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse single directory with trailing slash")
         void shouldParseSingleDirectoryWithTrailingSlash() {
             // when
-            ParsedPath result = queryPathParser.parse("documents/");
+            ResourcePath result = queryPathParser.parse("documents/");
 
             // then
             assertThat(result.directory()).isEqualTo("documents");
@@ -114,7 +114,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse nested directory with trailing slash")
         void shouldParseNestedDirectoryWithTrailingSlash() {
             // when
-            ParsedPath result = queryPathParser.parse("folder1/folder2/folder3/");
+            ResourcePath result = queryPathParser.parse("folder1/folder2/folder3/");
 
             // then
             assertThat(result.directory()).isEqualTo("folder1/folder2/folder3");
@@ -126,7 +126,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse root slash as root directory")
         void shouldParseRootSlashAsRootDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("/");
+            ResourcePath result = queryPathParser.parse("/");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -150,7 +150,7 @@ class QueryPathParserImplTest {
         })
         void shouldParseVariousFilePathsCorrectly(String input, String expectedDirectory, String expectedFilename) {
             // when
-            ParsedPath result = queryPathParser.parse(input);
+            ResourcePath result = queryPathParser.parse(input);
 
             // then
             assertThat(result.directory()).isEqualTo(expectedDirectory);
@@ -164,7 +164,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse file in nested directory")
         void shouldParseFileInNestedDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("folder1/folder2/file.txt");
+            ResourcePath result = queryPathParser.parse("folder1/folder2/file.txt");
 
             // then
             assertThat(result.directory()).isEqualTo("folder1/folder2");
@@ -178,7 +178,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should parse file in root directory")
         void shouldParseFileInRootDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("file.txt");
+            ResourcePath result = queryPathParser.parse("file.txt");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -203,7 +203,7 @@ class QueryPathParserImplTest {
         })
         void shouldNormalizePathsCorrectly(String input, String expectedDirectory, String expectedFilename) {
             // when
-            ParsedPath result = queryPathParser.parse(input);
+            ResourcePath result = queryPathParser.parse(input);
 
             // then
             assertThat(result.directory()).isEqualTo(expectedDirectory);
@@ -214,7 +214,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should remove trailing separator from directory path")
         void shouldRemoveTrailingSeparatorFromDirectoryPath() {
             // Act
-            ParsedPath result = queryPathParser.parse("folder1/folder2/");
+            ResourcePath result = queryPathParser.parse("folder1/folder2/");
 
             // Assert
             assertThat(result.directory()).isEqualTo("folder1/folder2");
@@ -225,7 +225,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should remove trailing separator from parent path in file path")
         void shouldRemoveTrailingSeparatorFromParentPath() {
             // Act
-            ParsedPath result = queryPathParser.parse("folder1/folder2/file.txt");
+            ResourcePath result = queryPathParser.parse("folder1/folder2/file.txt");
 
             // Assert
             // FilenameUtils.getPath() returns "folder1/folder2/", we remove trailing /
@@ -237,7 +237,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should handle path with whitespace and Windows separators")
         void shouldHandlePathWithWhitespaceAndWindowsSeparators() {
             // Act
-            ParsedPath result = queryPathParser.parse("  folder1\\folder2\\file.txt  ");
+            ResourcePath result = queryPathParser.parse("  folder1\\folder2\\file.txt  ");
 
             // Assert
             assertThat(result.directory()).isEqualTo("folder1/folder2");
@@ -253,7 +253,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should handle single character directory")
         void shouldHandleSingleCharacterDirectory() {
             // when
-            ParsedPath result = queryPathParser.parse("a/");
+            ResourcePath result = queryPathParser.parse("a/");
 
             // then
             assertThat(result.directory()).isEqualTo("a");
@@ -265,7 +265,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should handle single character filename")
         void shouldHandleSingleCharacterFilename() {
             // when
-            ParsedPath result = queryPathParser.parse("f");
+            ResourcePath result = queryPathParser.parse("f");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -277,7 +277,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should handle file with only extension")
         void shouldHandleFileWithOnlyExtension() {
             // when
-            ParsedPath result = queryPathParser.parse(".gitignore");
+            ResourcePath result = queryPathParser.parse(".gitignore");
 
             // then
             assertThat(result.directory()).isEmpty();
@@ -289,7 +289,7 @@ class QueryPathParserImplTest {
         @DisplayName("Should handle multiple trailing slashes")
         void shouldHandleMultipleTrailingSlashes() {
             // when
-            ParsedPath result = queryPathParser.parse("folder///");
+            ResourcePath result = queryPathParser.parse("folder///");
 
             // then
             assertThat(result.directory()).isEqualTo("folder");
@@ -388,13 +388,13 @@ class QueryPathParserImplTest {
 
     @Nested
     @DisplayName("ParsedPath helper methods")
-    class ParsedPathHelperMethodsTests {
+    class ResourcePathHelperMethodsTests {
 
         @Test
         @DisplayName("isFile should return true for file path")
         void isFileShouldReturnTrueForFilePath() {
             // when
-            ParsedPath result = queryPathParser.parse("folder/file.txt");
+            ResourcePath result = queryPathParser.parse("folder/file.txt");
 
             // then
             assertThat(result.isFile()).isTrue();
@@ -405,7 +405,7 @@ class QueryPathParserImplTest {
         @DisplayName("isDirectory should return true for directory path")
         void isDirectoryShouldReturnTrueForDirectoryPath() {
             // when
-            ParsedPath result = queryPathParser.parse("folder/");
+            ResourcePath result = queryPathParser.parse("folder/");
 
             // then
             assertThat(result.isDirectory()).isTrue();
@@ -416,7 +416,7 @@ class QueryPathParserImplTest {
         @DisplayName("isDirectory should return true for root path")
         void isDirectoryShouldReturnTrueForRootPath() {
             // when
-            ParsedPath result = queryPathParser.parse("");
+            ResourcePath result = queryPathParser.parse("");
 
             // then
             assertThat(result.isDirectory()).isTrue();

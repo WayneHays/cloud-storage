@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.dto.files;
 
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 
-public record ParsedPath(
+public record ResourcePath(
         String directory,
         String filename,
         ResourceType type
