@@ -60,6 +60,7 @@ class FileSearchTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should return 401 when not authenticated")
     void shouldReturn401WhenNotAuthenticated() throws Exception {
+        // when & then
         mockMvc.perform(get(SEARCH_URL)
                         .param(PARAM_QUERY, FILE_1))
                 .andExpect(status().isUnauthorized());
@@ -68,8 +69,10 @@ class FileSearchTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should not return other user's files")
     void shouldNotReturnOtherUsersFiles() throws Exception {
+        // given
         Cookie secondUserCookie = registerAndLogin("seconduser", "password456");
 
+        // when & then
         mockMvc.perform(get(SEARCH_URL)
                         .param(PARAM_QUERY, "report")
                         .cookie(secondUserCookie))
