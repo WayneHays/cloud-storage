@@ -1,11 +1,14 @@
 package com.waynehays.cloudfilestorage.controller;
 
+import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.EmptyFileException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.file.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,14 +32,18 @@ public class ResourceController {
             throw new EmptyFileException("File to upload is empty");
         }
 
-        ResourceDto result = fileService.uploadFile(userDetails.id(), path, file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(fileService.uploadFile(userDetails.id(), path, file));
     }
 
     @GetMapping("/download")
-    public ResponseEntity<?> downloadFile(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                          @RequestParam("path") String path) {
+    public ResponseEntity<InputStreamResource> downloadFile(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                            @RequestParam(value = "path", required = false) String path) {
+        FileDownloadDto file = fileService.downloadFile(userDetails.id(), path);
 
-        return null;
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(file.size())
+                .body(new InputStreamResource(file.inputStream()));
     }
 }
