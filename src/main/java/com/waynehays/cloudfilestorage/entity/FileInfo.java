@@ -23,7 +23,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "files_info", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "folder", "name"}))
+@Table(name = "files_info", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "directory", "name"}))
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
