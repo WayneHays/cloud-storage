@@ -21,7 +21,6 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
                                            @Param("directory") String directory,
                                            @Param("name") String name);
 
-    @Modifying(clearAutomatically = true)
     @Query(value = """
             DELETE FROM files_info
             WHERE user_id = :userId AND directory = :directory AND name = :name
@@ -39,4 +38,6 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
     List<FileInfo> findByUserIdAndDirectoryRecursive(Long userId, String directory);
 
     List<FileInfo> findByUserId(Long userId);
+
+    List<FileInfo> findByUserIdAndNameContainingIgnoreCase(Long userId, String name);
 }

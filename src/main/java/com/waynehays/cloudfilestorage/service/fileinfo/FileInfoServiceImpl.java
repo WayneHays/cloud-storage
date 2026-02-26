@@ -71,6 +71,7 @@ public class FileInfoServiceImpl implements FileInfoService {
     }
 
     @Override
+    @Transactional
     public FileInfo move(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey) {
         FileInfo fileInfo = find(userId, directory, filename);
         fileInfo.setDirectory(newDirectory);
@@ -78,7 +79,7 @@ public class FileInfoServiceImpl implements FileInfoService {
         fileInfo.setStorageKey(newStorageKey);
 
         try {
-            return fileInfoRepository.save(fileInfo);
+            return fileInfoRepository.saveAndFlush(fileInfo);
         } catch (DataIntegrityViolationException e) {
             throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + newDirectory + Constants.PATH_SEPARATOR + filename);
         }
@@ -90,5 +91,10 @@ public class FileInfoServiceImpl implements FileInfoService {
             return fileInfoRepository.findByUserId(userId);
         }
         return fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
+    }
+
+    @Override
+    public List<FileInfo> searchByName(Long userId, String name) {
+        return fileInfoRepository.findByUserIdAndNameContainingIgnoreCase(userId, name);
     }
 }

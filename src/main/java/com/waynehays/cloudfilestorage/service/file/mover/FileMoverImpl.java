@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.service.file.mover;
 
-import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
-import com.waynehays.cloudfilestorage.parser.querypathparser.QueryPathParser;
+import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParser;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoService;
 import com.waynehays.cloudfilestorage.service.keygenerator.StorageKeyGenerator;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +21,13 @@ public class FileMoverImpl implements FileMover {
     private final FileStorage fileStorage;
     private final FileInfoService fileInfoService;
     private final StorageKeyGenerator storageKeyGenerator;
-    private final QueryPathParser queryPathParser;
+    private final ResourcePathParser resourcePathParser;
     private final FileInfoMapper fileInfoMapper;
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
-        ParsedPath from = queryPathParser.parse(pathFrom);
-        ParsedPath to = queryPathParser.parse(pathTo);
+        ResourcePath from = resourcePathParser.parse(pathFrom);
+        ResourcePath to = resourcePathParser.parse(pathTo);
 
         if (from.isDirectory() || to.isDirectory()) {
             throw new UnsupportedOperationException(MSG_CANNOT_MOVE_DIRECTORY);
@@ -43,7 +43,7 @@ public class FileMoverImpl implements FileMover {
         return fileInfoMapper.toResourceDto(moved);
     }
 
-    private FileInfo moveFileInfo(Long userId, ParsedPath from, ParsedPath to, String newStorageKey, String oldStorageKey) {
+    private FileInfo moveFileInfo(Long userId, ResourcePath from, ResourcePath to, String newStorageKey, String oldStorageKey) {
         try {
             return fileInfoService.move(userId, from.directory(), from.filename(), to.directory(), to.filename(), newStorageKey);
         } catch (Exception e) {

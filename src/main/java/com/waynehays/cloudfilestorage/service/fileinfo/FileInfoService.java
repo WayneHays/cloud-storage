@@ -9,13 +9,15 @@ public interface FileInfoService {
 
     FileInfo save(Long userId, FileData fileData, String storageKey);
 
-    String deleteAndReturnStorageKey(Long userId, String directory, String filename);
-
     FileInfo find(Long userId, String directory, String filename);
-
-    void delete(Long userId, String directory, String filename);
 
     FileInfo move(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey);
 
+    void delete(Long userId, String directory, String filename);
+
+    String deleteAndReturnStorageKey(Long userId, String directory, String filename);
+
     List<FileInfo> findAllInDirectoryRecursive(Long userId, String directory);
+
+    List<FileInfo> searchByName(Long userId, String name);
 }
