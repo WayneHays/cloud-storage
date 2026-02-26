@@ -2,10 +2,13 @@ package com.waynehays.cloudfilestorage.service.file;
 
 import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.entity.FileInfo;
+import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
 import com.waynehays.cloudfilestorage.service.file.deleter.FileDeleter;
 import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloader;
 import com.waynehays.cloudfilestorage.service.file.mover.FileMover;
 import com.waynehays.cloudfilestorage.service.file.uploader.FileUploader;
+import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,38 +20,43 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
+    private final FileInfoService fileInfoService;
+    private final FileInfoMapper fileInfoMapper;
     private final FileUploader fileUploader;
     private final FileDeleter fileDeleter;
     private final FileDownloader fileDownloader;
     private final FileMover fileMover;
 
     @Override
-    public ResourceDto uploadFile(Long userId, String directory, MultipartFile file) {
+    public ResourceDto upload(Long userId, String directory, MultipartFile file) {
         return fileUploader.uploadFile(userId, directory, file);
     }
 
     @Override
-    public void deleteFile(Long userId, String directory, String filename) {
-        fileDeleter.delete(userId, directory, filename);
+    public void delete(Long userId, String path) {
+        fileDeleter.delete(userId, path);
     }
 
     @Override
-    public FileDownloadDto downloadFile(Long userId, String path) {
+    public FileDownloadDto download(Long userId, String path) {
         return fileDownloader.download(userId, path);
     }
 
     @Override
-    public ResourceDto moveFile(Long userId, String directoryFrom, String directoryTo) {
+    public ResourceDto move(Long userId, String directoryFrom, String directoryTo) {
         return fileMover.move(userId, directoryFrom, directoryTo);
     }
 
     @Override
-    public ResourceDto getFileInfo(Long userId, String directory, String filename) {
-        return null;
+    public List<ResourceDto> search(Long userId, String query) {
+        List<FileInfo> files = fileInfoService.searchByName(userId, query);
+        return files.stream()
+                .map(fileInfoMapper::toResourceDto)
+                .toList();
     }
 
     @Override
-    public List<ResourceDto> searchFiles(Long userId, String query) {
-        return List.of();
+    public ResourceDto getInfo(Long userId, String directory, String filename) {
+        return null;
     }
 }

@@ -8,15 +8,15 @@ import java.util.List;
 
 public interface FileService {
 
-    ResourceDto uploadFile(Long userId, String directory, MultipartFile file);
+    ResourceDto upload(Long userId, String directory, MultipartFile file);
 
-    void deleteFile(Long userId, String directory, String filename);
+    FileDownloadDto download(Long userId, String path);
 
-    FileDownloadDto downloadFile(Long userId, String path);
+    void delete(Long userId, String path);
 
-    ResourceDto moveFile(Long userId, String sourceDirectory, String targetDirectory);
+    ResourceDto move(Long userId, String sourceDirectory, String targetDirectory);
 
-    ResourceDto getFileInfo(Long userId, String directory, String filename);
+    List<ResourceDto> search(Long userId, String query);
 
-    List<ResourceDto> searchFiles(Long userId, String query);
+    ResourceDto getInfo(Long userId, String directory, String filename);
 }
