@@ -86,7 +86,9 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Override
     public List<FileInfo> findAllInDirectoryRecursive(Long userId, String directory) {
-        List<FileInfo> result = fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
-        return result.isEmpty() ? List.of() : result;
+        if (directory.isEmpty()) {
+            return fileInfoRepository.findByUserId(userId);
+        }
+        return fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
     }
 }

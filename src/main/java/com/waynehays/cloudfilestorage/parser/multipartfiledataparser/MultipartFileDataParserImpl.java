@@ -15,7 +15,6 @@ import java.io.InputStream;
 public class MultipartFileDataParserImpl implements MultipartFileDataParser {
     private static final String MSG_FAILED_READ_FILE = "Failed to read file stream";
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    ;
 
     @Override
     public FileData parse(MultipartFile file, String directory) {

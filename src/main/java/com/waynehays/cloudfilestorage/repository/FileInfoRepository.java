@@ -37,4 +37,6 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
             AND (f.directory = :directory OR f.directory LIKE CONCAT(:directory, '/%'))
             """)
     List<FileInfo> findByUserIdAndDirectoryRecursive(Long userId, String directory);
+
+    List<FileInfo> findByUserId(Long userId);
 }

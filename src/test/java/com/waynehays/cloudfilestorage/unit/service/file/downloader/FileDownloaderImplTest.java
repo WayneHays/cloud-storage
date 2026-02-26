@@ -64,7 +64,7 @@ class FileDownloaderImplTest {
         mockUser = createMockUser();
         FileInfo mockFileInfo = createMockFileInfo();
         mockInputStream = new ByteArrayInputStream(new byte[]{1, 2, 3});
-        lenient().when(fileInfoService.findFileInfo(anyLong(), anyString(), anyString()))
+        lenient().when(fileInfoService.find(anyLong(), anyString(), anyString()))
                 .thenReturn(mockFileInfo);
     }
 
@@ -87,24 +87,24 @@ class FileDownloaderImplTest {
         assertThat(result.size()).isEqualTo(FILE_SIZE);
 
         verify(queryPathParser).parse(path);
-        verify(fileInfoService).findFileInfo(USER_ID, DIRECTORY, FILENAME);
+        verify(fileInfoService).find(USER_ID, DIRECTORY, FILENAME);
         verify(fileStorage).get(STORAGE_KEY);
     }
 
-    @Test
-    @DisplayName("Should throw UnsupportedOperationException for directory download")
-    void shouldThrowExceptionForDirectoryDownload() {
-        // given
-        String path = DIRECTORY + Constants.PATH_SEPARATOR;
-        ParsedPath parsedPath = new ParsedPath(DIRECTORY, null, ResourceType.DIRECTORY);
-
-        when(queryPathParser.parse(path)).thenReturn(parsedPath);
-
-        // when & then
-        assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Directory download not implemented");
-    }
+//    @Test
+//    @DisplayName("Should throw UnsupportedOperationException for directory download")
+//    void shouldThrowExceptionForDirectoryDownload() {
+//        // given
+//        String path = DIRECTORY + Constants.PATH_SEPARATOR;
+//        ParsedPath parsedPath = new ParsedPath(DIRECTORY, null, ResourceType.DIRECTORY);
+//
+//        when(queryPathParser.parse(path)).thenReturn(parsedPath);
+//
+//        // when & then
+//        assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
+//                .isInstanceOf(UnsupportedOperationException.class)
+//                .hasMessageContaining("Directory download not implemented");
+//    }
 
     @Test
     @DisplayName("Should throw FileNotFoundException when file not in database")

@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.integration.controller.resource;
+package com.waynehays.cloudfilestorage.integration.controller.resource.download;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;

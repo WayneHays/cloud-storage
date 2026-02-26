@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.integration.controller.resource;
+package com.waynehays.cloudfilestorage.integration.controller.resource.upload;
 
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
