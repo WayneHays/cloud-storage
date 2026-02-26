@@ -46,7 +46,7 @@ public class FileInfoServiceImpl implements FileInfoService {
     }
 
     @Override
-    public FileInfo findFileInfo(Long userId, String directory, String filename) {
+    public FileInfo find(Long userId, String directory, String filename) {
         return fileInfoRepository.findByUserIdAndDirectoryAndName(userId, directory, filename)
                 .orElseThrow(() -> new FileNotFoundException(
                         MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename
@@ -55,22 +55,22 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Override
     @Transactional
-    public void deleteFile(Long userId, String directory, String filename) {
+    public void delete(Long userId, String directory, String filename) {
         fileInfoRepository.deleteByUserIdAndDirectoryAndName(userId, directory, filename);
     }
 
     @Override
     @Transactional
-    public String deleteFileInfoAndReturnStorageKey(Long userId, String directory, String filename) {
-        FileInfo fileInfo = fileInfoRepository.findByUserIdAndDirectoryAndName(userId, directory, filename)
-                .orElseThrow(() -> new FileNotFoundException(MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename));
-        fileInfoRepository.delete(fileInfo);
-        return fileInfo.getStorageKey();
+    public String deleteAndReturnStorageKey(Long userId, String directory, String filename) {
+        return fileInfoRepository.deleteAndReturnStorageKey(userId, directory, filename)
+                .orElseThrow(() -> new FileNotFoundException(
+                        MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename));
+
     }
 
     @Override
-    public FileInfo moveFileInfo(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey) {
-        FileInfo fileInfo = findFileInfo(userId, directory, filename);
+    public FileInfo move(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey) {
+        FileInfo fileInfo = find(userId, directory, filename);
         fileInfo.setDirectory(newDirectory);
         fileInfo.setName(newFilename);
         fileInfo.setStorageKey(newStorageKey);

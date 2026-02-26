@@ -30,10 +30,10 @@ import static org.mockito.Mockito.when;
 class FileInfoServiceImplTest {
     private static final Long USER_ID = 1L;
     private static final Long FILE_INFO_ID = 10L;
+    private static final long SIZE = 1024L;
     private static final String DIRECTORY = "directory";
     private static final String FILENAME = "file.txt";
     private static final String STORAGE_KEY = "key";
-    private static final long SIZE = 1024L;
     private static final String CONTENT_TYPE = "content-type";
     private static final String EXTENSION = "txt";
     private static final String ORIGINAL_FILENAME = "originalFileName";
@@ -83,9 +83,10 @@ class FileInfoServiceImplTest {
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(fileInfoRepository.save(any(FileInfo.class)))
                 .thenThrow(new DataIntegrityViolationException("message"));
+        FileData fileData = createFileData();
 
         // when & then
-        assertThatThrownBy(() -> fileInfoService.save(USER_ID, createFileData(), STORAGE_KEY))
+        assertThatThrownBy(() -> fileInfoService.save(USER_ID, fileData, STORAGE_KEY))
                 .isInstanceOf(FileAlreadyExistsException.class);
     }
 
@@ -98,7 +99,7 @@ class FileInfoServiceImplTest {
                 .thenReturn(Optional.of(fileInfo));
 
         // when
-        FileInfo result = fileInfoService.findFileInfo(USER_ID, DIRECTORY, FILENAME);
+        FileInfo result = fileInfoService.find(USER_ID, DIRECTORY, FILENAME);
 
         // then
         assertThat(result).isEqualTo(fileInfo);
@@ -112,7 +113,7 @@ class FileInfoServiceImplTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> fileInfoService.findFileInfo(USER_ID, DIRECTORY, FILENAME))
+        assertThatThrownBy(() -> fileInfoService.find(USER_ID, DIRECTORY, FILENAME))
                 .isInstanceOf(FileNotFoundException.class);
     }
 
@@ -120,7 +121,7 @@ class FileInfoServiceImplTest {
     @DisplayName("Should call repository delete")
     void shouldCallRepositoryDelete() {
         // when
-        fileInfoService.deleteFile(USER_ID, DIRECTORY, FILENAME);
+        fileInfoService.delete(USER_ID, DIRECTORY, FILENAME);
 
         // then
         verify(fileInfoRepository).deleteByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME);
@@ -130,27 +131,21 @@ class FileInfoServiceImplTest {
     @DisplayName("Should delete and return storage key when file exists")
     void shouldDeleteAndReturnStorageKey() {
         // given
-        FileInfo fileInfo = createPersistedFileInfo();
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.of(fileInfo));
+        when(fileInfoRepository.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
+                .thenReturn(Optional.of(STORAGE_KEY));
 
         // when
-        String result = fileInfoService.deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME);
+        String result = fileInfoService.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME);
 
         // then
         assertThat(result).isEqualTo(STORAGE_KEY);
-        verify(fileInfoRepository).delete(fileInfo);
     }
 
     @Test
     @DisplayName("Should throw FileNotFoundException and not delete when file not found")
     void shouldThrowAndNotDelete_whenFileNotFoundForDelete() {
-        // given
-        when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
-                .thenReturn(Optional.empty());
-
         // when
-        assertThatThrownBy(() -> fileInfoService.deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
+        assertThatThrownBy(() -> fileInfoService.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
                 .isInstanceOf(FileNotFoundException.class);
 
         // then
@@ -159,7 +154,7 @@ class FileInfoServiceImplTest {
 
     @Test
     @DisplayName("Should update directory, name and storageKey when move successful")
-    void shouldMoveFileInfo() {
+    void shouldMove() {
         // given
         FileInfo fileInfo = createPersistedFileInfo();
         when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
@@ -167,7 +162,7 @@ class FileInfoServiceImplTest {
         when(fileInfoRepository.save(fileInfo)).thenReturn(fileInfo);
 
         // when
-        FileInfo result = fileInfoService.moveFileInfo(
+        FileInfo result = fileInfoService.move(
                 USER_ID, DIRECTORY, FILENAME, NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY);
 
         // then
@@ -187,7 +182,7 @@ class FileInfoServiceImplTest {
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
 
         // when & then
-        assertThatThrownBy(() -> fileInfoService.moveFileInfo(
+        assertThatThrownBy(() -> fileInfoService.move(
                 USER_ID, DIRECTORY, FILENAME, NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY))
                 .isInstanceOf(FileAlreadyExistsException.class);
     }
@@ -200,7 +195,7 @@ class FileInfoServiceImplTest {
                 .thenReturn(Optional.empty());
 
         // when
-        assertThatThrownBy(() -> fileInfoService.moveFileInfo(
+        assertThatThrownBy(() -> fileInfoService.move(
                 USER_ID, DIRECTORY, FILENAME, NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY))
                 .isInstanceOf(FileNotFoundException.class);
 

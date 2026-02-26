@@ -16,7 +16,7 @@ public class FileDeleterImpl implements FileDeleter {
 
     @Override
     public void delete(Long userId, String directory, String filename) throws FileNotFoundException {
-        String storageKey = fileInfoService.deleteFileInfoAndReturnStorageKey(userId, directory, filename);
+        String storageKey = fileInfoService.deleteAndReturnStorageKey(userId, directory, filename);
         fileStorage.delete(storageKey);
     }
 }

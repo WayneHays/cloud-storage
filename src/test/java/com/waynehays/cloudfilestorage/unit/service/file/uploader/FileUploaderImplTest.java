@@ -154,7 +154,7 @@ class FileUploaderImplTest {
         assertThatThrownBy(() -> fileUploader.uploadFile(USER_ID, DIRECTORY, multipartFile))
                 .isInstanceOf(FileStorageException.class);
 
-        verify(fileInfoService).deleteFile(USER_ID, DIRECTORY, FILENAME);
+        verify(fileInfoService).delete(USER_ID, DIRECTORY, FILENAME);
     }
 
     @Test
@@ -164,7 +164,7 @@ class FileUploaderImplTest {
         doThrow(new FileStorageException("Storage failed"))
                 .when(fileStorage).put(any(), eq(STORAGE_KEY), eq(FILE_SIZE), eq(CONTENT_TYPE));
         doThrow(new RuntimeException("Rollback failed"))
-                .when(fileInfoService).deleteFile(USER_ID, DIRECTORY, FILENAME);
+                .when(fileInfoService).delete(USER_ID, DIRECTORY, FILENAME);
 
         assertThatThrownBy(() -> fileUploader.uploadFile(USER_ID, DIRECTORY, multipartFile))
                 .isInstanceOf(FileStorageException.class)

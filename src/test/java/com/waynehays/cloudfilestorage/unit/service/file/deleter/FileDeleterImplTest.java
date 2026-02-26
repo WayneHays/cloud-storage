@@ -41,7 +41,7 @@ class FileDeleterImplTest {
     @DisplayName("Should call deps in correct order")
     void shouldCallDepsInCorrectOrder() {
         // given
-        when(fileInfoService.deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
+        when(fileInfoService.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(STORAGE_KEY);
         doNothing()
                 .when(fileStorage).delete(STORAGE_KEY);
@@ -51,7 +51,7 @@ class FileDeleterImplTest {
 
         // then
         InOrder inOrder = Mockito.inOrder(fileInfoService, fileStorage);
-        inOrder.verify(fileInfoService).deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME);
+        inOrder.verify(fileInfoService).deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME);
         inOrder.verify(fileStorage).delete(STORAGE_KEY);
     }
 
@@ -59,7 +59,7 @@ class FileDeleterImplTest {
     @DisplayName("Should not call 'fileStorage.delete()' when 'fileInfoService' throw FileNotFoundException")
     void shouldNotCallMethodIfExceptionThrown() {
         // given
-        when(fileInfoService.deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
+        when(fileInfoService.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
                 .thenThrow(new FileNotFoundException(MSG_FILE_NOT_FOUND));
 
         // when & then
@@ -72,7 +72,7 @@ class FileDeleterImplTest {
     @DisplayName("Should rethrow exception up when 'fileStorage.delete' throws FileStorageException")
     void shouldRethrowException() {
         // given
-        when(fileInfoService.deleteFileInfoAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
+        when(fileInfoService.deleteAndReturnStorageKey(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(STORAGE_KEY);
         doThrow(new FileStorageException(MSG_STORAGE_FAILED))
                 .when(fileStorage).delete(STORAGE_KEY);
