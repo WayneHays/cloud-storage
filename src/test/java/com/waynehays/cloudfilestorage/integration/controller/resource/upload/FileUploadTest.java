@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.integration.controller.resource.upload;
 
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
+import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,14 +20,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class FileUploadTest extends AbstractControllerIntegrationTest {
-    private static final String STORAGE_KEY_FORMAT = "user-%d-files/%s";
-    private static final String STORAGE_KEY_FORMAT_WITH_DIR = "user-%d-files/%s/%s";
     private static final String UPLOAD_URL = "/api/resource";
     private static final String NAME = "file";
     private static final String FILENAME = "file.txt";
     private static final String CONTENT = "hello world";
-    private static final String DIRECTORY = "docs";
-    private static final String NESTED_DIRECTORY = "docs/work/reports";
+
+    private static final String STORAGE_KEY_FORMAT = "user-%d-files/%s";
+    private static final String STORAGE_KEY_FORMAT_WITH_DIR = "user-%d-files/%s/%s";
+
+    private static final String FOLDER_1 = "docs";
+    private static final String FOLDER_2 = "work";
+    private static final String FOLDER_3 = "task";
+
+    private static final String DIRECTORY = FOLDER_1;
+    private static final String NESTED_DIRECTORY = TestHelper.join(FOLDER_1, FOLDER_2, FOLDER_3);
 
     @Test
     @DisplayName("Should upload file with directory and return 201")
@@ -61,13 +68,10 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should upload file with embedded path in filename")
     void shouldUploadFileWithEmbeddedPath() throws Exception {
-        String embeddedFilename = "subfolder/file.txt";
-
-        uploadFile(embeddedFilename, CONTENT, DIRECTORY)
+        uploadFile(TestHelper.join("subfolder", FILENAME), CONTENT, DIRECTORY)
                 .andExpect(status().isCreated());
 
-        List<FileInfo> files = findAllFiles();
-        assertFileCountInDatabase(files, 1);
+        assertFileCount(1);
     }
 
     @Test
@@ -79,8 +83,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
         uploadFile(FILENAME, CONTENT, "dir2")
                 .andExpect(status().isCreated());
 
-        List<FileInfo> files = findAllFiles();
-        assertFileCountInDatabase(files, 2);
+        assertFileCount(2);
     }
 
     @Test
@@ -89,7 +92,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
         uploadFile(FILENAME, "", null)
                 .andExpect(status().isBadRequest());
 
-        assertNoFilesUploaded();
+        assertFileCount(0);
     }
 
     @Test
@@ -98,25 +101,25 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
         uploadFile("file@name.txt", CONTENT, DIRECTORY)
                 .andExpect(status().isBadRequest());
 
-        assertNoFilesUploaded();
+        assertFileCount(0);
     }
 
     @Test
     @DisplayName("Should return 400 when filename contains path traversal")
     void shouldReturn400WhenFilenameHasPathTraversal() throws Exception {
-        uploadFile("../file.txt", CONTENT, DIRECTORY)
+        uploadFile(TestHelper.join("..", FILENAME), CONTENT, DIRECTORY)
                 .andExpect(status().isBadRequest());
 
-        assertNoFilesUploaded();
+        assertFileCount(0);
     }
 
     @Test
     @DisplayName("Should return 400 when directory contains path traversal")
     void shouldReturn400WhenDirectoryHasPathTraversal() throws Exception {
-        uploadFile(FILENAME, CONTENT, "../docs")
+        uploadFile(FILENAME, CONTENT, TestHelper.join("..", FOLDER_1))
                 .andExpect(status().isBadRequest());
 
-        assertNoFilesUploaded();
+        assertFileCount(0);
     }
 
     @Test
@@ -125,7 +128,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
         uploadFile(FILENAME, CONTENT, "my@folder")
                 .andExpect(status().isBadRequest());
 
-        assertNoFilesUploaded();
+        assertFileCount(0);
     }
 
     @Test
@@ -137,17 +140,14 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
         uploadFile(FILENAME, CONTENT, DIRECTORY)
                 .andExpect(status().isConflict());
 
-        List<FileInfo> files = findAllFiles();
-        assertFileCountInDatabase(files, 1);
+        assertFileCount(1);
     }
 
     @Test
     @DisplayName("Should return 401 when not authenticated")
     void shouldReturn401WhenNotAuthenticated() throws Exception {
-        MockMultipartFile file = createMockFile();
-
         mockMvc.perform(multipart(UPLOAD_URL)
-                        .file(file)
+                        .file(createMockFile())
                         .param("path", DIRECTORY))
                 .andExpect(status().isUnauthorized());
     }
@@ -160,24 +160,18 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
 
         Cookie secondUserSessionCookie = registerAndLogin("seconduser", "password456");
 
-        MockMultipartFile file = createMockFile();
         mockMvc.perform(multipart(UPLOAD_URL)
-                        .file(file)
+                        .file(createMockFile())
                         .param("path", DIRECTORY)
                         .cookie(secondUserSessionCookie))
                 .andExpect(status().isCreated());
 
-        Long secondUserId = userRepository.findByUsername("seconduser").orElseThrow().getId();
+        Long secondUserId = getUserId("seconduser");
+        List<FileInfo> allFiles = fileInfoRepository.findAll();
+        assertThat(allFiles).hasSize(2);
 
-        List<FileInfo> allFiles = findAllFiles();
-        assertFileCountInDatabase(allFiles, 2);
-
-        FileInfo firstUserFile = allFiles.stream()
-                .filter(f -> f.getUser().getId().equals(userId))
-                .findFirst().orElseThrow();
-        FileInfo secondUserFile = allFiles.stream()
-                .filter(f -> f.getUser().getId().equals(secondUserId))
-                .findFirst().orElseThrow();
+        FileInfo firstUserFile = findFileByUserId(allFiles, userId);
+        FileInfo secondUserFile = findFileByUserId(allFiles, secondUserId);
 
         assertStorageKeyCorrect(firstUserFile.getStorageKey(), userId, DIRECTORY);
         assertStorageKeyCorrect(secondUserFile.getStorageKey(), secondUserId, DIRECTORY);
@@ -188,25 +182,16 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     }
 
     private void assertSingleFileUploadedTo(String directory) throws Exception {
-        List<FileInfo> files = findAllFiles();
-        assertFileCountInDatabase(files, 1);
+        List<FileInfo> files = fileInfoRepository.findAll();
+        assertThat(files).hasSize(1);
 
         String storageKey = files.getFirst().getStorageKey();
         assertFileExistsInStorage(storageKey);
         assertStorageKeyCorrect(storageKey, userId, directory);
     }
 
-    private void assertNoFilesUploaded() {
-        List<FileInfo> files = findAllFiles();
-        assertFileCountInDatabase(files, 0);
-    }
-
-    private List<FileInfo> findAllFiles() {
-        return fileInfoRepository.findAll();
-    }
-
-    private void assertFileCountInDatabase(List<FileInfo> files, int expected) {
-        assertThat(files).hasSize(expected);
+    private void assertFileCount(int expected) {
+        assertThat(fileInfoRepository.findAll()).hasSize(expected);
     }
 
     private void assertFileExistsInStorage(String storageKey) throws Exception {
@@ -227,5 +212,12 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
             expectedKey = STORAGE_KEY_FORMAT_WITH_DIR.formatted(userId, directory, FILENAME);
         }
         assertThat(actualKey).isEqualTo(expectedKey);
+    }
+
+    private FileInfo findFileByUserId(List<FileInfo> files, Long userId) {
+        return files.stream()
+                .filter(f -> f.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow();
     }
 }
