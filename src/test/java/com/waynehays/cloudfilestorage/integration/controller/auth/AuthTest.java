@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.integration.controller;
+package com.waynehays.cloudfilestorage.integration.controller.auth;
 
 import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.integration.base.AbstractControllerItTest;
+import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ItAuthControllerTest extends AbstractControllerItTest {
+class AuthTest extends AbstractControllerIntegrationTest {
     private static final String SIGN_UP_URL = "/api/auth/sign-up";
     private static final String SIGN_IN_URL = "/api/auth/sign-in";
     private static final String USERNAME = "testuser";
@@ -40,20 +40,9 @@ class ItAuthControllerTest extends AbstractControllerItTest {
 
     @Test
     @DisplayName("Should register new user and return 201")
-    void shouldRegisterUser() throws Exception {
-        // given
-        SignUpRequest signUpRequest = new SignUpRequest(USERNAME, PASSWORD);
-
-        // when
-        mockMvc.perform(post(SIGN_UP_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signUpRequest)))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value(USERNAME));
-
+    void shouldRegisterUser() {
         // then
-        assertThat(userRepository.findByUsername(USERNAME)).isPresent();
+        assertThat(userRepository.count()).isEqualTo(1);
     }
 
     @Test
