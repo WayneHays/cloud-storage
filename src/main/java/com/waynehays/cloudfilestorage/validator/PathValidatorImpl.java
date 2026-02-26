@@ -19,10 +19,10 @@ public class PathValidatorImpl implements PathValidator {
 
     public void validateUploadPath(String originalFilename, String directoryPath) {
         validateFilename(originalFilename);
-        validateDirectoryPath(directoryPath);
+        validateQueryPath(directoryPath);
     }
 
-    public void validateDirectoryPath(String directoryPath) {
+    public void validateQueryPath(String directoryPath) {
         if (StringUtils.isBlank(directoryPath)) {
             return;
         }

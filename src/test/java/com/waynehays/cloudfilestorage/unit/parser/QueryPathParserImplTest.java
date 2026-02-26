@@ -35,7 +35,7 @@ class QueryPathParserImplTest {
 
     @BeforeEach
     void setUp() {
-        lenient().doNothing().when(pathValidator).validateDirectoryPath(any());
+        lenient().doNothing().when(pathValidator).validateQueryPath(any());
     }
 
     @Nested
@@ -55,7 +55,7 @@ class QueryPathParserImplTest {
             assertThat(result.isDirectory()).isTrue();
             assertThat(result.isFile()).isFalse();
 
-            verify(pathValidator).validateDirectoryPath(null);
+            verify(pathValidator).validateQueryPath(null);
         }
 
         @Test
@@ -70,7 +70,7 @@ class QueryPathParserImplTest {
             assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
             assertThat(result.isDirectory()).isTrue();
 
-            verify(pathValidator).validateDirectoryPath("");
+            verify(pathValidator).validateQueryPath("");
         }
 
         @Test
@@ -312,7 +312,7 @@ class QueryPathParserImplTest {
             queryPathParser.parse(path);
 
             // then
-            verify(pathValidator).validateDirectoryPath(path);
+            verify(pathValidator).validateQueryPath(path);
         }
 
         @Test
@@ -320,13 +320,13 @@ class QueryPathParserImplTest {
         void shouldCallValidatorBeforeParsing() {
             // given
             doThrow(new InvalidPathException("Invalid path"))
-                    .when(pathValidator).validateDirectoryPath(anyString());
+                    .when(pathValidator).validateQueryPath(anyString());
 
             // when & then
             assertThatThrownBy(() -> queryPathParser.parse("../file.txt"))
                     .isInstanceOf(InvalidPathException.class);
 
-            verify(pathValidator).validateDirectoryPath("../file.txt");
+            verify(pathValidator).validateQueryPath("../file.txt");
         }
 
         @Test
@@ -334,7 +334,7 @@ class QueryPathParserImplTest {
         void shouldPropagateValidationExceptionForPathTraversal() {
             // given
             doThrow(new InvalidPathException("Path traversal detected"))
-                    .when(pathValidator).validateDirectoryPath("../folder/file.txt");
+                    .when(pathValidator).validateQueryPath("../folder/file.txt");
 
             // when & then
             assertThatThrownBy(() -> queryPathParser.parse("../folder/file.txt"))
@@ -347,7 +347,7 @@ class QueryPathParserImplTest {
         void shouldPropagateValidationExceptionForInvalidCharacters() {
             // given
             doThrow(new InvalidPathException("Invalid characters"))
-                    .when(pathValidator).validateDirectoryPath("folder@name/file.txt");
+                    .when(pathValidator).validateQueryPath("folder@name/file.txt");
 
             // when & then
             assertThatThrownBy(() -> queryPathParser.parse("folder@name/file.txt"))
@@ -362,7 +362,7 @@ class QueryPathParserImplTest {
             queryPathParser.parse(null);
 
             // then
-            verify(pathValidator).validateDirectoryPath(null);
+            verify(pathValidator).validateQueryPath(null);
         }
 
         @Test
@@ -372,7 +372,7 @@ class QueryPathParserImplTest {
             queryPathParser.parse("");
 
             // then
-            verify(pathValidator).validateDirectoryPath("");
+            verify(pathValidator).validateQueryPath("");
         }
 
         @Test
@@ -382,7 +382,7 @@ class QueryPathParserImplTest {
             queryPathParser.parse("   ");
 
             // then
-            verify(pathValidator).validateDirectoryPath("   ");
+            verify(pathValidator).validateQueryPath("   ");
         }
     }
 

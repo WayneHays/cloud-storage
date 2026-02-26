@@ -17,15 +17,15 @@ public class QueryPathParserImpl implements QueryPathParser {
 
     @Override
     public ParsedPath parse(String queryPath) {
-        pathValidator.validateDirectoryPath(queryPath);
+        pathValidator.validateQueryPath(queryPath);
 
         if (StringUtils.isBlank(queryPath)) {
-            return directoryPath(Constants.ROOT_DIRECTORY);
+            return pathToDirectory(Constants.ROOT_DIRECTORY);
         }
         String normalizedPath = PathUtils.normalizeSeparators(queryPath.trim());
 
         if (PathUtils.endsWithSeparator(normalizedPath)) {
-            return directoryPath(PathUtils.removeTrailingSeparator(normalizedPath));
+            return pathToDirectory(PathUtils.removeTrailingSeparator(normalizedPath));
         }
 
         String directory = PathUtils.removeTrailingSeparator(PathUtils.extractParentPath(normalizedPath));
@@ -34,7 +34,7 @@ public class QueryPathParserImpl implements QueryPathParser {
         return new ParsedPath(directory, fileName, ResourceType.FILE);
     }
 
-    private ParsedPath directoryPath(String path) {
+    private ParsedPath pathToDirectory(String path) {
         return new ParsedPath(path, null, ResourceType.DIRECTORY);
     }
 }

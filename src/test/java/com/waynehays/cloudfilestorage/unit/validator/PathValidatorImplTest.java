@@ -114,84 +114,84 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should accept null directory")
             void shouldAcceptNullDirectory() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath(null))
+                assertThatCode(() -> pathValidator.validateQueryPath(null))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept empty directory")
             void shouldAcceptEmptyDirectory() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath(""))
+                assertThatCode(() -> pathValidator.validateQueryPath(""))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept whitespace-only directory")
             void shouldAcceptWhitespaceOnlyDirectory() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("   "))
+                assertThatCode(() -> pathValidator.validateQueryPath("   "))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept single directory")
             void shouldAcceptSingleDirectory() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("documents"))
+                assertThatCode(() -> pathValidator.validateQueryPath("documents"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept nested directory path")
             void shouldAcceptNestedDirectoryPath() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1/folder2/folder3"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1/folder2/folder3"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with trailing slash")
             void shouldAcceptDirectoryWithTrailingSlash() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1/folder2/"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1/folder2/"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with hyphens")
             void shouldAcceptDirectoryWithHyphens() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("my-folder/sub-folder"))
+                assertThatCode(() -> pathValidator.validateQueryPath("my-folder/sub-folder"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with underscores")
             void shouldAcceptDirectoryWithUnderscores() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("my_folder/sub_folder"))
+                assertThatCode(() -> pathValidator.validateQueryPath("my_folder/sub_folder"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with dots")
             void shouldAcceptDirectoryWithDots() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder.v1.0/sub.folder"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder.v1.0/sub.folder"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with numbers")
             void shouldAcceptDirectoryWithNumbers() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder123/folder456"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder123/folder456"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with mixed allowed characters")
             void shouldAcceptDirectoryWithMixedAllowedCharacters() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("My_Folder-v1.0/Sub_Folder-v2.1"))
+                assertThatCode(() -> pathValidator.validateQueryPath("My_Folder-v1.0/Sub_Folder-v2.1"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should accept directory with double dots in name (not parent reference)")
             void shouldAcceptDirectoryWithDoubleDotsInName() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder..name"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder..name"))
                         .doesNotThrowAnyException();
             }
         }
@@ -203,7 +203,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with parent directory reference")
             void shouldRejectDirectoryWithParentDirectoryReference() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder1/../folder2"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder1/../folder2"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Path traversal detected");
             }
@@ -211,7 +211,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory starting with parent reference")
             void shouldRejectDirectoryStartingWithParentReference() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("../folder"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("../folder"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Path traversal detected");
             }
@@ -219,7 +219,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory ending with parent reference")
             void shouldRejectDirectoryEndingWithParentReference() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder/.."))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder/.."))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Path traversal detected");
             }
@@ -227,7 +227,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with only parent reference")
             void shouldRejectDirectoryWithOnlyParentReference() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath(".."))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath(".."))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Path traversal detected");
             }
@@ -235,7 +235,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with space")
             void shouldRejectDirectoryWithSpace() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("my folder"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("my folder"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -243,7 +243,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with @ sign")
             void shouldRejectDirectoryWithAtSign() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder@name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder@name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters")
                         .hasMessageContaining("folder@name");
@@ -252,7 +252,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with # sign")
             void shouldRejectDirectoryWithHashSign() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder#name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder#name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters")
                         .hasMessageContaining("folder#name");
@@ -261,7 +261,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with $ sign")
             void shouldRejectDirectoryWithDollarSign() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder$name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder$name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -269,7 +269,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with % sign")
             void shouldRejectDirectoryWithPercentSign() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder%name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder%name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -277,7 +277,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with & sign")
             void shouldRejectDirectoryWithAmpersand() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder&name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder&name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -285,7 +285,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with * sign")
             void shouldRejectDirectoryWithAsterisk() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder*name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder*name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -293,7 +293,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with parentheses")
             void shouldRejectDirectoryWithParentheses() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder(name)"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder(name)"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -301,7 +301,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with brackets")
             void shouldRejectDirectoryWithBrackets() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder[name]"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder[name]"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -309,7 +309,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with question mark")
             void shouldRejectDirectoryWithQuestionMark() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder?name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder?name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -317,7 +317,7 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should reject directory with exclamation mark")
             void shouldRejectDirectoryWithExclamationMark() {
-                assertThatThrownBy(() -> pathValidator.validateDirectoryPath("folder!name"))
+                assertThatThrownBy(() -> pathValidator.validateQueryPath("folder!name"))
                         .isInstanceOf(InvalidPathException.class)
                         .hasMessageContaining("Invalid characters");
             }
@@ -330,28 +330,28 @@ class PathValidatorImplTest {
             @Test
             @DisplayName("Should handle Windows-style separators")
             void shouldHandleWindowsStyleSeparators() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1\\folder2"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1\\folder2"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should handle mixed separators")
             void shouldHandleMixedSeparators() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1/folder2\\folder3"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1/folder2\\folder3"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should handle path with leading slash")
             void shouldHandlePathWithLeadingSlash() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("/folder1/folder2"))
+                assertThatCode(() -> pathValidator.validateQueryPath("/folder1/folder2"))
                         .doesNotThrowAnyException();
             }
 
             @Test
             @DisplayName("Should handle path with multiple consecutive slashes")
             void shouldHandlePathWithMultipleConsecutiveSlashes() {
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1///folder2"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1///folder2"))
                         .doesNotThrowAnyException();
             }
 
@@ -360,7 +360,7 @@ class PathValidatorImplTest {
             void shouldHandlePathWithWhitespaceAroundSlashes() {
                 // Whitespace is trimmed only at start/end by normalize()
                 // Between parts it's invalid
-                assertThatCode(() -> pathValidator.validateDirectoryPath("folder1/folder2"))
+                assertThatCode(() -> pathValidator.validateQueryPath("folder1/folder2"))
                         .doesNotThrowAnyException();
             }
         }
