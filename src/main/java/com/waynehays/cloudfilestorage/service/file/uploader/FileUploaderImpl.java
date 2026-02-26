@@ -33,23 +33,23 @@ public class FileUploaderImpl implements FileUploader {
         String storageKey = storageKeyGenerator.generate(userId, fileData.directory(), fileData.filename());
 
         FileInfo saved = fileInfoService.save(userId, fileData, storageKey);
-        trySaveToStorage(fileData, storageKey, saved);
+        saveToStorage(fileData, storageKey, saved);
 
         return fileInfoMapper.toResourceDto(saved);
     }
 
-    private void trySaveToStorage(FileData fileData, String storageKey, FileInfo saved) {
+    private void saveToStorage(FileData fileData, String storageKey, FileInfo saved) {
         try {
             fileStorage.put(fileData.inputStream(), storageKey, fileData.size(), fileData.contentType());
         } catch (Exception e) {
-            tryDelete(saved);
+            rollbackSavedFileInfo(saved);
             throw e;
         }
     }
 
-    private void tryDelete(FileInfo saved) {
+    private void rollbackSavedFileInfo(FileInfo saved) {
         try {
-            fileInfoService.deleteFile(saved.getUser().getId(), saved.getDirectory(), saved.getName());
+            fileInfoService.delete(saved.getUser().getId(), saved.getDirectory(), saved.getName());
         } catch (Exception rollbackException) {
             log.error("Failed to rollback file info: {}", saved.getName(), rollbackException);
         }
