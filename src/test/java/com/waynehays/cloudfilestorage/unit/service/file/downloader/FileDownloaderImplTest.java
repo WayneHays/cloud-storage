@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.service.file.downloader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
 import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
@@ -9,7 +9,7 @@ import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.filestorage.MinioFileStorage;
-import com.waynehays.cloudfilestorage.parser.querypathparser.QueryPathParserImpl;
+import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParserImpl;
 import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloaderImpl;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class FileDownloaderImplTest {
     private FileInfoServiceImpl fileInfoService;
 
     @Mock
-    private QueryPathParserImpl queryPathParser;
+    private ResourcePathParserImpl queryPathParser;
 
     @InjectMocks
     private FileDownloaderImpl fileDownloader;
@@ -73,9 +73,9 @@ class FileDownloaderImplTest {
     void shouldDownloadFileSuccessfully() {
         // given
         String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
 
-        when(queryPathParser.parse(path)).thenReturn(parsedPath);
+        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.of(mockInputStream));
 
         // when
@@ -111,9 +111,9 @@ class FileDownloaderImplTest {
     void shouldThrowFileNotFoundExceptionWhenFileNotInDatabase() {
         // given
         String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
 
-        when(queryPathParser.parse(path)).thenReturn(parsedPath);
+        when(queryPathParser.parse(path)).thenReturn(resourcePath);
 
         // when & then
         assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
@@ -126,9 +126,9 @@ class FileDownloaderImplTest {
     void shouldThrowFileNotFoundExceptionWhenFileNotInStorage() {
         // given
         String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
 
-        when(queryPathParser.parse(path)).thenReturn(parsedPath);
+        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.empty());
 
         // when & then
@@ -142,9 +142,9 @@ class FileDownloaderImplTest {
     void shouldThrowFileStorageExceptionOnStorageError() {
         // given
         String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ParsedPath parsedPath = new ParsedPath(DIRECTORY, FILENAME, ResourceType.FILE);
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
 
-        when(queryPathParser.parse(path)).thenReturn(parsedPath);
+        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenThrow(new FileStorageException("Failed to get object with key: " + STORAGE_KEY));
 
         // when & then

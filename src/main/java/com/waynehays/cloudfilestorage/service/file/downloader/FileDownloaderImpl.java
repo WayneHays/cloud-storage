@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.service.file.downloader;
 
-import com.waynehays.cloudfilestorage.dto.files.ParsedPath;
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
 import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
-import com.waynehays.cloudfilestorage.parser.querypathparser.QueryPathParser;
+import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParser;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +30,16 @@ public class FileDownloaderImpl implements FileDownloader {
 
     private final FileStorage fileStorage;
     private final FileInfoService fileInfoService;
-    private final QueryPathParser queryPathParser;
+    private final ResourcePathParser resourcePathParser;
 
     @Override
-    public FileDownloadDto download(Long userId, String queryPath) {
-        ParsedPath parsedPath = queryPathParser.parse(queryPath);
+    public FileDownloadDto download(Long userId, String path) {
+        ResourcePath resourcePath = resourcePathParser.parse(path);
 
-        if (parsedPath.isDirectory()) {
-            return downloadDirectory(userId, parsedPath.directory());
+        if (resourcePath.isDirectory()) {
+            return downloadDirectory(userId, resourcePath.directory());
         }
-        return downloadFile(userId, parsedPath.directory(), parsedPath.filename());
+        return downloadFile(userId, resourcePath.directory(), resourcePath.filename());
     }
 
     private FileDownloadDto downloadDirectory(Long userId, String baseDirectory) {
