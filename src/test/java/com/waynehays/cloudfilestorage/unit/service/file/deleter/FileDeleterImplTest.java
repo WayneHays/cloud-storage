@@ -47,7 +47,7 @@ class FileDeleterImplTest {
                 .when(fileStorage).delete(STORAGE_KEY);
 
         // when
-        fileDeleter.delete(USER_ID, DIRECTORY, FILENAME);
+        fileDeleter.delete(USER_ID, DIRECTORY);
 
         // then
         InOrder inOrder = Mockito.inOrder(fileInfoService, fileStorage);
@@ -63,7 +63,7 @@ class FileDeleterImplTest {
                 .thenThrow(new FileNotFoundException(MSG_FILE_NOT_FOUND));
 
         // when & then
-        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY, FILENAME))
+        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY))
                 .isInstanceOf(FileNotFoundException.class)
                 .hasMessageContaining(MSG_FILE_NOT_FOUND);
     }
@@ -78,7 +78,7 @@ class FileDeleterImplTest {
                 .when(fileStorage).delete(STORAGE_KEY);
 
         // when & then
-        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY, FILENAME))
+        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessageContaining(MSG_STORAGE_FAILED);
     }
