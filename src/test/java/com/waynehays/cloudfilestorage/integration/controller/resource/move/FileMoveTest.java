@@ -21,7 +21,6 @@ class FileMoveTest extends AbstractControllerIntegrationTest {
 
     private static final String FOLDER_1 = "docs";
     private static final String FOLDER_2 = "work";
-    private static final String FOLDER_3 = "task";
 
     private static final String FILENAME = "file.txt";
     private static final String RENAMED_FILENAME = "renamed.txt";
@@ -29,7 +28,6 @@ class FileMoveTest extends AbstractControllerIntegrationTest {
 
     private static final String DIRECTORY = FOLDER_1;
     private static final String TARGET_DIRECTORY = FOLDER_2;
-    private static final String NESTED_DIRECTORY = TestHelper.join(FOLDER_1, FOLDER_2);
 
     private static final String PATH_FROM = TestHelper.join(DIRECTORY, FILENAME);
     private static final String PATH_TO_RENAMED = TestHelper.join(DIRECTORY, RENAMED_FILENAME);
