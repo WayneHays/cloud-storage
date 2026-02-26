@@ -13,7 +13,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)
 @ActiveProfiles("test")
-public abstract class AbstractRepositoryItTest {
+public abstract class AbstractRepositoryIntegrationTest {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

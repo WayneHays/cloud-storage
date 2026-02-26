@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.controller.resource;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.integration.base.AbstractControllerItTest;
+import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,11 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ItFileDownloadTest extends AbstractControllerItTest {
+class FileDownloadTest extends AbstractControllerIntegrationTest {
     private static final String DOWNLOAD_URL = "/api/resource/download";
     private static final String FILENAME = "file.txt";
     private static final String CONTENT = "test";
     private static final String DIRECTORY = "docs";
+    private static final String PARAM_PATH = "path";
 
     @BeforeEach
     void setUpFile() throws Exception {
@@ -30,7 +31,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
     void shouldDownloadFile() throws Exception {
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
                         .cookie(sessionCookie))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -47,7 +48,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
 
         // when
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", nestedDirectory + Constants.PATH_SEPARATOR + FILENAME)
+                        .param(PARAM_PATH, nestedDirectory + Constants.PATH_SEPARATOR + FILENAME)
                         .cookie(sessionCookie))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -59,7 +60,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
     void shouldReturnCorrectContentType() throws Exception {
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
                         .cookie(sessionCookie))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -72,7 +73,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
     void shouldReturn404_whenFileNotFound() throws Exception {
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + "notfound")
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + "notfound")
                         .cookie(sessionCookie))
                 .andDo(print())
                 .andExpect(status().isNotFound());
@@ -83,7 +84,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
     void shouldReturn400_whenInvalidPath() throws Exception {
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + "..")
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + "..")
                         .cookie(sessionCookie))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -94,7 +95,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
     void shouldReturn401_whenUserNotAuthenticated() throws Exception {
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + FILENAME))
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + FILENAME))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
@@ -107,7 +108,7 @@ class ItFileDownloadTest extends AbstractControllerItTest {
 
         // when & then
         mockMvc.perform(get(DOWNLOAD_URL)
-                        .param("path", DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
+                        .param(PARAM_PATH, DIRECTORY + Constants.PATH_SEPARATOR + FILENAME)
                         .cookie(secondUserCookie))
                 .andExpect(status().isNotFound());
     }

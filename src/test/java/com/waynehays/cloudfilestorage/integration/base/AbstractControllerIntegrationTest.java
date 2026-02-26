@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @SpringBootTest
-public abstract class AbstractControllerItTest {
+public abstract class AbstractControllerIntegrationTest {
     private static final String SIGN_UP_URL = "/api/auth/sign-up";
     private static final String SIGN_IN_URL = "/api/auth/sign-in";
     private static final String UPLOAD_URL = "/api/resource";
@@ -68,7 +68,7 @@ public abstract class AbstractControllerItTest {
     }
 
     @BeforeEach
-    void setUpUser() throws Exception {
+    void registerUser() throws Exception {
         sessionCookie = registerAndLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         userId = getUserId(DEFAULT_USERNAME);
     }
