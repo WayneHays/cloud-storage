@@ -50,4 +50,11 @@ public class PathUtils {
         }
         return base + Constants.PATH_SEPARATOR + sub;
     }
+
+    public static String removePrefix(String path, String prefix) {
+        if (prefix.isEmpty()) {
+            return path;
+        }
+        return path.substring(prefix.length() + 1);
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,4 +30,11 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
     Optional<String> deleteAndReturnStorageKey(@Param("userId") Long userId,
                                                @Param("directory") String directory,
                                                @Param("name") String name);
+
+    @Query("""
+            SELECT f FROM FileInfo f
+            WHERE f.user.id = :userId
+            AND (f.directory = :directory OR f.directory LIKE CONCAT(:directory, '/%'))
+            """)
+    List<FileInfo> findByUserIdAndDirectoryRecursive(Long userId, String directory);
 }

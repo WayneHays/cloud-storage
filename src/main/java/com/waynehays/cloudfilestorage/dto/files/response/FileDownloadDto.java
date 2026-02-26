@@ -4,6 +4,7 @@ import java.io.InputStream;
 
 public record FileDownloadDto(
         InputStream inputStream,
-        long size
+        long size,
+        String filename
 ) {
 }

@@ -13,6 +13,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -80,5 +82,11 @@ public class FileInfoServiceImpl implements FileInfoService {
         } catch (DataIntegrityViolationException e) {
             throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + newDirectory + Constants.PATH_SEPARATOR + filename);
         }
+    }
+
+    @Override
+    public List<FileInfo> findAllInDirectoryRecursive(Long userId, String directory) {
+        List<FileInfo> result = fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
+        return result.isEmpty() ? List.of() : result;
     }
 }

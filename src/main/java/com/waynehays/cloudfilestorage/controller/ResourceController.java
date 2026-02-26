@@ -7,6 +7,7 @@ import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.file.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +40,14 @@ public class ResourceController {
     @GetMapping("/download")
     public ResponseEntity<InputStreamResource> downloadFile(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @RequestParam(value = "path", required = false) String path) {
+
         FileDownloadDto file = fileService.downloadFile(userDetails.id(), path);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(file.size())
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"%s\"".formatted(file.filename()))
                 .body(new InputStreamResource(file.inputStream()));
     }
 }
