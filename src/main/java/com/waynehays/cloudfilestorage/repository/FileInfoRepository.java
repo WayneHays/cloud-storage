@@ -19,4 +19,14 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
     void deleteByUserIdAndDirectoryAndName(@Param("userId") Long userId,
                                            @Param("directory") String directory,
                                            @Param("name") String name);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+            DELETE FROM files_info
+            WHERE user_id = :userId AND directory = :directory AND name = :name
+            RETURNING storage_key
+            """, nativeQuery = true)
+    Optional<String> deleteAndReturnStorageKey(@Param("userId") Long userId,
+                                               @Param("directory") String directory,
+                                               @Param("name") String name);
 }
