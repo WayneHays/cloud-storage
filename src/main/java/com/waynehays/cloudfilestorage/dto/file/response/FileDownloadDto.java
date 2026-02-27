@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto.files.response;
+package com.waynehays.cloudfilestorage.dto.file.response;
 
 import java.io.InputStream;
 

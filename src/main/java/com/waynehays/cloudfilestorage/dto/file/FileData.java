@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto.files;
+package com.waynehays.cloudfilestorage.dto.file;
 
 import lombok.Builder;
 
