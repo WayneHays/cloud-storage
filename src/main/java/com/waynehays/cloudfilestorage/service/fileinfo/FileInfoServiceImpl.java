@@ -79,7 +79,6 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Override
     public List<FileInfoDto> searchByName(Long userId, String name) {
-
         List<FileInfo> files = fileInfoRepository.findByUserIdAndNameContainingIgnoreCase(userId, name);
         return toDtoList(files);
     }
@@ -95,6 +94,12 @@ public class FileInfoServiceImpl implements FileInfoService {
             files = fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
         }
 
+        return toDtoList(files);
+    }
+
+    @Override
+    public List<FileInfoDto> findInDirectory(Long userId, String directory) {
+        List<FileInfo> files = fileInfoRepository.findByUserIdAndDirectory(userId, directory);
         return toDtoList(files);
     }
 

@@ -39,5 +39,7 @@ public interface FileInfoRepository extends JpaRepository<FileInfo, Long> {
 
     List<FileInfo> findByUserId(Long userId);
 
+    List<FileInfo> findByUserIdAndDirectory(Long userId, String directory);
+
     List<FileInfo> findByUserIdAndNameContainingIgnoreCase(Long userId, String name);
 }

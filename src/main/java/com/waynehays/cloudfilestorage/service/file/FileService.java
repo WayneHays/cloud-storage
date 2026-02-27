@@ -18,5 +18,5 @@ public interface FileService {
 
     List<ResourceDto> search(Long userId, String query);
 
-    ResourceDto getInfo(Long userId, String directory, String filename);
+    List<ResourceDto> getDirectoryContent(Long userId, String path);
 }

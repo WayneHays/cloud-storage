@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.service.file;
 
+import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
 import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
 import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
@@ -9,12 +10,16 @@ import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloader;
 import com.waynehays.cloudfilestorage.service.file.mover.FileMover;
 import com.waynehays.cloudfilestorage.service.file.uploader.FileUploader;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoService;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -48,15 +53,37 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<ResourceDto> search(Long userId, String query) {
-        List<FileInfoDto> files = fileInfoService.searchByName(userId, query);
+    public List<ResourceDto> search(Long userId, String path) {
+        List<FileInfoDto> files = fileInfoService.searchByName(userId, path);
         return files.stream()
                 .map(resourceMapper::toDto)
                 .toList();
     }
 
     @Override
-    public ResourceDto getInfo(Long userId, String directory, String filename) {
-        return null;
+    public List<ResourceDto> getDirectoryContent(Long userId, String directory) {
+        List<FileInfoDto> directoryContent = fileInfoService.findInDirectory(userId, directory);
+        List<ResourceDto> result = new ArrayList<>();
+        Set<String> subDirectories = new HashSet<>();
+
+        for (FileInfoDto unit : directoryContent) {
+            if (unit.directory().equals(directory)) {
+                result.add(resourceMapper.toDto(unit));
+            } else {
+                subDirectories.add(extractImmediateSubdirectory(unit.directory(), directory));
+            }
+        }
+
+        for (String subDirectory : subDirectories) {
+            result.add(ResourceDto.directory(directory, subDirectory));
+        }
+
+        return result;
+    }
+
+    private String extractImmediateSubdirectory(String fullDirectory, String baseDirectory) {
+        String relative = PathUtils.removePrefix(fullDirectory, baseDirectory);
+        int separatorIndex = relative.indexOf(Constants.PATH_SEPARATOR);
+        return separatorIndex > 0 ? relative.substring(0, separatorIndex) : relative;
     }
 }

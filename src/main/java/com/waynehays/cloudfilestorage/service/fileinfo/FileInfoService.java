@@ -20,4 +20,6 @@ public interface FileInfoService {
     List<FileInfoDto> findAllInDirectoryRecursive(Long userId, String directory);
 
     List<FileInfoDto> searchByName(Long userId, String name);
+
+    List<FileInfoDto> findInDirectory(Long userId, String directory);
 }
