@@ -1,11 +1,13 @@
 package com.waynehays.cloudfilestorage.service.fileinfo;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.FileData;
+import com.waynehays.cloudfilestorage.dto.file.FileData;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
+import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +26,11 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     private final FileInfoRepository fileInfoRepository;
     private final UserRepository userRepository;
+    private final FileInfoMapper fileInfoMapper;
 
     @Override
     @Transactional
-    public FileInfo save(Long userId, FileData fileData, String storageKey) {
+    public FileInfoDto save(Long userId, FileData fileData, String storageKey) {
         User user = userRepository.getReferenceById(userId);
         FileInfo fileInfo = FileInfo.builder()
                 .directory(fileData.directory())
@@ -38,21 +41,14 @@ public class FileInfoServiceImpl implements FileInfoService {
                 .user(user)
                 .build();
 
-        try {
-            return fileInfoRepository.save(fileInfo);
-        } catch (DataIntegrityViolationException e) {
-            throw new FileAlreadyExistsException(
-                    MSG_FILE_ALREADY_EXISTS + fileInfo.getDirectory() + Constants.PATH_SEPARATOR + fileInfo.getName()
-            );
-        }
+        FileInfo saved = saveOrThrow(fileInfo);
+        return fileInfoMapper.toDto(saved);
     }
 
     @Override
-    public FileInfo find(Long userId, String directory, String filename) {
-        return fileInfoRepository.findByUserIdAndDirectoryAndName(userId, directory, filename)
-                .orElseThrow(() -> new FileNotFoundException(
-                        MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename
-                ));
+    public FileInfoDto find(Long userId, String directory, String filename) {
+        FileInfo fileInfo = findEntity(userId, directory, filename);
+        return fileInfoMapper.toDto(fileInfo);
     }
 
     @Override
@@ -65,36 +61,65 @@ public class FileInfoServiceImpl implements FileInfoService {
     @Transactional
     public String deleteAndReturnStorageKey(Long userId, String directory, String filename) {
         return fileInfoRepository.deleteAndReturnStorageKey(userId, directory, filename)
-                .orElseThrow(() -> new FileNotFoundException(
-                        MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename));
-
+                .orElseThrow(() -> fileNotFound(directory, filename));
     }
 
     @Override
     @Transactional
-    public FileInfo move(Long userId, String directory, String filename, String newDirectory, String newFilename, String newStorageKey) {
-        FileInfo fileInfo = find(userId, directory, filename);
+    public FileInfoDto move(Long userId, String directory, String filename,
+                            String newDirectory, String newFilename, String newStorageKey) {
+        FileInfo fileInfo = findEntity(userId, directory, filename);
         fileInfo.setDirectory(newDirectory);
         fileInfo.setName(newFilename);
         fileInfo.setStorageKey(newStorageKey);
 
+        FileInfo saved = saveOrThrow(fileInfo);
+        return fileInfoMapper.toDto(saved);
+    }
+
+    @Override
+    public List<FileInfoDto> searchByName(Long userId, String name) {
+
+        List<FileInfo> files = fileInfoRepository.findByUserIdAndNameContainingIgnoreCase(userId, name);
+        return toDtoList(files);
+    }
+
+    @Override
+    public List<FileInfoDto> findAllInDirectoryRecursive(Long userId, String directory) {
+        List<FileInfo> files;
+
+        if (directory.isEmpty()) {
+            files = fileInfoRepository.findByUserId(userId);
+            return toDtoList(files);
+        } else {
+            files = fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
+        }
+
+        return toDtoList(files);
+    }
+
+    private FileInfo findEntity(Long userId, String directory, String filename) {
+        return fileInfoRepository.findByUserIdAndDirectoryAndName(userId, directory, filename)
+                .orElseThrow(() -> fileNotFound(directory, filename));
+    }
+
+    private FileInfo saveOrThrow(FileInfo fileInfo) {
         try {
             return fileInfoRepository.saveAndFlush(fileInfo);
         } catch (DataIntegrityViolationException e) {
-            throw new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + newDirectory + Constants.PATH_SEPARATOR + filename);
+            throw fileAlreadyExists(fileInfo.getDirectory(), fileInfo.getName());
         }
     }
 
-    @Override
-    public List<FileInfo> findAllInDirectoryRecursive(Long userId, String directory) {
-        if (directory.isEmpty()) {
-            return fileInfoRepository.findByUserId(userId);
-        }
-        return fileInfoRepository.findByUserIdAndDirectoryRecursive(userId, directory);
+    private List<FileInfoDto> toDtoList(List<FileInfo> files) {
+        return fileInfoMapper.toDtoList(files);
     }
 
-    @Override
-    public List<FileInfo> searchByName(Long userId, String name) {
-        return fileInfoRepository.findByUserIdAndNameContainingIgnoreCase(userId, name);
+    private FileNotFoundException fileNotFound(String directory, String filename) {
+        return new FileNotFoundException(MSG_FILE_NOT_FOUND + directory + Constants.PATH_SEPARATOR + filename);
+    }
+
+    private FileAlreadyExistsException fileAlreadyExists(String directory, String filename) {
+        return new FileAlreadyExistsException(MSG_FILE_ALREADY_EXISTS + directory + Constants.PATH_SEPARATOR + filename);
     }
 }

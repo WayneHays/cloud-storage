@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.service.file;
 
-import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
-import com.waynehays.cloudfilestorage.entity.FileInfo;
-import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
+import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
+import com.waynehays.cloudfilestorage.mapper.ResourceMapper;
 import com.waynehays.cloudfilestorage.service.file.deleter.FileDeleter;
 import com.waynehays.cloudfilestorage.service.file.downloader.FileDownloader;
 import com.waynehays.cloudfilestorage.service.file.mover.FileMover;
@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
     private final FileInfoService fileInfoService;
-    private final FileInfoMapper fileInfoMapper;
+    private final ResourceMapper resourceMapper;
     private final FileUploader fileUploader;
     private final FileDeleter fileDeleter;
     private final FileDownloader fileDownloader;
@@ -49,9 +49,9 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<ResourceDto> search(Long userId, String query) {
-        List<FileInfo> files = fileInfoService.searchByName(userId, query);
+        List<FileInfoDto> files = fileInfoService.searchByName(userId, query);
         return files.stream()
-                .map(fileInfoMapper::toResourceDto)
+                .map(resourceMapper::toDto)
                 .toList();
     }
 

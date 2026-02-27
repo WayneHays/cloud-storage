@@ -1,15 +1,14 @@
 package com.waynehays.cloudfilestorage.unit.service.file.uploader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.FileData;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
-import com.waynehays.cloudfilestorage.entity.FileInfo;
-import com.waynehays.cloudfilestorage.entity.User;
+import com.waynehays.cloudfilestorage.dto.file.FileData;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceType;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.exception.InvalidPathException;
 import com.waynehays.cloudfilestorage.filestorage.MinioFileStorage;
-import com.waynehays.cloudfilestorage.mapper.FileInfoMapperImpl;
+import com.waynehays.cloudfilestorage.mapper.ResourceMapperImpl;
 import com.waynehays.cloudfilestorage.parser.multipartfiledataparser.MultipartFileDataParserImpl;
 import com.waynehays.cloudfilestorage.service.file.uploader.FileUploaderImpl;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoServiceImpl;
@@ -67,14 +66,14 @@ class FileUploaderImplTest {
     private StorageKeyGeneratorImpl storageKeyGenerator;
 
     @Mock
-    private FileInfoMapperImpl fileInfoMapper;
+    private ResourceMapperImpl resourceMapper;
 
     @InjectMocks
     private FileUploaderImpl fileUploader;
 
     private MultipartFile multipartFile;
     private FileData fileData;
-    private FileInfo fileInfo;
+    private FileInfoDto fileInfoDto;
     private ResourceDto resourceDto;
 
     @BeforeEach
@@ -85,7 +84,7 @@ class FileUploaderImplTest {
                 FILENAME, FILENAME, DIRECTORY, EXTENSION,
                 FILE_SIZE, CONTENT_TYPE, new ByteArrayInputStream(CONTENT.getBytes())
         );
-        fileInfo = createFileInfo();
+        fileInfoDto = createFileInfoDto();
         resourceDto = new ResourceDto(FILENAME, DIRECTORY, FILE_SIZE, ResourceType.FILE);
     }
 
@@ -208,14 +207,14 @@ class FileUploaderImplTest {
 
     private void setupSuccessfulUploadTo(String directory) {
         setupSuccessfulSaveTo(directory);
-        when(fileInfoMapper.toResourceDto(fileInfo)).thenReturn(resourceDto);
+        when(resourceMapper.toDto(fileInfoDto)).thenReturn(resourceDto);
     }
 
     private void setupSuccessfulSaveTo(String directory) {
         when(parser.parse(multipartFile, directory)).thenReturn(fileData);
         when(storageKeyGenerator.generate(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(STORAGE_KEY);
-        when(fileInfoService.save(USER_ID, fileData, STORAGE_KEY)).thenReturn(fileInfo);
+        when(fileInfoService.save(USER_ID, fileData, STORAGE_KEY)).thenReturn(fileInfoDto);
     }
 
     private void verifySuccessfulUploadInteractions(String directory) {
@@ -227,17 +226,14 @@ class FileUploaderImplTest {
         inOrder.verify(fileStorage).put(any(), eq(STORAGE_KEY), eq(FILE_SIZE), eq(CONTENT_TYPE));
     }
 
-    private FileInfo createFileInfo() {
-        User user = new User();
-        user.setId(USER_ID);
+    private FileInfoDto createFileInfoDto() {
 
-        return FileInfo.builder()
+        return FileInfoDto.builder()
                 .directory(DIRECTORY)
                 .name(FILENAME)
                 .storageKey(STORAGE_KEY)
                 .size(FILE_SIZE)
                 .contentType(CONTENT_TYPE)
-                .user(user)
                 .build();
     }
 }

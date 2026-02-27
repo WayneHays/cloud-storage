@@ -1,17 +1,14 @@
 package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface FileInfoMapper {
+    FileInfoDto toDto(FileInfo fileInfo);
 
-    default ResourceDto toResourceDto(FileInfo fileInfo) {
-        return ResourceDto.file(
-                fileInfo.getDirectory(),
-                fileInfo.getName(),
-                fileInfo.getSize()
-        );
-    }
+    List<FileInfoDto> toDtoList(List<FileInfo> fileInfoList);
 }

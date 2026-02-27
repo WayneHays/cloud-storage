@@ -1,10 +1,12 @@
 package com.waynehays.cloudfilestorage.unit.service.fileinfo;
 
-import com.waynehays.cloudfilestorage.dto.files.FileData;
+import com.waynehays.cloudfilestorage.dto.file.FileData;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
+import com.waynehays.cloudfilestorage.mapper.FileInfoMapperImpl;
 import com.waynehays.cloudfilestorage.repository.FileInfoRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoServiceImpl;
@@ -47,6 +49,9 @@ class FileInfoServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private FileInfoMapperImpl fileInfoMapper;
+
     @InjectMocks
     private FileInfoServiceImpl fileInfoService;
 
@@ -57,23 +62,24 @@ class FileInfoServiceImplTest {
     void shouldReturnCorrectFileInfo_whenSaveSuccessful() {
         // given
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
-        when(fileInfoRepository.save(any(FileInfo.class))).thenAnswer(invocation -> {
+        when(fileInfoRepository.saveAndFlush(any(FileInfo.class))).thenAnswer(invocation -> {
             FileInfo created = invocation.getArgument(0);
             created.setId(FILE_INFO_ID);
             return created;
         });
+        when(fileInfoMapper.toDto(any(FileInfo.class)))
+                .thenReturn(createFileInfoDto());
 
         // when
-        FileInfo result = fileInfoService.save(USER_ID, createFileData(), STORAGE_KEY);
+        FileInfoDto result = fileInfoService.save(USER_ID, createFileData(), STORAGE_KEY);
 
         // then
-        assertThat(result.getId()).isEqualTo(FILE_INFO_ID);
-        assertThat(result.getDirectory()).isEqualTo(DIRECTORY);
-        assertThat(result.getName()).isEqualTo(FILENAME);
-        assertThat(result.getStorageKey()).isEqualTo(STORAGE_KEY);
-        assertThat(result.getSize()).isEqualTo(SIZE);
-        assertThat(result.getContentType()).isEqualTo(CONTENT_TYPE);
-        assertThat(result.getUser()).isEqualTo(user);
+        assertThat(result.id()).isEqualTo(FILE_INFO_ID);
+        assertThat(result.directory()).isEqualTo(DIRECTORY);
+        assertThat(result.name()).isEqualTo(FILENAME);
+        assertThat(result.storageKey()).isEqualTo(STORAGE_KEY);
+        assertThat(result.size()).isEqualTo(SIZE);
+        assertThat(result.contentType()).isEqualTo(CONTENT_TYPE);
     }
 
     @Test
@@ -81,7 +87,7 @@ class FileInfoServiceImplTest {
     void shouldThrowException_whenDuplicateFilename() {
         // given
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
-        when(fileInfoRepository.save(any(FileInfo.class)))
+        when(fileInfoRepository.saveAndFlush(any(FileInfo.class)))
                 .thenThrow(new DataIntegrityViolationException("message"));
         FileData fileData = createFileData();
 
@@ -97,12 +103,15 @@ class FileInfoServiceImplTest {
         FileInfo fileInfo = createPersistedFileInfo();
         when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(Optional.of(fileInfo));
+        FileInfoDto dto = createFileInfoDto();
+        when(fileInfoMapper.toDto(any(FileInfo.class)))
+                .thenReturn(dto);
 
         // when
-        FileInfo result = fileInfoService.find(USER_ID, DIRECTORY, FILENAME);
+        FileInfoDto result = fileInfoService.find(USER_ID, DIRECTORY, FILENAME);
 
         // then
-        assertThat(result).isEqualTo(fileInfo);
+        assertThat(result).isEqualTo(dto);
     }
 
     @Test
@@ -157,18 +166,21 @@ class FileInfoServiceImplTest {
     void shouldMove() {
         // given
         FileInfo fileInfo = createPersistedFileInfo();
+        FileInfoDto moved = new FileInfoDto(FILE_INFO_ID, NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY, CONTENT_TYPE, SIZE);
         when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(Optional.of(fileInfo));
         when(fileInfoRepository.saveAndFlush(fileInfo)).thenReturn(fileInfo);
+        when(fileInfoMapper.toDto(any(FileInfo.class)))
+                .thenReturn(moved);
 
         // when
-        FileInfo result = fileInfoService.move(
-                USER_ID, DIRECTORY, FILENAME, NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY);
+        FileInfoDto result = fileInfoService.move(USER_ID, DIRECTORY, FILENAME,
+                NEW_DIRECTORY, NEW_FILENAME, NEW_STORAGE_KEY);
 
         // then
-        assertThat(result.getDirectory()).isEqualTo(NEW_DIRECTORY);
-        assertThat(result.getName()).isEqualTo(NEW_FILENAME);
-        assertThat(result.getStorageKey()).isEqualTo(NEW_STORAGE_KEY);
+        assertThat(result.directory()).isEqualTo(NEW_DIRECTORY);
+        assertThat(result.name()).isEqualTo(NEW_FILENAME);
+        assertThat(result.storageKey()).isEqualTo(NEW_STORAGE_KEY);
     }
 
     @Test
@@ -212,6 +224,17 @@ class FileInfoServiceImplTest {
                 .size(SIZE)
                 .contentType(CONTENT_TYPE)
                 .user(user)
+                .build();
+    }
+
+    private FileInfoDto createFileInfoDto() {
+        return FileInfoDto.builder()
+                .id(FILE_INFO_ID)
+                .directory(DIRECTORY)
+                .name(FILENAME)
+                .storageKey(STORAGE_KEY)
+                .contentType(CONTENT_TYPE)
+                .size(SIZE)
                 .build();
     }
 

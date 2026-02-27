@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.service.file.mover;
 
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
-import com.waynehays.cloudfilestorage.entity.FileInfo;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
-import com.waynehays.cloudfilestorage.mapper.FileInfoMapper;
+import com.waynehays.cloudfilestorage.mapper.ResourceMapper;
 import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParser;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoService;
 import com.waynehays.cloudfilestorage.service.keygenerator.StorageKeyGenerator;
@@ -22,7 +22,7 @@ public class FileMoverImpl implements FileMover {
     private final FileInfoService fileInfoService;
     private final StorageKeyGenerator storageKeyGenerator;
     private final ResourcePathParser resourcePathParser;
-    private final FileInfoMapper fileInfoMapper;
+    private final ResourceMapper resourceMapper;
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
@@ -34,16 +34,16 @@ public class FileMoverImpl implements FileMover {
             // TODO: write logic copy directory
         }
 
-        FileInfo fileInfo = fileInfoService.find(userId, from.directory(), from.filename());
+        FileInfoDto file = fileInfoService.find(userId, from.directory(), from.filename());
         String newStorageKey = storageKeyGenerator.generate(userId, to.directory(), to.filename());
 
-        fileStorage.move(fileInfo.getStorageKey(), newStorageKey);
-        FileInfo moved = moveFileInfo(userId, from, to, newStorageKey, fileInfo.getStorageKey());
+        fileStorage.move(file.storageKey(), newStorageKey);
+        FileInfoDto moved = moveFileInfo(userId, from, to, newStorageKey, file.storageKey());
 
-        return fileInfoMapper.toResourceDto(moved);
+        return resourceMapper.toDto(moved);
     }
 
-    private FileInfo moveFileInfo(Long userId, ResourcePath from, ResourcePath to, String newStorageKey, String oldStorageKey) {
+    private FileInfoDto moveFileInfo(Long userId, ResourcePath from, ResourcePath to, String newStorageKey, String oldStorageKey) {
         try {
             return fileInfoService.move(userId, from.directory(), from.filename(), to.directory(), to.filename(), newStorageKey);
         } catch (Exception e) {

@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.service.file.downloader;
 
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
-import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
-import com.waynehays.cloudfilestorage.entity.FileInfo;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
@@ -43,24 +43,24 @@ public class FileDownloaderImpl implements FileDownloader {
     }
 
     private FileDownloadDto downloadDirectory(Long userId, String baseDirectory) {
-        List<FileInfo> files = fileInfoService.findAllInDirectoryRecursive(userId, baseDirectory);
+        List<FileInfoDto> files = fileInfoService.findAllInDirectoryRecursive(userId, baseDirectory);
         byte[] zipBytes = createZipArchive(files, baseDirectory);
         String zipName = PathUtils.extractFilename(baseDirectory) + ".zip";
         return new FileDownloadDto(new ByteArrayInputStream(zipBytes), zipBytes.length, zipName);
     }
 
     private FileDownloadDto downloadFile(Long userId, String directory, String filename) {
-        FileInfo fileInfo = fileInfoService.find(userId, directory, filename);
-        InputStream inputStream = getFileStream(fileInfo);
-        return new FileDownloadDto(inputStream, fileInfo.getSize(), fileInfo.getName());
+        FileInfoDto file = fileInfoService.find(userId, directory, filename);
+        InputStream inputStream = getFileStream(file);
+        return new FileDownloadDto(inputStream, file.size(), file.name());
     }
 
-    private byte[] createZipArchive(List<FileInfo> files, String baseDirectory) {
+    private byte[] createZipArchive(List<FileInfoDto> files, String baseDirectory) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos)) {
 
-            for (FileInfo fileInfo : files) {
-                addFileToZip(zos, fileInfo, baseDirectory);
+            for (FileInfoDto file : files) {
+                addFileToZip(zos, file, baseDirectory);
             }
 
             zos.finish();
@@ -70,7 +70,7 @@ public class FileDownloaderImpl implements FileDownloader {
         }
     }
 
-    private void addFileToZip(ZipOutputStream zos, FileInfo fileInfo, String baseDirectory) throws IOException {
+    private void addFileToZip(ZipOutputStream zos, FileInfoDto fileInfo, String baseDirectory) throws IOException {
         String entryPath = buildEntryPath(fileInfo, baseDirectory);
         zos.putNextEntry(new ZipEntry(entryPath));
 
@@ -81,14 +81,14 @@ public class FileDownloaderImpl implements FileDownloader {
         zos.closeEntry();
     }
 
-    private InputStream getFileStream(FileInfo fileInfo) {
-        return fileStorage.get(fileInfo.getStorageKey())
+    private InputStream getFileStream(FileInfoDto fileInfo) {
+        return fileStorage.get(fileInfo.storageKey())
                 .orElseThrow(() -> new FileNotFoundException(
-                        MSG_FILE_NOT_FOUND_IN_STORAGE + fileInfo.getName()));
+                        MSG_FILE_NOT_FOUND_IN_STORAGE + fileInfo.name()));
     }
 
-    private String buildEntryPath(FileInfo fileInfo, String baseDirectory) {
-        String fullPath = PathUtils.combine(fileInfo.getDirectory(), fileInfo.getName());
+    private String buildEntryPath(FileInfoDto fileInfo, String baseDirectory) {
+        String fullPath = PathUtils.combine(fileInfo.directory(), fileInfo.name());
         return PathUtils.removePrefix(fullPath, baseDirectory);
     }
 }

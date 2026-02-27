@@ -1,11 +1,10 @@
 package com.waynehays.cloudfilestorage.unit.service.file.downloader;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
-import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
-import com.waynehays.cloudfilestorage.entity.FileInfo;
-import com.waynehays.cloudfilestorage.entity.User;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceType;
+import com.waynehays.cloudfilestorage.dto.fileinfo.FileInfoDto;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.filestorage.MinioFileStorage;
@@ -37,12 +36,9 @@ class FileDownloaderImplTest {
     private static final Long USER_ID = 1L;
     private static final String DIRECTORY = "docs";
     private static final String FILENAME = "file";
-    private static final String EXTENSION = ".txt";
     private static final String STORAGE_KEY = "123/docs/uuid.txt";
-    private static final String USERNAME = "username";
-    private static final String PASSWORD = "password";
-    private static final long FILE_SIZE = 1024L;
     private static final String CONTENT_TYPE = "text/plain";
+    private static final long FILE_SIZE = 1024L;
 
     @Mock
     private MinioFileStorage fileStorage;
@@ -56,26 +52,24 @@ class FileDownloaderImplTest {
     @InjectMocks
     private FileDownloaderImpl fileDownloader;
 
-    private User mockUser;
     private InputStream mockInputStream;
+    private String path;
 
     @BeforeEach
     void setUp() {
-        mockUser = createMockUser();
-        FileInfo mockFileInfo = createMockFileInfo();
+        FileInfoDto mockFileInfoDto = createMockFileInfoDto();
         mockInputStream = new ByteArrayInputStream(new byte[]{1, 2, 3});
+        path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
         lenient().when(fileInfoService.find(anyLong(), anyString(), anyString()))
-                .thenReturn(mockFileInfo);
+                .thenReturn(mockFileInfoDto);
+        when(queryPathParser.parse(path)).thenReturn(resourcePath);
     }
 
     @Test
     @DisplayName("Should download file successfully")
     void shouldDownloadFileSuccessfully() {
         // given
-        String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
-
-        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.of(mockInputStream));
 
         // when
@@ -109,12 +103,6 @@ class FileDownloaderImplTest {
     @Test
     @DisplayName("Should throw FileNotFoundException when file not in database")
     void shouldThrowFileNotFoundExceptionWhenFileNotInDatabase() {
-        // given
-        String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
-
-        when(queryPathParser.parse(path)).thenReturn(resourcePath);
-
         // when & then
         assertThatThrownBy(() -> fileDownloader.download(USER_ID, path))
                 .isInstanceOf(FileNotFoundException.class)
@@ -125,10 +113,6 @@ class FileDownloaderImplTest {
     @DisplayName("Should throw FileNotFoundException when file not in storage")
     void shouldThrowFileNotFoundExceptionWhenFileNotInStorage() {
         // given
-        String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
-
-        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenReturn(Optional.empty());
 
         // when & then
@@ -141,10 +125,6 @@ class FileDownloaderImplTest {
     @DisplayName("Should throw FileStorageException on storage error")
     void shouldThrowFileStorageExceptionOnStorageError() {
         // given
-        String path = DIRECTORY + Constants.PATH_SEPARATOR + FILENAME;
-        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
-
-        when(queryPathParser.parse(path)).thenReturn(resourcePath);
         when(fileStorage.get(STORAGE_KEY)).thenThrow(new FileStorageException("Failed to get object with key: " + STORAGE_KEY));
 
         // when & then
@@ -153,23 +133,14 @@ class FileDownloaderImplTest {
                 .hasMessageContaining("Failed to get object with key: " + STORAGE_KEY);
     }
 
-    private User createMockUser() {
-        return User.builder()
-                .id(USER_ID)
-                .username(USERNAME)
-                .password(PASSWORD)
-                .build();
-    }
-
-    private FileInfo createMockFileInfo() {
-        return FileInfo.builder()
+    private FileInfoDto createMockFileInfoDto() {
+        return FileInfoDto.builder()
                 .id(1L)
                 .directory(DIRECTORY)
                 .name(FILENAME)
                 .storageKey(STORAGE_KEY)
                 .size(FILE_SIZE)
                 .contentType(CONTENT_TYPE)
-                .user(mockUser)
                 .build();
     }
 }
