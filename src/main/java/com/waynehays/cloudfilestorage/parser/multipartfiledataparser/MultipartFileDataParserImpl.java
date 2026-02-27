@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.parser.multipartfiledataparser;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.FileData;
+import com.waynehays.cloudfilestorage.dto.file.FileData;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.apache.commons.io.FilenameUtils;

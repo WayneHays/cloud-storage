@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.parser.resourcepathparser;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceType;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import com.waynehays.cloudfilestorage.validator.PathValidator;
 import lombok.RequiredArgsConstructor;

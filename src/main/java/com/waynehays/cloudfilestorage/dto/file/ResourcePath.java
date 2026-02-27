@@ -1,6 +1,6 @@
-package com.waynehays.cloudfilestorage.dto.files;
+package com.waynehays.cloudfilestorage.dto.file;
 
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceType;
 
 public record ResourcePath(
         String directory,

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.parser;
 
-import com.waynehays.cloudfilestorage.dto.files.FileData;
+import com.waynehays.cloudfilestorage.dto.file.FileData;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.parser.multipartfiledataparser.MultipartFileDataParserImpl;
 import org.junit.jupiter.api.DisplayName;

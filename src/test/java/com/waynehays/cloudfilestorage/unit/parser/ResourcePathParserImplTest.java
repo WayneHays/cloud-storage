@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.parser;
 
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceType;
 import com.waynehays.cloudfilestorage.exception.InvalidPathException;
 import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParserImpl;
 import com.waynehays.cloudfilestorage.validator.PathValidatorImpl;

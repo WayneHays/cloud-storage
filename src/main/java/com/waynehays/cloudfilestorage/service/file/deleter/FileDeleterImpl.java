@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.file.deleter;
 
-import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.file.ResourcePath;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
 import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParser;

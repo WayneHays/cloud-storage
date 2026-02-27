@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.file.mover;
 
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
 
 public interface FileMover {
 

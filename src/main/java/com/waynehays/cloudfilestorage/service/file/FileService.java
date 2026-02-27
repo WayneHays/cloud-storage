@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.file;
 
-import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.controller;
 
-import com.waynehays.cloudfilestorage.dto.files.response.FileDownloadDto;
-import com.waynehays.cloudfilestorage.dto.files.response.ResourceDto;
+import com.waynehays.cloudfilestorage.dto.file.response.FileDownloadDto;
+import com.waynehays.cloudfilestorage.dto.file.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.EmptyFileException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.file.FileService;
