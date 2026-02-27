@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.controller.resource.download;
 
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
-import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,10 +26,10 @@ class FileDownloadTest extends AbstractControllerIntegrationTest {
     private static final String FILENAME = "file.txt";
     private static final String CONTENT = "test";
     private static final String DIRECTORY = FOLDER_1;
-    private static final String NESTED_DIRECTORY = TestHelper.join(FOLDER_1, FOLDER_2, FOLDER_3);
+    private static final String NESTED_DIRECTORY = join(FOLDER_1, FOLDER_2, FOLDER_3);
 
-    private static final String PATH_TO_FILE = TestHelper.join(DIRECTORY, FILENAME);
-    private static final String PATH_TO_NESTED_FILE = TestHelper.join(NESTED_DIRECTORY, FILENAME);
+    private static final String PATH_TO_FILE = join(DIRECTORY, FILENAME);
+    private static final String PATH_TO_NESTED_FILE = join(NESTED_DIRECTORY, FILENAME);
 
     @BeforeEach
     void setUpFile() throws Exception {
@@ -73,7 +72,7 @@ class FileDownloadTest extends AbstractControllerIntegrationTest {
     @DisplayName("Should return 404 when file not found")
     void shouldReturn404_whenFileNotFound() throws Exception {
         // when & then
-        downloadFile(TestHelper.join(DIRECTORY, "notfound"))
+        downloadFile(join(DIRECTORY, "notfound"))
                 .andExpect(status().isNotFound());
     }
 
@@ -81,7 +80,7 @@ class FileDownloadTest extends AbstractControllerIntegrationTest {
     @DisplayName("Should return 400 when invalid path")
     void shouldReturn400_whenInvalidPath() throws Exception {
         // when & then
-        downloadFile(TestHelper.join(DIRECTORY, ".."))
+        downloadFile(join(DIRECTORY, ".."))
                 .andExpect(status().isBadRequest());
     }
 

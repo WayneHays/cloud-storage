@@ -1,10 +1,14 @@
 package com.waynehays.cloudfilestorage.unit.service.file.deleter;
 
+import com.waynehays.cloudfilestorage.dto.files.ResourcePath;
+import com.waynehays.cloudfilestorage.dto.files.response.ResourceType;
 import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.filestorage.MinioFileStorage;
+import com.waynehays.cloudfilestorage.parser.resourcepathparser.ResourcePathParserImpl;
 import com.waynehays.cloudfilestorage.service.file.deleter.FileDeleterImpl;
 import com.waynehays.cloudfilestorage.service.fileinfo.FileInfoServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +27,7 @@ import static org.mockito.Mockito.when;
 class FileDeleterImplTest {
     private static final String STORAGE_KEY = "storageKey";
     private static final Long USER_ID = 1L;
+    private static final String PATH = "directory/file.txt";
     private static final String DIRECTORY = "directory";
     private static final String FILENAME = "file.txt";
     private static final String MSG_FILE_NOT_FOUND = "file not found";
@@ -34,8 +39,18 @@ class FileDeleterImplTest {
     @Mock
     private FileInfoServiceImpl fileInfoService;
 
+    @Mock
+    private ResourcePathParserImpl resourcePathParser;
+
     @InjectMocks
     private FileDeleterImpl fileDeleter;
+
+    @BeforeEach
+    void setUp() {
+        ResourcePath resourcePath = new ResourcePath(DIRECTORY, FILENAME, ResourceType.FILE);
+        when(resourcePathParser.parse(PATH))
+                .thenReturn(resourcePath);
+    }
 
     @Test
     @DisplayName("Should call deps in correct order")
@@ -47,7 +62,7 @@ class FileDeleterImplTest {
                 .when(fileStorage).delete(STORAGE_KEY);
 
         // when
-        fileDeleter.delete(USER_ID, DIRECTORY);
+        fileDeleter.delete(USER_ID, PATH);
 
         // then
         InOrder inOrder = Mockito.inOrder(fileInfoService, fileStorage);
@@ -63,7 +78,7 @@ class FileDeleterImplTest {
                 .thenThrow(new FileNotFoundException(MSG_FILE_NOT_FOUND));
 
         // when & then
-        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY))
+        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, PATH))
                 .isInstanceOf(FileNotFoundException.class)
                 .hasMessageContaining(MSG_FILE_NOT_FOUND);
     }
@@ -78,9 +93,8 @@ class FileDeleterImplTest {
                 .when(fileStorage).delete(STORAGE_KEY);
 
         // when & then
-        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, DIRECTORY))
+        assertThatThrownBy(() -> fileDeleter.delete(USER_ID, PATH))
                 .isInstanceOf(FileStorageException.class)
                 .hasMessageContaining(MSG_STORAGE_FAILED);
     }
-
 }

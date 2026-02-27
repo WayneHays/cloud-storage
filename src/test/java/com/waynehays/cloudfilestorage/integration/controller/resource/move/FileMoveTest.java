@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.controller.resource.move;
 
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
-import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -29,10 +28,10 @@ class FileMoveTest extends AbstractControllerIntegrationTest {
     private static final String DIRECTORY = FOLDER_1;
     private static final String TARGET_DIRECTORY = FOLDER_2;
 
-    private static final String PATH_FROM = TestHelper.join(DIRECTORY, FILENAME);
-    private static final String PATH_TO_RENAMED = TestHelper.join(DIRECTORY, RENAMED_FILENAME);
-    private static final String PATH_TO_MOVED = TestHelper.join(TARGET_DIRECTORY, FILENAME);
-    private static final String PATH_TO_MOVED_AND_RENAMED = TestHelper.join(TARGET_DIRECTORY, RENAMED_FILENAME);
+    private static final String PATH_FROM = join(DIRECTORY, FILENAME);
+    private static final String PATH_TO_RENAMED = join(DIRECTORY, RENAMED_FILENAME);
+    private static final String PATH_TO_MOVED = join(TARGET_DIRECTORY, FILENAME);
+    private static final String PATH_TO_MOVED_AND_RENAMED = join(TARGET_DIRECTORY, RENAMED_FILENAME);
     public static final String DOWNLOAD_URL = "/api/resource/download";
 
     @Autowired
@@ -118,10 +117,10 @@ class FileMoveTest extends AbstractControllerIntegrationTest {
     void shouldReturn400WhenInvalidPath() throws Exception {
         uploadFile(FILENAME, CONTENT, DIRECTORY);
 
-        moveFile(TestHelper.join(DIRECTORY, ".."), PATH_TO_MOVED)
+        moveFile(join(DIRECTORY, ".."), PATH_TO_MOVED)
                 .andExpect(status().isBadRequest());
 
-        moveFile(PATH_FROM, TestHelper.join("my@folder", FILENAME))
+        moveFile(PATH_FROM, join("my@folder", FILENAME))
                 .andExpect(status().isBadRequest());
     }
 

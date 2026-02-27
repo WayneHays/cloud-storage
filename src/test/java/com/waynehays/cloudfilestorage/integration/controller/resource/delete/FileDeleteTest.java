@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.controller.resource.delete;
 
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
-import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,10 +22,10 @@ class FileDeleteTest extends AbstractControllerIntegrationTest {
     private static final String CONTENT = "test";
 
     private static final String DIRECTORY = FOLDER_1;
-    private static final String NESTED_DIRECTORY = TestHelper.join(FOLDER_1, FOLDER_2);
+    private static final String NESTED_DIRECTORY = join(FOLDER_1, FOLDER_2);
 
-    private static final String PATH_TO_FILE = TestHelper.join(DIRECTORY, FILENAME);
-    private static final String PATH_TO_NESTED_FILE = TestHelper.join(NESTED_DIRECTORY, FILENAME);
+    private static final String PATH_TO_FILE = join(DIRECTORY, FILENAME);
+    private static final String PATH_TO_NESTED_FILE = join(NESTED_DIRECTORY, FILENAME);
 
     @Test
     @DisplayName("Should delete file and return 204")

@@ -159,7 +159,7 @@ class FileInfoServiceImplTest {
         FileInfo fileInfo = createPersistedFileInfo();
         when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(Optional.of(fileInfo));
-        when(fileInfoRepository.save(fileInfo)).thenReturn(fileInfo);
+        when(fileInfoRepository.saveAndFlush(fileInfo)).thenReturn(fileInfo);
 
         // when
         FileInfo result = fileInfoService.move(
@@ -178,7 +178,7 @@ class FileInfoServiceImplTest {
         FileInfo fileInfo = createPersistedFileInfo();
         when(fileInfoRepository.findByUserIdAndDirectoryAndName(USER_ID, DIRECTORY, FILENAME))
                 .thenReturn(Optional.of(fileInfo));
-        when(fileInfoRepository.save(fileInfo))
+        when(fileInfoRepository.saveAndFlush(fileInfo))
                 .thenThrow(new DataIntegrityViolationException("duplicate"));
 
         // when & then

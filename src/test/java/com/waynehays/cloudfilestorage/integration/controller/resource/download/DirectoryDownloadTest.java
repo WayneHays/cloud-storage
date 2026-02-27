@@ -2,7 +2,6 @@ package com.waynehays.cloudfilestorage.integration.controller.resource.download;
 
 import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
-import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -39,16 +38,16 @@ class DirectoryDownloadTest extends AbstractControllerIntegrationTest {
     private static final String CONTENT_3 = "text3";
 
     private static final String DIRECTORY_1 = FOLDER_1;
-    private static final String DIRECTORY_2 = TestHelper.join(DIRECTORY_1, FOLDER_2);
-    private static final String DIRECTORY_3 = TestHelper.join(DIRECTORY_2, FOLDER_3);
+    private static final String DIRECTORY_2 = join(DIRECTORY_1, FOLDER_2);
+    private static final String DIRECTORY_3 = join(DIRECTORY_2, FOLDER_3);
 
     private static final String ZIP_ENTRY_1 = FILE_1;
-    private static final String ZIP_ENTRY_2 = TestHelper.join(FOLDER_2, FILE_2);
-    private static final String ZIP_ENTRY_3 = TestHelper.join(FOLDER_2, FOLDER_3, FILE_3);
+    private static final String ZIP_ENTRY_2 = join(FOLDER_2, FILE_2);
+    private static final String ZIP_ENTRY_3 = join(FOLDER_2, FOLDER_3, FILE_3);
 
-    private static final String ROOT_ZIP_ENTRY_1 = TestHelper.join(DIRECTORY_1, FILE_1);
-    private static final String ROOT_ZIP_ENTRY_2 = TestHelper.join(DIRECTORY_2, FILE_2);
-    private static final String ROOT_ZIP_ENTRY_3 = TestHelper.join(DIRECTORY_3, FILE_3);
+    private static final String ROOT_ZIP_ENTRY_1 = join(DIRECTORY_1, FILE_1);
+    private static final String ROOT_ZIP_ENTRY_2 = join(DIRECTORY_2, FILE_2);
+    private static final String ROOT_ZIP_ENTRY_3 = join(DIRECTORY_3, FILE_3);
 
     @Test
     @DisplayName("Should download directory with single file")

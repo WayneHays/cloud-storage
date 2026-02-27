@@ -2,7 +2,6 @@ package com.waynehays.cloudfilestorage.integration.controller.resource.upload;
 
 import com.waynehays.cloudfilestorage.entity.FileInfo;
 import com.waynehays.cloudfilestorage.integration.base.AbstractControllerIntegrationTest;
-import com.waynehays.cloudfilestorage.integration.controller.resource.TestHelper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     private static final String FOLDER_3 = "task";
 
     private static final String DIRECTORY = FOLDER_1;
-    private static final String NESTED_DIRECTORY = TestHelper.join(FOLDER_1, FOLDER_2, FOLDER_3);
+    private static final String NESTED_DIRECTORY = join(FOLDER_1, FOLDER_2, FOLDER_3);
 
     @Test
     @DisplayName("Should upload file with directory and return 201")
@@ -68,7 +67,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should upload file with embedded path in filename")
     void shouldUploadFileWithEmbeddedPath() throws Exception {
-        uploadFile(TestHelper.join("subfolder", FILENAME), CONTENT, DIRECTORY)
+        uploadFile(join("subfolder", FILENAME), CONTENT, DIRECTORY)
                 .andExpect(status().isCreated());
 
         assertFileCount(1);
@@ -107,7 +106,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should return 400 when filename contains path traversal")
     void shouldReturn400WhenFilenameHasPathTraversal() throws Exception {
-        uploadFile(TestHelper.join("..", FILENAME), CONTENT, DIRECTORY)
+        uploadFile(join("..", FILENAME), CONTENT, DIRECTORY)
                 .andExpect(status().isBadRequest());
 
         assertFileCount(0);
@@ -116,7 +115,7 @@ class FileUploadTest extends AbstractControllerIntegrationTest {
     @Test
     @DisplayName("Should return 400 when directory contains path traversal")
     void shouldReturn400WhenDirectoryHasPathTraversal() throws Exception {
-        uploadFile(FILENAME, CONTENT, TestHelper.join("..", FOLDER_1))
+        uploadFile(FILENAME, CONTENT, join("..", FOLDER_1))
                 .andExpect(status().isBadRequest());
 
         assertFileCount(0);
