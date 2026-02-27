@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.base;
 
+import com.waynehays.cloudfilestorage.constant.Constants;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.filestorage.FileStorage;
@@ -117,5 +118,9 @@ public abstract class AbstractControllerIntegrationTest {
         }
 
         return mockMvc.perform(request);
+    }
+
+    protected static String join(String... parts) {
+        return String.join(Constants.PATH_SEPARATOR, parts);
     }
 }
