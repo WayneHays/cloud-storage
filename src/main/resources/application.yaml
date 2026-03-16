@@ -3,3 +3,5 @@ spring:
     name: cloud-file-storage
   profiles:
     default: dev
+streaming:
+  buffer-size: 8192
