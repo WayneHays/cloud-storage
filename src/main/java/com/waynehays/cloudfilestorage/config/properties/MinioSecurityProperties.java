@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record MinioSecurityProperties(
 
         @NotBlank(message = "URL MinIO cannot be empty")
-        @Pattern(regexp = "http[s]?://.+", message = "URL must begin with http:// or https://")
+        @Pattern(regexp = "https?://.+", message = "URL must begin with http:// or https://")
         String url,
 
         @NotBlank(message = "Access key cannot be empty")
