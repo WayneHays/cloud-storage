@@ -1,12 +1,11 @@
 package com.waynehays.cloudfilestorage.exceptionhandler;
 
-import com.waynehays.cloudfilestorage.dto.ErrorDto;
+import com.waynehays.cloudfilestorage.dto.response.ErrorDto;
 import com.waynehays.cloudfilestorage.exception.EmptyFileException;
-import com.waynehays.cloudfilestorage.exception.FileAlreadyExistsException;
-import com.waynehays.cloudfilestorage.exception.FileNotFoundException;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.exception.InvalidFilenameException;
-import com.waynehays.cloudfilestorage.exception.InvalidPathException;
+import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -19,7 +18,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.util.List;
 
 @Slf4j
 @RestControllerAdvice(basePackages = "com.waynehays.cloudfilestorage.controller")
@@ -30,65 +33,75 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                             HttpHeaders headers,
                                                                             HttpStatusCode status,
                                                                             WebRequest request) {
-        log.debug("Validation params for method failed");
-        return new ResponseEntity<>(new ErrorDto("Validation failed"), HttpStatus.BAD_REQUEST);
+        List<String> messages = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList();
+        return new ResponseEntity<>(new ErrorDto(messages), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler
-    public ResponseEntity<ErrorDto> handleInvalidPathException(InvalidPathException e) {
-        log.info("Attempt to upload file with invalid path", e);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException ex,
+                                                                               HttpHeaders headers,
+                                                                               HttpStatusCode status,
+                                                                               WebRequest request) {
+        log.info("Attempt to upload empty or invalid resource");
+        return ResponseEntity.badRequest().body(new ErrorDto("Invalid resources to upload"));
     }
 
-    @ExceptionHandler(InvalidFilenameException.class)
-    public ResponseEntity<ErrorDto> handleInvalidFilenameException(InvalidFilenameException e) {
-        log.info("Attempt to upload file with invalid filename", e);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorDto> handleMaxUploadSize(MaxUploadSizeExceededException e) {
+        log.info("File size limit exceeded");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorDto("File size exceeds allowed limit"));
     }
 
-    @ExceptionHandler(FileAlreadyExistsException.class)
-    public ResponseEntity<ErrorDto> handleFileAlreadyExists(FileAlreadyExistsException e) {
-        log.info("Attempt to upload duplicate file", e);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorDto(e.getMessage()));
+    @ExceptionHandler(InvalidMoveException.class)
+    public ResponseEntity<ErrorDto> handleInvalidMoveException(InvalidMoveException e) {
+        log.info(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto("Invalid move operation - can't move directory to file"));
     }
 
     @ExceptionHandler(EmptyFileException.class)
     public ResponseEntity<ErrorDto> handleEmptyFile(EmptyFileException e) {
-        log.info("Attempt to upload empty file", e);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(e.getMessage()));
+        log.info(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto("File cannot be empty"));
     }
 
-    @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleFileNotFound(FileNotFoundException e) {
-        log.warn("File not found: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorDto(e.getMessage()));
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorDto> handleResourceNotFound(ResourceNotFoundException e) {
+        log.info(e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorDto("Resource not found"));
     }
 
-    @ExceptionHandler(FileStorageException.class)
-    public ResponseEntity<ErrorDto> handleFileStorageException(FileStorageException e) {
-        log.error("File storage error: {}", e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorDto("Failed to process file operation"));
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ResponseEntity<ErrorDto> handleResourceAlreadyExists(ResourceAlreadyExistsException e) {
+        log.info(e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorDto("Resource already exists"));
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorDto> handleUserAlreadyExists(UserAlreadyExistsException e) {
-        String message = e.getMessage();
-        log.info(message, e);
-        return new ResponseEntity<>(new ErrorDto(message), HttpStatus.CONFLICT);
+        log.info(e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorDto("Username already taken"));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException e) {
-        String message = "Invalid credentials";
-        log.info(message, e);
-        return new ResponseEntity<>(new ErrorDto(message), HttpStatus.UNAUTHORIZED);
+        log.info("Invalid credentials attempt");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorDto("Invalid credentials"));
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorDto> handleFileStorageException(FileStorageException e) {
+        log.error("File storage error", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorDto("Failed to process file operation"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDto> handleException(Exception e) {
         log.error("Internal server error", e);
-        return new ResponseEntity<>(new ErrorDto("Internal server error"), HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorDto("Internal server error"));
     }
 }
