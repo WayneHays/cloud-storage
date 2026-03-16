@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.controller;
 
-import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
-import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
-import com.waynehays.cloudfilestorage.service.user.UserService;
+import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
+import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.service.user.UserServiceApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserService userService;
+    private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
