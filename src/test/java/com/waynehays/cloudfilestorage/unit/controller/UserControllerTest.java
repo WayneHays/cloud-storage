@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.controller;
 
-import com.waynehays.cloudfilestorage.config.SecurityConfig;
+import com.waynehays.cloudfilestorage.security.SecurityConfig;
 import com.waynehays.cloudfilestorage.controller.UserController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

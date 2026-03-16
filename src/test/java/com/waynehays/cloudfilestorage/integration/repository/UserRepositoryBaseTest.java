@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryIntegrationTest;
+import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryBaseTest;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest {
+class UserRepositoryBaseTest extends AbstractRepositoryBaseTest {
     private static final String USERNAME = "test-name";
     private static final String PASSWORD = "password";
 

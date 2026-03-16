@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.unit.service.user;
 
-import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
+import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
-import com.waynehays.cloudfilestorage.service.user.UserServiceImpl;
+import com.waynehays.cloudfilestorage.service.user.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceImplTest {
+class UserServiceTest {
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
     private static final String HASHED_PASSWORD = "hashedPassword";
@@ -40,7 +40,7 @@ class UserServiceImplTest {
     private UserMapper userMapper;
 
     @InjectMocks
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Test
     @DisplayName("Should successfully register user")

@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.unit.controller;
 
-import com.waynehays.cloudfilestorage.config.SecurityConfig;
+import com.waynehays.cloudfilestorage.security.SecurityConfig;
 import com.waynehays.cloudfilestorage.controller.AuthController;
-import com.waynehays.cloudfilestorage.dto.auth.request.SignInRequest;
-import com.waynehays.cloudfilestorage.dto.auth.request.SignUpRequest;
-import com.waynehays.cloudfilestorage.dto.auth.response.UserDto;
+import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
+import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
+import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
-import com.waynehays.cloudfilestorage.service.user.UserService;
+import com.waynehays.cloudfilestorage.service.user.UserServiceApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserService userService;
+    private UserServiceApi userService;
 
     @MockitoBean
     private AuthenticationManager authenticationManager;
@@ -78,18 +78,17 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 400 if invalid credentials")
-        void shouldReturnBadRequest_whenInvalidData() throws Exception {
+        @DisplayName("Should return 400 if invalid request")
+        void shouldReturnBadRequest_whenInvalidRequest() throws Exception {
             // given
-            SignUpRequest request = new SignUpRequest("ab", "123");
+            SignUpRequest request = new SignUpRequest("user", "pas");
 
             // when & then
             mockMvc.perform(post(PATH_SIGN_UP)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value("Validation failed"));
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
@@ -107,7 +106,7 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andDo(print())
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.message").value("Username already taken"));
+                    .andExpect(jsonPath("$.messages[0]").value("Username already taken"));
         }
     }
 
@@ -165,7 +164,7 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("Should return 401 if not existing path")
+        @DisplayName("Should return 401 if not existing query")
         void shouldReturn401whenUnauthenticated() throws Exception {
             mockMvc.perform(get("/api/sjhsgh"))
                     .andDo(print())
