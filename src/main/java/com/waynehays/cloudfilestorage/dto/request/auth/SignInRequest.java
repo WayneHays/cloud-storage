@@ -1,10 +1,10 @@
-package com.waynehays.cloudfilestorage.dto.auth.request;
+package com.waynehays.cloudfilestorage.dto.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record SignUpRequest(
+public record SignInRequest(
 
         @NotBlank(message = "Username must not be empty")
         @Pattern(regexp = "^\\w{3,50}$", message = "Username must be 3-50 characters, letters, digits, underscore only")

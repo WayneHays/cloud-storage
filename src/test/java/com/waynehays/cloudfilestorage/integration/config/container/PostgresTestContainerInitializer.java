@@ -1,13 +1,13 @@
-package com.waynehays.cloudfilestorage.integration.config;
+package com.waynehays.cloudfilestorage.integration.config.container;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class PostgresTestContainer {
+public class PostgresTestContainerInitializer {
     private static final String IMAGE = "postgres:16";
-    private static final String DB_NAME = "test-db";
-    private static final String DB_USER = "test-user";
-    private static final String DB_PASSWORD = "test-password";
+    private static final String DB_NAME = "dev-db";
+    private static final String DB_USER = "dev-user";
+    private static final String DB_PASSWORD = "dev-password";
 
     private static final PostgreSQLContainer<?> CONTAINER;
 
