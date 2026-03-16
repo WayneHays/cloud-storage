@@ -1,17 +1,15 @@
-package com.waynehays.cloudfilestorage.dto.file;
+package com.waynehays.cloudfilestorage.dto;
 
 import lombok.Builder;
-
-import java.io.InputStream;
 
 @Builder
 public record FileData(
         String originalFilename,
         String filename,
         String directory,
-        String extension,
+        String fullPath,
         long size,
         String contentType,
-        InputStream inputStream
+        InputStreamSupplier inputStreamSupplier
 ) {
 }
