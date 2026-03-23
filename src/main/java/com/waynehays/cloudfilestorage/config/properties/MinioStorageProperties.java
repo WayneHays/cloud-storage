@@ -13,7 +13,7 @@ public record MinioStorageProperties(
         String bucketName,
 
         @NotBlank(message = "Batch size cannot be empty")
-        @Size(min = 10, max = 1000, message = "Batch size must be > 10 and < 1000")
+        @Size(min = 10, max = 1000, message = "Batch size must be >= 10 and <= 1000")
         Integer batchSize
 ) {
 }
