@@ -1,0 +1,93 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-resource-metadata-table
+      author: waynehays
+      changes:
+        - createTable:
+            tableName: resource_metadata
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_resource_metadata_user
+                    references: users(id)
+              - column:
+                  name: path
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size
+                  type: BIGINT
+              - column:
+                  name: type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: marked_for_deletion
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: resource_metadata
+            columnNames: user_id, path
+            constraintName: uq_resource_metadata_user_path
+        - createIndex:
+            tableName: resource_metadata
+            indexName: idx_resource_metadata_user_name
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: name
+
+  - changeSet:
+      id: create-resource_metadata-deletion-index
+      author: waynehays
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_resource_metadata_marked_for_deletion ON resource_metadata(marked_for_deletion) WHERE marked_for_deletion = TRUE
+
+  - changeSet:
+      id: add-parent-path-to-resource-metadata
+      author: waynehays
+      changes:
+        - addColumn:
+            tableName: resource_metadata
+            columns:
+              - column:
+                  name: parent_path
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+                  defaultValue: ""
+        - createIndex:
+            tableName: resource_metadata
+            indexName: idx_resource_metadata_user_parent_path
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: parent_path
