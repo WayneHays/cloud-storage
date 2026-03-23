@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.component.converter;
 
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 
 public interface ResourceDtoConverterApi {
 
-    ResourceDto convert (MetaData metaData, String path);
+    ResourceDto fromMetadata(ResourceMetadata metaData);
 
     ResourceDto fileFromPath(String path, Long size);
 

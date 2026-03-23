@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.component.converter;
 
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -11,13 +11,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ResourceDtoConverter implements ResourceDtoConverterApi {
 
-    @Override
-    public ResourceDto convert(MetaData metaData, String path) {
+    public ResourceDto fromMetadata(ResourceMetadata resourceMetadata) {
         return ResourceDto.builder()
-                .path(PathUtils.extractParentPath(path))
-                .name(PathUtils.extractFilename(path))
-                .size(metaData.isDirectory() ? null : metaData.size())
-                .type(metaData.isDirectory() ? ResourceType.DIRECTORY : ResourceType.FILE)
+                .path(PathUtils.extractParentPath(resourceMetadata.getPath()))
+                .name(resourceMetadata.getName())
+                .size(resourceMetadata.getSize())
+                .type(resourceMetadata.getType())
                 .build();
     }
 

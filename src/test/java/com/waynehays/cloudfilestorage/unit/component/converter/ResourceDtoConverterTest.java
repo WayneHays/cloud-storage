@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.unit.component.converter;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
 import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
-import org.junit.jupiter.api.DisplayName;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -12,161 +12,138 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceDtoConverterTest {
 
-    private final ResourceDtoConverterApi converter = new ResourceDtoConverter();
+    private ResourceDtoConverter converter;
+
+    @BeforeEach
+    void setUp() {
+        converter = new ResourceDtoConverter();
+    }
 
     @Nested
-    class ConvertTests {
+    class FromMetadata {
 
         @Test
-        @DisplayName("Should convert file from metadata to dto")
-        void shouldConvertFileFromMetadataToDto() {
+        void shouldConvertFileMetadata() {
             // given
-            MetaData metaData = MetaData.builder()
-                    .key("key")
-                    .name("file.txt")
-                    .size(10L)
-                    .contentType("text")
-                    .isDirectory(false)
-                    .build();
-            String path = "docs/file.txt";
+            ResourceMetadata metadata = new ResourceMetadata();
+            metadata.setPath("directory/file.txt");
+            metadata.setName("file.txt");
+            metadata.setSize(100L);
+            metadata.setType(ResourceType.FILE);
 
             // when
-            ResourceDto result = converter.convert(metaData, path);
+            ResourceDto result = converter.fromMetadata(metadata);
 
             // then
+            assertThat(result.path()).isEqualTo("directory/");
             assertThat(result.name()).isEqualTo("file.txt");
-            assertThat(result.size()).isEqualTo(10L);
-            assertThat(result.type().isFile()).isTrue();
-            assertThat(result.type().isDirectory()).isFalse();
-            assertThat(result.path()).isEqualTo("docs/");
+            assertThat(result.size()).isEqualTo(100L);
+            assertThat(result.type()).isEqualTo(ResourceType.FILE);
         }
 
         @Test
-        @DisplayName("Should convert path from metadata to dto")
-        void shouldConvertDirectoryFromMetadataToDto() {
+        void shouldConvertDirectoryMetadata() {
             // given
-            MetaData metaData = MetaData.builder()
-                    .key("key")
-                    .name("work")
-                    .size(null)
-                    .contentType("text")
-                    .isDirectory(true)
-                    .build();
-            String path = "docs/work/";
+            ResourceMetadata metadata = new ResourceMetadata();
+            metadata.setPath("directory/subdirectory/");
+            metadata.setName("subdirectory");
+            metadata.setSize(null);
+            metadata.setType(ResourceType.DIRECTORY);
 
             // when
-            ResourceDto result = converter.convert(metaData, path);
+            ResourceDto result = converter.fromMetadata(metadata);
 
             // then
-            assertThat(result.name()).isEqualTo("work");
+            assertThat(result.path()).isEqualTo("directory/");
+            assertThat(result.name()).isEqualTo("subdirectory");
             assertThat(result.size()).isNull();
-            assertThat(result.type().isDirectory()).isTrue();
-            assertThat(result.type().isFile()).isFalse();
-            assertThat(result.path()).isEqualTo("docs/");
+            assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
         }
 
         @Test
-        @DisplayName("Should convert file with zero size from metadata to dto")
-        void shouldConvertFileWithZeroSizeToDto() {
+        void shouldConvertRootLevelFile() {
             // given
-            MetaData metaData = MetaData.builder()
-                    .size(null)
-                    .isDirectory(false)
-                    .build();
-            String path = "";
+            ResourceMetadata metadata = new ResourceMetadata();
+            metadata.setPath("file.txt");
+            metadata.setName("file.txt");
+            metadata.setSize(50L);
+            metadata.setType(ResourceType.FILE);
 
             // when
-            ResourceDto result = converter.convert(metaData, path);
+            ResourceDto result = converter.fromMetadata(metadata);
 
             // then
-            assertThat(result.size()).isNull();
-            assertThat(result.type().isFile()).isTrue();
+            assertThat(result.path()).isEmpty();
+            assertThat(result.name()).isEqualTo("file.txt");
         }
     }
 
     @Nested
-    class FileFromPathTests {
+    class FileFromPath {
 
         @Test
-        @DisplayName("Should convert file when in root")
-        void shouldConvertFile_whenFileInRoot() {
+        void shouldCreateFileDtoFromPath() {
+            // given
+            String path = "directory/file.txt";
+            Long size = 100L;
+
             // when
-            ResourceDto result = converter.fileFromPath("/file.txt", 10L);
+            ResourceDto result = converter.fileFromPath(path, size);
 
             // then
+            assertThat(result.path()).isEqualTo("directory/");
             assertThat(result.name()).isEqualTo("file.txt");
-            assertThat(result.size()).isEqualTo(10L);
-            assertThat(result.type().isFile()).isTrue();
+            assertThat(result.size()).isEqualTo(100L);
+            assertThat(result.type()).isEqualTo(ResourceType.FILE);
+        }
+
+        @Test
+        void shouldCreateRootLevelFileDtoFromPath() {
+            // given
+            String path = "file.txt";
+            Long size = 50L;
+
+            // when
+            ResourceDto result = converter.fileFromPath(path, size);
+
+            // then
             assertThat(result.path()).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Should convert file when file in path")
-        void shouldConvertFile_whenFileInDirectory() {
-            // when
-            ResourceDto result = converter.fileFromPath("docs/file.txt", 10L);
-
-            // then
             assertThat(result.name()).isEqualTo("file.txt");
-            assertThat(result.type().isFile()).isTrue();
-            assertThat(result.size()).isEqualTo(10L);
-            assertThat(result.path()).isEqualTo("docs/");
-        }
-
-        @Test
-        @DisplayName("Should convert file when in deep nested path")
-        void shouldConvertFile_whenFileInNestedDirectory() {
-            // when
-            ResourceDto result = converter.fileFromPath("docs/work/task/file.txt", 10L);
-
-            // then
-            assertThat(result.name()).isEqualTo("file.txt");
-            assertThat(result.type().isFile()).isTrue();
-            assertThat(result.size()).isEqualTo(10L);
-            assertThat(result.path()).isEqualTo("docs/work/task/");
+            assertThat(result.size()).isEqualTo(50L);
         }
     }
 
     @Nested
-    class DirectoryFromPathTests {
+    class DirectoryFromPath {
 
         @Test
-        @DisplayName("Should convert path when in root")
-        void shouldConvertDirectory_whenDirectoryInRoot() {
+        void shouldCreateDirectoryDtoFromPath() {
+            // given
+            String path = "directory/subdirectory/";
+
             // when
-            ResourceDto result = converter.directoryFromPath("docs/");
+            ResourceDto result = converter.directoryFromPath(path);
+
+            // then
+            assertThat(result.path()).isEqualTo("directory/");
+            assertThat(result.name()).isEqualTo("subdirectory");
+            assertThat(result.size()).isNull();
+            assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
+        }
+
+        @Test
+        void shouldCreateRootDirectoryDtoFromPath() {
+            // given
+            String path = "directory/";
+
+            // when
+            ResourceDto result = converter.directoryFromPath(path);
 
             // then
             assertThat(result.path()).isEmpty();
-            assertThat(result.name()).isEqualTo("docs");
-            assertThat(result.type().isDirectory()).isTrue();
+            assertThat(result.name()).isEqualTo("directory");
             assertThat(result.size()).isNull();
-        }
-
-        @Test
-        @DisplayName("Should convert path when in nested path")
-        void shouldConvertDirectory_whenInNestedDirectory() {
-            // when
-            ResourceDto result = converter.directoryFromPath("docs/work/");
-
-            // then
-            assertThat(result.path()).isEqualTo("docs/");
-            assertThat(result.name()).isEqualTo("work");
-            assertThat(result.type().isDirectory()).isTrue();
-            assertThat(result.size()).isNull();
-        }
-
-        @Test
-        @DisplayName("Should convert path when in deep nested path")
-        void shouldConvertDirectory_whenInDeepNestedDirectory() {
-            // when
-            ResourceDto result = converter.directoryFromPath("docs/work/task/files/");
-
-            // then
-            assertThat(result.path()).isEqualTo("docs/work/task/");
-            assertThat(result.name()).isEqualTo("files");
-            assertThat(result.type().isDirectory()).isTrue();
-            assertThat(result.size()).isNull();
+            assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
         }
     }
 }
