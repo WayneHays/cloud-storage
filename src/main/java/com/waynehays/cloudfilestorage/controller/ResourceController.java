@@ -37,8 +37,6 @@ import java.util.List;
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
 public class ResourceController {
-    private static final String ZIP_TYPE = "application/zip";
-
     private final ResourceServiceApi resourceService;
     private final MultipartFileDataParserApi multipartFileDataParser;
 
@@ -60,12 +58,9 @@ public class ResourceController {
     public ResponseEntity<StreamingResponseBody> downloadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                   @Valid DownloadRequest downloadRequest) {
         DownloadResult result = resourceService.download(userDetails.id(), downloadRequest.path());
-        String contentType = result.type().isFile()
-                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                : ZIP_TYPE;
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
+                .contentType(MediaType.parseMediaType(result.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.name() + "\"")
                 .body(result.body());
     }
@@ -94,5 +89,4 @@ public class ResourceController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(resourceService.upload(userDetails.id(), fileDataList));
     }
-
 }
