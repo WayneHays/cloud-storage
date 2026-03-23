@@ -2,12 +2,12 @@ package com.waynehays.cloudfilestorage.unit.service.resource;
 
 
 import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.filestorage.FileStorageApi;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.infoprovider.ResourceInfoProvider;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,8 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,21 +23,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith({MockitoExtension.class})
+@ExtendWith(MockitoExtension.class)
 class ResourceInfoProviderTest {
-    private static final Long USER_ID = 1L;
 
     @Mock
-    private FileStorageApi fileStorage;
+    private ResourceMetadataServiceApi service;
 
     @Mock
-    private StorageKeyResolverApi keyResolver;
-
-    @Mock
-    private ResourceDtoConverterApi dtoConverter;
+    private ResourceDtoConverterApi converter;
 
     @InjectMocks
-    private ResourceInfoProvider infoProvider;
+    private ResourceInfoProvider resourceInfoProvider;
+
+    private static final Long USER_ID = 1L;
 
     @Nested
     class GetFileInfo {
@@ -48,16 +44,15 @@ class ResourceInfoProviderTest {
         void shouldReturnFileInfo() {
             // given
             String path = "directory/file.txt";
-            String objectKey = "user-1-files/directory/file.txt";
-            MetaData metaData = new MetaData(objectKey, "file.txt", 100L, "text/plain", false);
+            ResourceMetadata metadata = new ResourceMetadata();
+            metadata.setSize(100L);
             ResourceDto expectedDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(fileStorage.getMetaData(objectKey)).thenReturn(Optional.of(metaData));
-            when(dtoConverter.convert(metaData, path)).thenReturn(expectedDto);
+            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(converter.fileFromPath(path, 100L)).thenReturn(expectedDto);
 
             // when
-            ResourceDto result = infoProvider.getInfo(USER_ID, path);
+            ResourceDto result = resourceInfoProvider.getInfo(USER_ID, path);
 
             // then
             assertThat(result).isEqualTo(expectedDto);
@@ -67,13 +62,12 @@ class ResourceInfoProviderTest {
         void shouldThrowWhenFileNotFound() {
             // given
             String path = "directory/file.txt";
-            String objectKey = "user-1-files/directory/file.txt";
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(fileStorage.getMetaData(objectKey)).thenReturn(Optional.empty());
+            when(service.findOrThrow(USER_ID, path))
+                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + path));
 
             // when & then
-            assertThatThrownBy(() -> infoProvider.getInfo(USER_ID, path))
+            assertThatThrownBy(() -> resourceInfoProvider.getInfo(USER_ID, path))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining(path);
         }
@@ -86,35 +80,18 @@ class ResourceInfoProviderTest {
         void shouldReturnDirectoryInfo() {
             // given
             String path = "directory/subdirectory/";
-            String objectKey = "user-1-files/directory/subdirectory/";
-            MetaData metaData = new MetaData(objectKey, "subdirectory", null, "text/plain", true);
+            ResourceMetadata metadata = new ResourceMetadata();
             ResourceDto expectedDto = new ResourceDto("directory/", "subdirectory", null, ResourceType.DIRECTORY);
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(fileStorage.getMetaData(objectKey)).thenReturn(Optional.of(metaData));
-            when(dtoConverter.directoryFromPath(path)).thenReturn(expectedDto);
+            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(converter.directoryFromPath(path)).thenReturn(expectedDto);
 
             // when
-            ResourceDto result = infoProvider.getInfo(USER_ID, path);
+            ResourceDto result = resourceInfoProvider.getInfo(USER_ID, path);
 
             // then
             assertThat(result).isEqualTo(expectedDto);
-            verify(dtoConverter, never()).convert(any(), any());
-        }
-
-        @Test
-        void shouldThrowWhenDirectoryNotFound() {
-            // given
-            String path = "directory/subdirectory/";
-            String objectKey = "user-1-files/directory/subdirectory/";
-
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(fileStorage.getMetaData(objectKey)).thenReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> infoProvider.getInfo(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(path);
+            verify(converter, never()).fileFromPath(any(), any());
         }
     }
 }
