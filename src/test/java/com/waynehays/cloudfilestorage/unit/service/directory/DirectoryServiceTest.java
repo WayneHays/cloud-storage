@@ -2,13 +2,16 @@ package com.waynehays.cloudfilestorage.unit.service.directory;
 
 import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.filestorage.FileStorageApi;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.service.directory.DirectoryService;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,30 +20,34 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DirectoryServiceTest {
-    private static final Long USER_ID = 1L;
 
     @Mock
-    private FileStorageApi fileStorage;
+    private ResourceStorageApi storage;
 
     @Mock
-    private ResourceDtoConverterApi dtoConverter;
+    private ResourceMetadataServiceApi metadataService;
+
+    @Mock
+    private ResourceDtoConverterApi converter;
 
     @Mock
     private StorageKeyResolverApi keyResolver;
 
     @InjectMocks
     private DirectoryService directoryService;
+
+    private static final Long USER_ID = 1L;
 
     @Nested
     class GetContent {
@@ -49,77 +56,54 @@ class DirectoryServiceTest {
         void shouldReturnDirectoryContents() {
             // given
             String path = "directory/";
-            String prefix = "user-1-files/directory/";
-            String childKey = "user-1-files/directory/file.txt";
-            MetaData childMetaData = new MetaData(childKey, "file.txt", 100L, "text/plain", false);
-            MetaData selfMetaData = new MetaData(prefix, "directory/", 0L, "text/plain", false);
-            ResourceDto expectedDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
+            ResourceMetadata dirMetadata = new ResourceMetadata();
+            ResourceMetadata child1 = createFileMetadata();
+            ResourceMetadata child2 = createDirectoryMetadata();
+            ResourceDto dto1 = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
+            ResourceDto dto2 = new ResourceDto("directory/", "sub", null, ResourceType.DIRECTORY);
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(prefix);
-            when(fileStorage.getList(prefix)).thenReturn(List.of(selfMetaData, childMetaData));
-            when(keyResolver.extractPath(USER_ID, childKey)).thenReturn("directory/file.txt");
-            when(dtoConverter.convert(childMetaData, "directory/file.txt")).thenReturn(expectedDto);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
+            when(metadataService.findDirectChildren(USER_ID, path)).thenReturn(List.of(child1, child2));
+            when(converter.fromMetadata(child1)).thenReturn(dto1);
+            when(converter.fromMetadata(child2)).thenReturn(dto2);
 
             // when
             List<ResourceDto> result = directoryService.getContent(USER_ID, path);
 
             // then
-            assertThat(result).containsExactly(expectedDto);
+            assertThat(result).containsExactly(dto1, dto2);
         }
 
         @Test
-        void shouldFilterOutSelfMarker() {
+        void shouldReturnEmptyListForEmptyDirectory() {
             // given
-            String path = "directory/";
-            String prefix = "user-1-files/directory/";
-            MetaData selfMetaData = new MetaData(prefix, "directory/", 0L, "text/plain", true);
+            String path = "empty/";
+            ResourceMetadata dirMetadata = new ResourceMetadata();
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(prefix);
-            when(fileStorage.getList(prefix)).thenReturn(List.of(selfMetaData));
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
+            when(metadataService.findDirectChildren(USER_ID, path)).thenReturn(List.of());
 
             // when
             List<ResourceDto> result = directoryService.getContent(USER_ID, path);
 
             // then
             assertThat(result).isEmpty();
-            verify(dtoConverter, never()).convert(any(), any());
         }
 
         @Test
-        void shouldThrowWhenDirectoryNotFoundAndContentEmpty() {
+        void shouldThrowWhenDirectoryNotFound() {
             // given
             String path = "nonexistent/";
-            String prefix = "user-1-files/nonexistent/";
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(prefix);
-            when(fileStorage.getList(prefix)).thenReturn(List.of());
-            when(fileStorage.getMetaData(prefix)).thenReturn(Optional.empty());
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + path));
 
             // when & then
             assertThatThrownBy(() -> directoryService.getContent(USER_ID, path))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining(path);
-        }
 
-        @Test
-        void shouldNotCheckExistenceWhenContentIsPresent() {
-            // given
-            String path = "directory/";
-            String prefix = "user-1-files/directory/";
-            String childKey = "user-1-files/directory/file.txt";
-            MetaData childMetaData = new MetaData(childKey, "file.txt", 100L, "text/plain", false);
-
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(prefix);
-            when(fileStorage.getList(prefix)).thenReturn(List.of(childMetaData));
-            when(keyResolver.extractPath(USER_ID, childKey)).thenReturn("directory/file.txt");
-            when(dtoConverter.convert(any(), any())).thenReturn(
-                    new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE));
-
-            // when
-            directoryService.getContent(USER_ID, path);
-
-            // then
-            verify(fileStorage, never()).getMetaData(any());
+            verify(metadataService, never()).findDirectChildren(any(), any());
         }
     }
 
@@ -132,22 +116,21 @@ class DirectoryServiceTest {
             String path = "directory/subdirectory/";
             String storageKey = "user-1-files/directory/subdirectory/";
             String parentPath = "directory/";
-            String parentKey = "user-1-files/directory/";
-            MetaData parentMetaData = new MetaData(parentKey, "directory", null, "text/plain", true);
+            ResourceMetadata parentMetadata = new ResourceMetadata();
             ResourceDto expectedDto = new ResourceDto("directory/", "subdirectory", null, ResourceType.DIRECTORY);
 
+            when(metadataService.exists(USER_ID, path)).thenReturn(false);
+            when(metadataService.findOrThrow(USER_ID, parentPath)).thenReturn(parentMetadata);
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(storageKey);
-            when(fileStorage.exists(storageKey)).thenReturn(false);
-            when(keyResolver.resolveKey(USER_ID, parentPath)).thenReturn(parentKey);
-            when(fileStorage.getMetaData(parentKey)).thenReturn(Optional.of(parentMetaData));
-            when(dtoConverter.directoryFromPath(path)).thenReturn(expectedDto);
+            when(converter.directoryFromPath(path)).thenReturn(expectedDto);
 
             // when
             ResourceDto result = directoryService.createDirectory(USER_ID, path);
 
             // then
             assertThat(result).isEqualTo(expectedDto);
-            verify(fileStorage).createDirectory(storageKey);
+            verify(storage).createDirectory(storageKey);
+            verify(metadataService).saveDirectory(USER_ID, path);
         }
 
         @Test
@@ -157,55 +140,92 @@ class DirectoryServiceTest {
             String storageKey = "user-1-files/directory/";
             ResourceDto expectedDto = new ResourceDto("", "directory", null, ResourceType.DIRECTORY);
 
+            when(metadataService.exists(USER_ID, path)).thenReturn(false);
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(storageKey);
-            when(fileStorage.exists(storageKey)).thenReturn(false);
-            when(dtoConverter.directoryFromPath(path)).thenReturn(expectedDto);
+            when(converter.directoryFromPath(path)).thenReturn(expectedDto);
 
             // when
             ResourceDto result = directoryService.createDirectory(USER_ID, path);
 
             // then
             assertThat(result).isEqualTo(expectedDto);
-            verify(fileStorage).createDirectory(storageKey);
-            verify(fileStorage, never()).getMetaData(any());
+            verify(storage).createDirectory(storageKey);
+            verify(metadataService).saveDirectory(USER_ID, path);
         }
 
         @Test
         void shouldThrowWhenDirectoryAlreadyExists() {
             // given
             String path = "directory/";
-            String storageKey = "user-1-files/directory/";
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(storageKey);
-            when(fileStorage.exists(storageKey)).thenReturn(true);
+            when(metadataService.exists(USER_ID, path)).thenReturn(true);
 
             // when & then
             assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))
                     .isInstanceOf(ResourceAlreadyExistsException.class)
                     .hasMessageContaining(path);
 
-            verify(fileStorage, never()).createDirectory(any());
+            verify(storage, never()).createDirectory(any());
+            verify(metadataService, never()).saveDirectory(any(), any());
         }
 
         @Test
-        void shouldThrowWhenParentDirectoryNotFound() {
+        void shouldThrowWhenParentNotFound() {
             // given
             String path = "directory/subdirectory/";
-            String storageKey = "user-1-files/directory/subdirectory/";
             String parentPath = "directory/";
-            String parentKey = "user-1-files/directory/";
 
-            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(storageKey);
-            when(fileStorage.exists(storageKey)).thenReturn(false);
-            when(keyResolver.resolveKey(USER_ID, parentPath)).thenReturn(parentKey);
-            when(fileStorage.getMetaData(parentKey)).thenReturn(Optional.empty());
+            when(metadataService.exists(USER_ID, path)).thenReturn(false);
+            when(metadataService.findOrThrow(USER_ID, parentPath))
+                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + parentPath));
 
             // when & then
             assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining(parentPath);
 
-            verify(fileStorage, never()).createDirectory(any());
+            verify(storage, never()).createDirectory(any());
+            verify(metadataService, never()).saveDirectory(any(), any());
         }
+
+        @Test
+        void shouldNotCallStorageWhenMetadataSaveFails() {
+            // given
+            String path = "directory/subdirectory/";
+            String storageKey = "user-1-files/directory/subdirectory/";
+            String parentPath = "directory/";
+            ResourceMetadata parentMetadata = new ResourceMetadata();
+
+            when(metadataService.exists(USER_ID, path)).thenReturn(false);
+            when(metadataService.findOrThrow(USER_ID, parentPath)).thenReturn(parentMetadata);
+            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(storageKey);
+
+            // storage succeeds, but metadata save fails
+            doThrow(new RuntimeException("DB error"))
+                    .when(metadataService).saveDirectory(USER_ID, path);
+
+            // when & then
+            assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))
+                    .isInstanceOf(RuntimeException.class);
+
+            verify(storage).createDirectory(storageKey);
+        }
+    }
+
+    private ResourceMetadata createFileMetadata() {
+        ResourceMetadata metadata = new ResourceMetadata();
+        metadata.setPath("directory/file.txt");
+        metadata.setName(PathUtils.extractFilename("directory/file.txt"));
+        metadata.setSize(100L);
+        metadata.setType(ResourceType.FILE);
+        return metadata;
+    }
+
+    private ResourceMetadata createDirectoryMetadata() {
+        ResourceMetadata metadata = new ResourceMetadata();
+        metadata.setPath("directory/sub/");
+        metadata.setName(PathUtils.extractFilename("directory/sub/"));
+        metadata.setType(ResourceType.DIRECTORY);
+        return metadata;
     }
 }
