@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.constants;
+package com.waynehays.cloudfilestorage.constant;
 
 import lombok.experimental.UtilityClass;
 

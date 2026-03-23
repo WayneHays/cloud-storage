@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.integration.config.container;
+package com.waynehays.cloudfilestorage.integration.config;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;

@@ -12,12 +12,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryBaseTest extends AbstractRepositoryBaseTest {
+class UserRepositoryTest extends AbstractRepositoryBaseTest {
     private static final String USERNAME = "test-name";
     private static final String PASSWORD = "password";
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepository repository;
 
     @Autowired
     private TestEntityManager entityManager;
@@ -26,15 +26,15 @@ class UserRepositoryBaseTest extends AbstractRepositoryBaseTest {
     @DisplayName("Should find user when exists")
     void shouldFindUser() {
         // given
-        User user = User.builder()
-                .username(USERNAME)
-                .password(PASSWORD)
-                .build();
+        User user = new User();
+        user.setUsername(USERNAME);
+        user.setPassword(PASSWORD);
+
         entityManager.persistAndFlush(user);
         entityManager.clear();
 
         // when
-        Optional<User> result = userRepository.findByUsername(user.getUsername());
+        Optional<User> result = repository.findByUsername(user.getUsername());
 
         // then
         assertThat(result).isPresent();
@@ -45,7 +45,7 @@ class UserRepositoryBaseTest extends AbstractRepositoryBaseTest {
     @DisplayName("Should return empty when not found")
     void shouldReturnEmpty_whenNotFound() {
         // when
-        Optional<User> result = userRepository.findByUsername("not exists");
+        Optional<User> result = repository.findByUsername("not exists");
 
         // then
         assertThat(result).isEmpty();

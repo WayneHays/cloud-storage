@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.filestorage.minio;
+package com.waynehays.cloudfilestorage.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MinioStorageInitializer {
+public class MinioBucketInitializer {
     private static final String MSG_INIT_FAILED = "Failed to initialize MinIO bucket: ";
     private static final String LOG_BUCKET_CREATED = "Created bucket: {}";
 

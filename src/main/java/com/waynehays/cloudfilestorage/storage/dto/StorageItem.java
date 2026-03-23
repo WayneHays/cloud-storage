@@ -1,9 +1,8 @@
-package com.waynehays.cloudfilestorage.filestorage.dto;
+package com.waynehays.cloudfilestorage.storage.dto;
 
 import java.io.InputStream;
 
 public record StorageItem(
-        MetaData metaData,
         InputStream inputStream
 ) {
 }

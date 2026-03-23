@@ -1,6 +1,5 @@
-package com.waynehays.cloudfilestorage.integration.config.initializer;
+package com.waynehays.cloudfilestorage.integration.config;
 
-import com.waynehays.cloudfilestorage.integration.config.container.MinioTestContainerInitializer;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;

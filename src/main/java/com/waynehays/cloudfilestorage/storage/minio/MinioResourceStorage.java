@@ -1,10 +1,9 @@
-package com.waynehays.cloudfilestorage.filestorage.minio;
+package com.waynehays.cloudfilestorage.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
-import com.waynehays.cloudfilestorage.filestorage.FileStorageApi;
-import com.waynehays.cloudfilestorage.filestorage.dto.MetaData;
-import com.waynehays.cloudfilestorage.filestorage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import io.minio.CopyObjectArgs;
 import io.minio.CopySource;
 import io.minio.GetObjectArgs;
@@ -14,8 +13,6 @@ import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.RemoveObjectsArgs;
 import io.minio.Result;
-import io.minio.StatObjectArgs;
-import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
@@ -29,12 +26,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MinioFileStorage implements FileStorageApi {
+public class MinioResourceStorage implements ResourceStorageApi {
     private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
     private static final String MSG_KEY_NOT_EXISTS = "NoSuchKey";
     private static final String MSG_FAILED_GET = "Failed to get object with key: ";
@@ -43,70 +39,32 @@ public class MinioFileStorage implements FileStorageApi {
     private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
     private static final String MSG_FAILED_DELETE_OBJECTS = "Failed to delete objects: ";
-    private static final String MSG_FAILED_GET_LIST = "Failed to get list of files by prefix: ";
-    private static final String MSG_FAILED_GET_METADATA = "Failed to get meta data from object: ";
     private static final String MSG_FAILED_CREATE_DIRECTORY = "Failed to create directory with key: ";
-    private static final String MSG_FAILED_EXTRACT_ITEM = "Failed to extract item from result";
     private static final String LOG_FAILED_ROLLBACK_COPY = "Failed to rollback copy: {}";
     private static final String LOG_FAILED_DELETE_OBJECT = "Failed to delete object: {}";
     private static final String LOG_FAILED_PROCESS_DELETE_RESULT = "Error while processing delete object result";
 
     private final MinioClient minioClient;
-    private final MinioConverter minioConverter;
     private final MinioStorageProperties properties;
 
     @Override
-    public boolean exists(String objectKey) {
-        return getMetaData(objectKey).isPresent();
-    }
-
-    @Override
-    public Optional<MetaData> getMetaData(String objectKey) {
+    public Optional<StorageItem> getObject(String objectKey) {
         try {
-            StatObjectResponse response = minioClient.statObject(
-                    StatObjectArgs.builder()
+            InputStream inputStream = minioClient.getObject(
+                    GetObjectArgs.builder()
                             .bucket(properties.bucketName())
                             .object(objectKey)
                             .build()
             );
-
-            return Optional.of(minioConverter.toMetaData(response));
-
+            return Optional.of(new StorageItem(inputStream));
         } catch (ErrorResponseException e) {
             if (MSG_KEY_NOT_EXISTS.equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new FileStorageException(MSG_FAILED_GET_METADATA + objectKey, e);
+            throw new FileStorageException(MSG_FAILED_GET + objectKey, e);
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_GET_METADATA + objectKey, e);
+            throw new FileStorageException(MSG_FAILED_GET + objectKey, e);
         }
-    }
-
-    @Override
-    public Optional<StorageItem> getObject(String objectKey) {
-        return getMetaData(objectKey).map(metaData -> {
-            try {
-                InputStream inputStream = minioClient.getObject(
-                        GetObjectArgs.builder()
-                                .bucket(properties.bucketName())
-                                .object(objectKey)
-                                .build()
-                );
-                return new StorageItem(metaData, inputStream);
-            } catch (Exception e) {
-                throw new FileStorageException(MSG_FAILED_GET + objectKey, e);
-            }
-        });
-    }
-
-    @Override
-    public List<MetaData> getList(String prefix) {
-        return listObjects(prefix, false);
-    }
-
-    @Override
-    public List<MetaData> getListRecursive(String prefix) {
-        return listObjects(prefix, true);
     }
 
     @Override
@@ -167,7 +125,7 @@ public class MinioFileStorage implements FileStorageApi {
     public void deleteByPrefix(String prefix) {
         List<DeleteObject> batch = new ArrayList<>();
 
-        for (Result<Item> result : listObjectsRaw(prefix, true)) {
+        for (Result<Item> result : listObjects(prefix)) {
             try {
                 batch.add(new DeleteObject(result.get().objectName()));
 
@@ -207,34 +165,16 @@ public class MinioFileStorage implements FileStorageApi {
         }
     }
 
-    private Iterable<Result<Item>> listObjectsRaw(String prefix, boolean recursive) {
+    private Iterable<Result<Item>> listObjects(String prefix) {
         return minioClient.listObjects(
                 ListObjectsArgs.builder()
                         .bucket(properties.bucketName())
                         .prefix(prefix)
-                        .recursive(recursive)
+                        .recursive(true)
                         .build()
         );
     }
 
-    private List<MetaData> listObjects(String prefix, boolean recursive) {
-        try {
-            return StreamSupport.stream(listObjectsRaw(prefix, recursive).spliterator(), false)
-                    .map(this::extractItem)
-                    .map(minioConverter::toMetaData)
-                    .toList();
-        } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_GET_LIST + prefix, e);
-        }
-    }
-
-    private Item extractItem(Result<Item> result) {
-        try {
-            return result.get();
-        } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_EXTRACT_ITEM, e);
-        }
-    }
 
     private void flushDeleteBatch(List<DeleteObject> batch) {
         Iterable<Result<DeleteError>> results = minioClient.removeObjects(
