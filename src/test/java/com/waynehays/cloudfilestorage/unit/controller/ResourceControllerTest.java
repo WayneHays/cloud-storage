@@ -41,6 +41,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -210,7 +211,7 @@ class ResourceControllerTest {
         void shouldDownloadFileAndReturn200() throws Exception {
             // given
             StreamingResponseBody body = outputStream -> outputStream.write("content".getBytes());
-            DownloadResult result = new DownloadResult(body, "file.txt", ResourceType.FILE);
+            DownloadResult result = new DownloadResult(body, "file.txt", "application/octet-stream");
 
             when(resourceService.download(1L, "docs/file.txt"))
                     .thenReturn(result);
@@ -229,7 +230,7 @@ class ResourceControllerTest {
         void shouldDownloadDirectoryAndReturn200() throws Exception {
             // given
             StreamingResponseBody body = outputStream -> outputStream.write("content".getBytes());
-            DownloadResult result = new DownloadResult(body, "docs", ResourceType.DIRECTORY);
+            DownloadResult result = new DownloadResult(body, "docs", "application/zip");
 
             when(resourceService.download(1L, "docs/"))
                     .thenReturn(result);
@@ -294,7 +295,7 @@ class ResourceControllerTest {
                     .thenReturn(result);
 
             // when & then
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "docs/work/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -319,7 +320,7 @@ class ResourceControllerTest {
                     .thenReturn(result);
 
             // when & then
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/files/work/")
                             .param("to", "docs/work/")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -338,7 +339,7 @@ class ResourceControllerTest {
                     .when(resourceService).move(1L, "docs/file.txt", "docs/work/file.txt");
 
             // when & then
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "docs/work/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -353,7 +354,7 @@ class ResourceControllerTest {
                     .when(resourceService).move(1L, "docs/file.txt", "docs/work/file.txt");
 
             // when & then
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "docs/work/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -368,7 +369,7 @@ class ResourceControllerTest {
                     .when(resourceService).move(1L, "docs/files/", "docs/files/file.txt");
 
             // when & then
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/files/")
                             .param("to", "docs/files/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -378,7 +379,7 @@ class ResourceControllerTest {
         @Test
         @DisplayName("Should return 400 when from and to are equals")
         void shouldReturn400_whenFromAndToEquals() throws Exception {
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "docs/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -389,7 +390,7 @@ class ResourceControllerTest {
         @ValueSource(strings = {"", " ", "/docs/", "docs//work/", "docs/../work/", "docs/wo rk/", "docs/@work/"})
         @DisplayName("Should return 400 when invalid from path")
         void shouldReturn400_whenInvalidFromPath(String from) throws Exception {
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", from)
                             .param("to", "docs/file.txt")
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -400,7 +401,7 @@ class ResourceControllerTest {
         @ValueSource(strings = {"", " ", "/docs/", "docs//work/", "docs/../work/", "docs/wo rk/", "docs/@work/"})
         @DisplayName("Should return 400 when invalid path")
         void shouldReturn400_whenInvalidToPath(String to) throws Exception {
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", to)
                             .with(user(new CustomUserDetails(1L, "user", "pass"))))
@@ -410,7 +411,7 @@ class ResourceControllerTest {
         @Test
         @DisplayName("Should return 401 when user not authorized")
         void shouldReturn401_whenUserNotAuthorized() throws Exception {
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "docs/files/file.txt"))
                     .andExpect(status().isUnauthorized());

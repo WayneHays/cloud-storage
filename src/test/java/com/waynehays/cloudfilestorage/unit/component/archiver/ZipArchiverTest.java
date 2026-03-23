@@ -48,7 +48,7 @@ class ZipArchiverTest {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             // when
-            zipArchiver.archiveFiles(List.of(item), outputStream);
+            zipArchiver.archiveResources(List.of(item), outputStream);
 
             // then
             Map<String, byte[]> entries = extractZipEntries(outputStream.toByteArray());
@@ -67,7 +67,7 @@ class ZipArchiverTest {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             // when
-            zipArchiver.archiveFiles(List.of(item1, item2), outputStream);
+            zipArchiver.archiveResources(List.of(item1, item2), outputStream);
 
             // then
             Map<String, byte[]> entries = extractZipEntries(outputStream.toByteArray());
@@ -85,7 +85,7 @@ class ZipArchiverTest {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             // when
-            zipArchiver.archiveFiles(List.of(item), outputStream);
+            zipArchiver.archiveResources(List.of(item), outputStream);
 
             // then
             Map<String, byte[]> entries = extractZipEntries(outputStream.toByteArray());
@@ -98,7 +98,7 @@ class ZipArchiverTest {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             // when
-            zipArchiver.archiveFiles(List.of(), outputStream);
+            zipArchiver.archiveResources(List.of(), outputStream);
 
             // then
             Map<String, byte[]> entries = extractZipEntries(outputStream.toByteArray());
@@ -116,7 +116,7 @@ class ZipArchiverTest {
 
             // when & then
             List<ArchiveItem> items = List.of(item);
-            assertThatThrownBy(() -> zipArchiver.archiveFiles(items, outputStream))
+            assertThatThrownBy(() -> zipArchiver.archiveResources(items, outputStream))
                     .isInstanceOf(ArchiveException.class);
         }
     }

@@ -20,6 +20,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -258,7 +259,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
             createDirectory(sessionCookie, "work/");
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/file.txt")
                             .param("to", "work/file.txt")
                             .cookie(sessionCookie))
@@ -285,7 +286,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie sessionCookie = registerAndLoginDefaultUser();
             uploadFile(sessionCookie, "docs/", "old.txt", "content".getBytes());
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/old.txt")
                             .param("to", "docs/new.txt")
                             .cookie(sessionCookie))
@@ -308,7 +309,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(sessionCookie, "docs/");
             createDirectory(sessionCookie, "docs/work/");
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/work/")
                             .param("to", "work/")
                             .cookie(sessionCookie))
@@ -332,7 +333,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(sessionCookie, "docs/text/");
             uploadFile(sessionCookie, "docs/work/", "file1.txt", "content1".getBytes());
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/work/")
                             .param("to", "docs/text/work/")
                             .cookie(sessionCookie))
@@ -359,7 +360,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie sessionCookie = registerAndLoginDefaultUser();
             uploadFile(sessionCookie, "docs/work/text/", "file.txt", "content".getBytes());
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/text/")
                             .param("to", "docs/test/")
                             .cookie(sessionCookie))
@@ -374,7 +375,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(sessionCookie, "docs/work/text/", "file.txt", "content".getBytes());
             uploadFile(sessionCookie, "docs/work/", "file.txt", "content".getBytes());
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/work/file.txt")
                             .param("to", "docs/work/text/file.txt")
                             .cookie(sessionCookie))
@@ -390,7 +391,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(sessionCookie, "docs/work/");
             createDirectory(sessionCookie, "docs/task/");
 
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/work/")
                             .param("to", "docs/task/")
                             .cookie(sessionCookie))
@@ -401,7 +402,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should return 401 when user unauthorised")
         void shouldReturn401_whenUserUnauthorised() throws Exception {
-            mockMvc.perform(get(MOVE_PATH)
+            mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/work/")
                             .param("to", "docs/task/"))
                     .andExpect(status().isUnauthorized());
