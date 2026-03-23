@@ -1,22 +1,16 @@
 package com.waynehays.cloudfilestorage.integration.base;
 
-import com.waynehays.cloudfilestorage.filestorage.FileStorageApi;
-import com.waynehays.cloudfilestorage.integration.config.container.MinioTestContainerInitializer;
-import com.waynehays.cloudfilestorage.integration.config.container.PostgresTestContainerInitializer;
-import com.waynehays.cloudfilestorage.integration.config.initializer.MinioInitializer;
+import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -28,12 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public abstract class AbstractRestControllerBaseTest {
+public abstract class AbstractRestControllerBaseTest extends AbstractIntegrationBaseTest{
     protected static final String RESOURCE_PATH = "/api/resource";
     protected static final String DIRECTORY_PATH = "/api/directory";
 
     private static final String SIGN_UP_PATH = "/api/auth/sign-up";
-    private static final String TEST_BUCKET_NAME = "test-bucket";
 
     @Autowired
     protected MockMvc mockMvc;
@@ -45,28 +38,13 @@ public abstract class AbstractRestControllerBaseTest {
     protected MinioTestCleaner minioCleaner;
 
     @Autowired
-    protected FileStorageApi fileStorage;
+    protected ResourceMetadataRepository metadataRepository;
 
     @AfterEach
     void cleanStorage() {
+        metadataRepository.deleteAll();
         userRepository.deleteAll();
         minioCleaner.deleteAll();
-    }
-
-    @DynamicPropertySource
-    static void dynamicPropertySource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", PostgresTestContainerInitializer::getJdbcUrl);
-        registry.add("spring.datasource.username", PostgresTestContainerInitializer::getUsername);
-        registry.add("spring.datasource.password", PostgresTestContainerInitializer::getPassword);
-        registry.add("minio.security.url", MinioTestContainerInitializer::getUrl);
-        registry.add("minio.security.access-key", MinioTestContainerInitializer::getUser);
-        registry.add("minio.security.secret-key", MinioTestContainerInitializer::getPassword);
-        registry.add("minio.storage.bucket-name", () -> TEST_BUCKET_NAME);
-    }
-
-    @BeforeAll
-    static void initBucket() {
-        MinioInitializer.createBucket(TEST_BUCKET_NAME);
     }
 
     protected void uploadFile(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.base;
 
-import com.waynehays.cloudfilestorage.integration.config.container.PostgresTestContainerInitializer;
+import com.waynehays.cloudfilestorage.integration.config.PostgresTestContainerInitializer;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.context.ActiveProfiles;

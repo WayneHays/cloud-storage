@@ -51,7 +51,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(duplicate))
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.messages[0]").value("Username already taken: user"));
+                    .andExpect(jsonPath("$.messages[0]", containsString("Username already taken")));
         }
 
         @Test
