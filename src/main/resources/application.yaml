@@ -5,3 +5,5 @@ spring:
     default: dev
 streaming:
   buffer-size: 8192
+cleanup:
+  interval: 1200000

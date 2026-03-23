@@ -21,6 +21,7 @@ minio:
     secretKey: minioadmin123
   storage:
     bucketName: dev-bucket
+    batch-size: 10
 logging:
   level:
     root: info
