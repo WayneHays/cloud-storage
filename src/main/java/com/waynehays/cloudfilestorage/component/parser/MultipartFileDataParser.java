@@ -9,6 +9,7 @@ import java.util.Objects;
 
 @Component
 public class MultipartFileDataParser implements MultipartFileDataParserApi {
+    private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     @Override
     public FileData parse(MultipartFile file, String directory) {
@@ -26,8 +27,12 @@ public class MultipartFileDataParser implements MultipartFileDataParserApi {
                 .directory(finalDirectory)
                 .fullPath(fullPath)
                 .size(file.getSize())
-                .contentType(file.getContentType())
+                .contentType(resolveContentType(file.getContentType()))
                 .inputStreamSupplier(file::getInputStream)
                 .build();
+    }
+
+    private String resolveContentType(String contentType) {
+        return contentType != null ? contentType : DEFAULT_CONTENT_TYPE;
     }
 }
