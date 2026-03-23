@@ -17,12 +17,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ZipArchiver implements ArchiverApi {
     private static final String MSG_FAILED_CREATE_ARCHIVE = "Failed to create ZIP archive ";
+    private static final String CONTENT_TYPE = "application/zip";
     private static final String EXTENSION = ".zip";
 
     private final ArchiveProperties archiveProperties;
 
     @Override
-    public void archiveFiles(List<ArchiveItem> items, OutputStream outputStream) {
+    public void archiveResources(List<ArchiveItem> items, OutputStream outputStream) {
         try (ZipArchiveOutputStream zos = new ZipArchiveOutputStream(outputStream)) {
             for (ArchiveItem item : items) {
                 addFileToArchive(zos, item);
@@ -44,6 +45,11 @@ public class ZipArchiver implements ArchiverApi {
         } finally {
             zos.closeArchiveEntry();
         }
+    }
+
+    @Override
+    public String getContentType() {
+        return CONTENT_TYPE;
     }
 
     @Override
