@@ -6,72 +6,84 @@ import com.waynehays.cloudfilestorage.dto.FileData;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.filestorage.FileStorageApi;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
-    private static final String LOG_FAILED_ROLLBACK = "Failed to rollback key: {}";
     private static final String MSG_LIST_ALREADY_EXISTS = "Resources are already exist by paths: ";
     private static final String MSG_FAILED_PROCESS_STREAM = "Failed to process file stream";
-    private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+    private static final String MSG_DUPLICATE_FILES = "Duplicate files in request";
+    private static final String LOG_FAILED_ROLLBACK = "Failed to rollback key: {}";
 
-    private final FileStorageApi fileStorage;
+    private final ResourceStorageApi fileStorage;
     private final StorageKeyResolverApi keyResolver;
     private final ResourceDtoConverterApi dtoConverter;
+    private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> upload(Long userId, List<FileData> files) {
         checkForDuplicates(userId, files);
-        List<String> uploadedKeys = new ArrayList<>();
-        List<String> createdDirectoryKeys = new ArrayList<>();
+        UploadContext context = new UploadContext();
 
         try {
-            List<ResourceDto> uploadedFiles = uploadFiles(userId, files, uploadedKeys);
-            List<ResourceDto> createdDirectories = collectDirectories(userId, uploadedFiles, createdDirectoryKeys);
-            return Stream.concat(createdDirectories.stream(), uploadedFiles.stream()).toList();
+            List<ResourceDto> uploadedFiles = uploadFiles(userId, files, context);
+            List<ResourceDto> createdDirectories = createDirectories(userId, uploadedFiles, context);
+            List<ResourceDto> result = new ArrayList<>(createdDirectories);
+            result.addAll(uploadedFiles);
+            return result;
         } catch (Exception e) {
-            rollback(uploadedKeys, createdDirectoryKeys);
+            rollback(userId, context);
             throw e;
         }
     }
 
     private void checkForDuplicates(Long userId, List<FileData> files) {
-        List<String> duplicateFilesPaths = files.stream()
+        List<String> paths = files.stream()
                 .map(FileData::fullPath)
-                .filter(path -> {
-                    String storageKey = keyResolver.resolveKey(userId, path);
-                    return fileStorage.exists(storageKey);
-                })
+                .toList();
+        Set<String> uniquePaths = new HashSet<>(paths);
+
+        if (uniquePaths.size() != paths.size()) {
+            throw new ResourceAlreadyExistsException(MSG_DUPLICATE_FILES);
+        }
+
+        List<String> existingPaths = paths.stream()
+                .filter(path -> metadataService.exists(userId, path))
                 .toList();
 
-        if (ObjectUtils.isNotEmpty(duplicateFilesPaths)) {
-            throw new ResourceAlreadyExistsException(MSG_LIST_ALREADY_EXISTS + duplicateFilesPaths);
+        if (!existingPaths.isEmpty()) {
+            throw new ResourceAlreadyExistsException(MSG_LIST_ALREADY_EXISTS + existingPaths);
         }
     }
 
-    private List<ResourceDto> uploadFiles(Long userId, List<FileData> files, List<String> uploadedKeys) {
+    private List<ResourceDto> uploadFiles(Long userId, List<FileData> files, UploadContext context) {
         List<ResourceDto> result = new ArrayList<>();
 
-        for (FileData fileData : files) {
-            String storageKey = keyResolver.resolveKey(userId, fileData.fullPath());
-            putObjectOrThrow(fileData, storageKey);
-            uploadedKeys.add(storageKey);
-            result.add(dtoConverter.fileFromPath(fileData.fullPath(), fileData.size()));
+        for (FileData file : files) {
+            String storageKey = keyResolver.resolveKey(userId, file.fullPath());
+            putObjectOrThrow(file, storageKey);
+            context.addStorageKey(storageKey);
+
+            metadataService.saveFile(userId, file.fullPath(), file.size());
+            context.addMetadataPath(file.fullPath());
+
+            ResourceDto dto = dtoConverter.fileFromPath(file.fullPath(), file.size());
+            result.add(dto);
         }
 
         return result;
@@ -79,48 +91,49 @@ public class ResourceUploader implements ResourceUploaderApi {
 
     private void putObjectOrThrow(FileData fileData, String storageKey) {
         try (InputStream inputStream = fileData.inputStreamSupplier().get()) {
-            String contentType = resolveContentType(fileData.contentType());
-            fileStorage.putObject(inputStream, storageKey, fileData.size(), contentType);
+            fileStorage.putObject(inputStream, storageKey, fileData.size(), fileData.contentType());
         } catch (IOException e) {
             throw new FileStorageException(MSG_FAILED_PROCESS_STREAM, e);
         }
     }
 
-    private List<ResourceDto> collectDirectories(Long userId, List<ResourceDto> uploadedFiles, List<String> createdDirectoryKeys) {
+    private List<ResourceDto> createDirectories(Long userId, List<ResourceDto> uploadedFiles, UploadContext context) {
         Set<String> uniqueDirectories = uploadedFiles.stream()
                 .flatMap(file -> PathUtils.getAllDirectories(file.path()).stream())
+                .map(PathUtils::ensureTrailingSeparator)
                 .collect(Collectors.toSet());
 
-        List<ResourceDto> createdDirectories = new ArrayList<>();
+        List<ResourceDto> result = new ArrayList<>();
 
         for (String directory : uniqueDirectories) {
-            String objectKey = keyResolver.resolveKeyToDirectory(userId, directory);
-
-            if (!fileStorage.exists(objectKey)) {
+            if (!metadataService.exists(userId, directory)) {
+                String objectKey = keyResolver.resolveKey(userId, directory);
                 fileStorage.createDirectory(objectKey);
-                createdDirectoryKeys.add(objectKey);
-                createdDirectories.add(dtoConverter.directoryFromPath(directory));
+                context.addStorageKey(objectKey);
+
+                metadataService.saveDirectory(userId, directory);
+                context.addMetadataPath(directory);
+
+                result.add(dtoConverter.directoryFromPath(directory));
             }
         }
 
-        return createdDirectories;
+        return result;
     }
 
-    private void rollback(List<String> uploadedKeys, List<String> createdDirectoryKeys) {
-        createdDirectoryKeys.forEach(this::tryDelete);
-        uploadedKeys.forEach(this::tryDelete);
+    private void rollback(Long userId, UploadContext context) {
+        context.getStorageKeys()
+                .forEach(key -> tryDelete(() -> fileStorage.delete(key), key));
+        context.getMetadataPaths()
+                .forEach(path -> tryDelete(() -> metadataService.delete(userId, path), path));
     }
 
-    private void tryDelete(String key) {
+    private void tryDelete(Runnable action, String identifier) {
         try {
-            fileStorage.delete(key);
+            action.run();
         } catch (Exception e) {
-            log.warn(LOG_FAILED_ROLLBACK, key, e);
+            log.warn(LOG_FAILED_ROLLBACK, identifier, e);
         }
-    }
-
-    private String resolveContentType(String contentType) {
-        return contentType != null ? contentType : DEFAULT_CONTENT_TYPE;
     }
 }
 
