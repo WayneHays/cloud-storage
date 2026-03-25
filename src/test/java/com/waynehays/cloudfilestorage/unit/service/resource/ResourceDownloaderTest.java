@@ -2,7 +2,6 @@ package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -43,7 +42,7 @@ class ResourceDownloaderTest {
     private StorageKeyResolverApi keyResolver;
 
     @Mock
-    private ResourceMetadataServiceApi service;
+    private ResourceMetadataServiceApi metadataService;
 
     @InjectMocks
     private ResourceDownloader resourceDownloader;
@@ -61,7 +60,7 @@ class ResourceDownloaderTest {
             ResourceMetadata metadata = new ResourceMetadata();
             StorageItem storageItem = new StorageItem(new ByteArrayInputStream(new byte[0]));
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
             when(storage.getObject(objectKey)).thenReturn(Optional.of(storageItem));
 
@@ -82,7 +81,7 @@ class ResourceDownloaderTest {
             ResourceMetadata metadata = new ResourceMetadata();
             StorageItem storageItem = new StorageItem(new ByteArrayInputStream(content));
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
             when(storage.getObject(objectKey)).thenReturn(Optional.of(storageItem));
 
@@ -100,8 +99,8 @@ class ResourceDownloaderTest {
             // given
             String path = "directory/file.txt";
 
-            when(service.findOrThrow(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + path));
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenThrow(new ResourceNotFoundException("Resource not found: " + path));
 
             // when & then
             assertThatThrownBy(() -> resourceDownloader.download(USER_ID, path))
@@ -119,8 +118,8 @@ class ResourceDownloaderTest {
             String path = "directory/subdirectory/";
             ResourceMetadata metadata = new ResourceMetadata();
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
-            when(service.findDirectoryContent(USER_ID, path)).thenReturn(List.of());
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findDirectoryContent(USER_ID, path)).thenReturn(List.of());
             when(archiver.getExtension()).thenReturn(".zip");
             when(archiver.getContentType()).thenReturn("application/zip");
 
@@ -139,8 +138,8 @@ class ResourceDownloaderTest {
             ResourceMetadata dirMetadata = new ResourceMetadata();
             ResourceMetadata fileMetadata = createFileMetadata();
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
-            when(service.findDirectoryContent(USER_ID, path)).thenReturn(List.of(fileMetadata));
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
+            when(metadataService.findDirectoryContent(USER_ID, path)).thenReturn(List.of(fileMetadata));
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
                     .thenReturn("user-1-files/directory/file.txt");
             when(archiver.getExtension()).thenReturn(".zip");
@@ -162,8 +161,8 @@ class ResourceDownloaderTest {
             ResourceMetadata fileMetadata = createFileMetadata();
             ResourceMetadata subDirMetadata = createDirectoryMetadata();
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
-            when(service.findDirectoryContent(USER_ID, path))
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
+            when(metadataService.findDirectoryContent(USER_ID, path))
                     .thenReturn(List.of(fileMetadata, subDirMetadata));
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
                     .thenReturn("user-1-files/directory/file.txt");

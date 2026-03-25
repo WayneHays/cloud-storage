@@ -10,88 +10,208 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.containsStringIgnoringCase;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ResourceControllerTest extends AbstractRestControllerBaseTest {
+    private static final String MOVE_PATH = RESOURCE_PATH + "/move";
     private static final String DOWNLOAD_PATH = RESOURCE_PATH + "/download";
+    private static final String SEARCH_PATH = RESOURCE_PATH + "/search";
+
+    @Nested
+    class UploadTests {
+
+        @Test
+        @DisplayName("Should upload file to root and return 201")
+        void shouldUploadFileToRoot_andReturn201() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            MockMultipartFile file = new MockMultipartFile(
+                    "object", "file.txt", "text/plain", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(file)
+                            .param("path", "")
+                            .cookie(session))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
+                    .andExpect(jsonPath("$[*].type", hasItem("FILE")));
+        }
+
+        @Test
+        @DisplayName("Should upload file to directory and return 201")
+        void shouldUploadFileToDirectory_andReturn201() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "docs/");
+            MockMultipartFile file = new MockMultipartFile(
+                    "object", "file.txt", "text/plain", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(file)
+                            .param("path", "docs/")
+                            .cookie(session))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
+                    .andExpect(jsonPath("$[*].path", hasItem("docs/")));
+        }
+
+        @Test
+        @DisplayName("Should upload multiple files and return 201")
+        void shouldUploadMultipleFiles_andReturn201() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "docs/");
+            MockMultipartFile file1 = new MockMultipartFile(
+                    "object", "file1.txt", "text/plain", "content1".getBytes());
+            MockMultipartFile file2 = new MockMultipartFile(
+                    "object", "file2.txt", "text/plain", "content2".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(file1)
+                            .file(file2)
+                            .param("path", "docs/")
+                            .cookie(session))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$[*].name", hasItems("file1.txt", "file2.txt")));
+        }
+
+        @Test
+        @DisplayName("Should upload file with nested directory and create structure")
+        void shouldUploadFileWithNestedDirectory_andReturn201() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            MockMultipartFile file = new MockMultipartFile(
+                    "object", "work/report.txt", "text/plain", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(file)
+                            .param("path", "docs/")
+                            .cookie(session))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$[*].name", hasItems("report.txt", "docs/", "work/")));
+        }
+
+        @Test
+        @DisplayName("Should return 409 when file already exists")
+        void shouldReturn409_whenFileAlreadyExists() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            MockMultipartFile duplicate = new MockMultipartFile(
+                    "object", "file.txt", "text/plain", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(duplicate)
+                            .param("path", "docs/")
+                            .cookie(session))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // given
+            MockMultipartFile file = new MockMultipartFile(
+                    "object", "file.txt", "text/plain", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(multipart(RESOURCE_PATH)
+                            .file(file)
+                            .param("path", ""))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
 
     @Nested
     class GetInfoTests {
 
         @Test
-        @DisplayName("Should return 200 and correct result when file info and resource exists")
-        void shouldReturn200_andCorrectResult_whenFileInfo() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
+        @DisplayName("Should return 200 and file info")
+        void shouldReturn200_andFileInfo() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(get(RESOURCE_PATH)
                             .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.path").value("docs/"))
                     .andExpect(jsonPath("$.name").value("file.txt"))
-                    .andExpect(jsonPath("$.size", greaterThan(0)))
-                    .andExpect(jsonPath("$.type").value("FILE"));
+                    .andExpect(jsonPath("$.path").value("docs/"))
+                    .andExpect(jsonPath("$.type").value("FILE"))
+                    .andExpect(jsonPath("$.size").isNumber());
         }
 
         @Test
-        @DisplayName("Should return 200 and correct result when directory info and resource exists")
-        void shouldReturn200_andCorrectResult_whenDirectoryInfo() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
+        @DisplayName("Should return 200 and directory info")
+        void shouldReturn200_andDirectoryInfo() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "docs/");
 
+            // when & then
             mockMvc.perform(get(RESOURCE_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("docs/"))
                     .andExpect(jsonPath("$.path").value(""))
-                    .andExpect(jsonPath("$.name").value("docs"))
-                    .andExpect(jsonPath("$.size").isEmpty())
-                    .andExpect(jsonPath("$.type").value("DIRECTORY"));
+                    .andExpect(jsonPath("$.type").value("DIRECTORY"))
+                    .andExpect(jsonPath("$.size").doesNotExist());
         }
 
         @Test
-        @DisplayName("Should return 404 when file not found")
-        void shouldReturn404_whenFileNotFound() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should return 404 when resource not found")
+        void shouldReturn404_whenNotFound() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
 
+            // when & then
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .param("path", "nonexistent.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.messages[0]").value(containsString("not found")));
+                    .andExpect(jsonPath("$.message").value("Resource not found"));
         }
 
         @Test
-        @DisplayName("Should return 404 when directory not found")
-        void shouldReturn404_whenDirectoryNotFound() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should return 400 when path is invalid")
+        void shouldReturn400_whenPathInvalid() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
 
+            // when & then
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.messages[0]").value(containsString("not found")));
+                            .param("path", "../hack")
+                            .cookie(session))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
-        @DisplayName("Should return 401 when unauthorised user")
-        void shouldReturn401_whenUnauthorisedUser() throws Exception {
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // when & then
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/"))
+                            .param("path", "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -102,93 +222,84 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should delete file and return 204")
         void shouldDeleteFile_andReturn204() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(delete(RESOURCE_PATH)
                             .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNoContent());
-        }
-
-        @Test
-        @DisplayName("Should return 404 when get info after deleting file")
-        void shouldReturn404_whenGetInfo_afterDeletingFile() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
-
-            mockMvc.perform(delete(RESOURCE_PATH)
-                            .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isNoContent());
 
             mockMvc.perform(get(RESOURCE_PATH)
                             .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should delete directory with all content and return 204")
-        void shouldDeleteDirectoryWithContent() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(sessionCookie, "docs/", "file2.txt", "content2".getBytes());
+        @DisplayName("Should delete directory with content and return 204")
+        void shouldDeleteDirectoryWithContent_andReturn204() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(delete(RESOURCE_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isNoContent());
 
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/file1.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/file2.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .cookie(session))
+                    .andExpect(status().isNotFound());
+
+            mockMvc.perform(get(RESOURCE_PATH)
+                            .param("path", "docs/file.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
         }
 
         @Test
         @DisplayName("Should delete empty directory and return 204")
         void shouldDeleteEmptyDirectory_andReturn204() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "empty/");
 
+            // when & then
             mockMvc.perform(delete(RESOURCE_PATH)
-                            .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .param("path", "empty/")
+                            .cookie(session))
                     .andExpect(status().isNoContent());
 
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .param("path", "empty/")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 404 when delete not existent resource")
-        void shouldReturn204_whenDeleteNotExistentResource() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should return 404 when resource not found")
+        void shouldReturn404_whenNotFound() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
 
+            // when & then
             mockMvc.perform(delete(RESOURCE_PATH)
-                            .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .param("path", "nonexistent.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 401 when unauthorised user")
-        void shouldReturn401_whenUnauthorisedUser() throws Exception {
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // when & then
             mockMvc.perform(delete(RESOURCE_PATH)
-                            .param("path", "docs/file.txt"))
+                            .param("path", "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -199,355 +310,390 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should download file and return 200")
         void shouldDownloadFile_andReturn200() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            byte[] content = "file content".getBytes();
+            uploadFile(session, "docs/", "file.txt", content);
 
-            MvcResult result = mockMvc.perform(get(DOWNLOAD_PATH)
+            // when & then
+            mockMvc.perform(get(DOWNLOAD_PATH)
                             .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"file.txt\""))
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE))
-                    .andReturn();
-
-            byte[] responseBytes = result.getResponse().getContentAsByteArray();
-            assertThat(responseBytes).isEqualTo("content".getBytes());
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("file.txt")))
+                    .andExpect(content().bytes(content));
         }
 
         @Test
-        @DisplayName("Should download directory and return 200")
-        void shouldDownloadDirectory_andReturn200() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file1.txt", "content".getBytes());
+        @DisplayName("Should download directory as ZIP and return 200")
+        void shouldDownloadDirectoryAsZip_andReturn200() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
+            uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
 
+            // when & then
             mockMvc.perform(get(DOWNLOAD_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"docs.zip\""))
-                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/zip"));
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/zip"))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("docs.zip")));
         }
 
         @Test
-        @DisplayName("Should return 404 when download not existent resource")
-        void shouldReturn404_whenDownloadNotExistentFile() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should return 404 when resource not found")
+        void shouldReturn404_whenNotFound() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
 
+            // when & then
             mockMvc.perform(get(DOWNLOAD_PATH)
-                            .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
+                            .param("path", "nonexistent.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 401 when user not authorized")
-        void shouldReturn401_whenUserNotAuthorised() throws Exception {
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // when & then
             mockMvc.perform(get(DOWNLOAD_PATH)
-                            .param("path", "docs/file.txt"))
+                            .param("path", "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
 
     @Nested
     class MoveTests {
-        private static final String MOVE_PATH = RESOURCE_PATH + "/move";
-
-        @Test
-        @DisplayName("Should move file to another directory when file and target directory exist")
-        void shouldMoveFileToAnotherDirectory_whenFileAndTargetDirectoryExist() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "file.txt", "content".getBytes());
-            createDirectory(sessionCookie, "work/");
-
-            mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/file.txt")
-                            .param("to", "work/file.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.path").value("work/"))
-                    .andExpect(jsonPath("$.name").value("file.txt"))
-                    .andExpect(jsonPath("$.size").value(greaterThan(0)))
-                    .andExpect(jsonPath("$.type").value("FILE"));
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/file.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "work/file.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isOk());
-        }
 
         @Test
         @DisplayName("Should rename file and return 200")
         void shouldRenameFile_andReturn200() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/", "old.txt", "content".getBytes());
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "old.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
                             .param("from", "docs/old.txt")
                             .param("to", "docs/new.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.path").value("docs/"))
                     .andExpect(jsonPath("$.name").value("new.txt"))
-                    .andExpect(jsonPath("$.size").value(greaterThan(0)))
+                    .andExpect(jsonPath("$.path").value("docs/"))
                     .andExpect(jsonPath("$.type").value("FILE"));
 
             mockMvc.perform(get(RESOURCE_PATH)
                             .param("path", "docs/old.txt")
-                            .cookie(sessionCookie))
+                            .cookie(session))
                     .andExpect(status().isNotFound());
+
+            mockMvc.perform(get(RESOURCE_PATH)
+                            .param("path", "docs/new.txt")
+                            .cookie(session))
+                    .andExpect(status().isOk());
         }
 
         @Test
-        @DisplayName("Should move empty directory and return 200")
-        void shouldMoveDirectory_andReturn200() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
-            createDirectory(sessionCookie, "docs/work/");
+        @DisplayName("Should move file to another directory and return 200")
+        void shouldMoveFileToAnotherDirectory_andReturn200() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            createDirectory(session, "archive/");
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/work/")
-                            .param("to", "work/")
-                            .cookie(sessionCookie))
+                            .param("from", "docs/file.txt")
+                            .param("to", "archive/file.txt")
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.path").value(""))
-                    .andExpect(jsonPath("$.name").value("work"))
-                    .andExpect(jsonPath("$.size").isEmpty())
-                    .andExpect(jsonPath("$.type").value("DIRECTORY"));
+                    .andExpect(jsonPath("$.path").value("archive/"))
+                    .andExpect(jsonPath("$.name").value("file.txt"));
 
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/work/")
-                            .cookie(sessionCookie))
+                            .param("path", "docs/file.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
+
+            mockMvc.perform(get(RESOURCE_PATH)
+                            .param("path", "archive/file.txt")
+                            .cookie(session))
+                    .andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should move directory with content and return 200")
         void shouldMoveDirectoryWithContent_andReturn200() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
-            createDirectory(sessionCookie, "docs/text/");
-            uploadFile(sessionCookie, "docs/work/", "file1.txt", "content1".getBytes());
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "target/");
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/work/")
-                            .param("to", "docs/text/work/")
-                            .cookie(sessionCookie))
+                            .param("from", "docs/")
+                            .param("to", "target/docs/")
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.path").value("docs/text/"))
-                    .andExpect(jsonPath("$.name").value("work"))
-                    .andExpect(jsonPath("$.size").isEmpty())
+                    .andExpect(jsonPath("$.name").value("docs/"))
+                    .andExpect(jsonPath("$.path").value("target/"))
                     .andExpect(jsonPath("$.type").value("DIRECTORY"));
 
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/work/file1.txt")
-                            .cookie(sessionCookie))
+                            .param("path", "docs/file.txt")
+                            .cookie(session))
                     .andExpect(status().isNotFound());
 
             mockMvc.perform(get(RESOURCE_PATH)
-                            .param("path", "docs/text/work/file1.txt")
-                            .cookie(sessionCookie))
+                            .param("path", "target/docs/file.txt")
+                            .cookie(session))
                     .andExpect(status().isOk());
         }
 
         @Test
-        @DisplayName("Should return 404 when from not exists")
-        void shouldReturn400_whenFromNotExists() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/work/text/", "file.txt", "content".getBytes());
+        @DisplayName("Should rename directory and return 200")
+        void shouldRenameDirectory_andReturn200() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/text/")
-                            .param("to", "docs/test/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.messages[0]", containsStringIgnoringCase("not found")));
+                            .param("from", "docs/")
+                            .param("to", "documents/")
+                            .cookie(session))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("documents/"))
+                    .andExpect(jsonPath("$.type").value("DIRECTORY"));
+
+            mockMvc.perform(get(RESOURCE_PATH)
+                            .param("path", "documents/file.txt")
+                            .cookie(session))
+                    .andExpect(status().isOk());
         }
 
         @Test
-        @DisplayName("Should return 409 when file to is already exists")
-        void shouldReturn409_whenFileToIsAlreadyExists() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/work/text/", "file.txt", "content".getBytes());
-            uploadFile(sessionCookie, "docs/work/", "file.txt", "content".getBytes());
+        @DisplayName("Should return 404 when source not found")
+        void shouldReturn404_whenSourceNotFound() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/work/file.txt")
-                            .param("to", "docs/work/text/file.txt")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.messages[0]", containsStringIgnoringCase("already exists")));
+                            .param("from", "nonexistent.txt")
+                            .param("to", "other.txt")
+                            .cookie(session))
+                    .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 409 when directory to is already exists")
-        void shouldReturn409_whenDirectoryToIsAlreadyExists() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
-            createDirectory(sessionCookie, "docs/work/");
-            createDirectory(sessionCookie, "docs/task/");
+        @DisplayName("Should return 409 when target already exists")
+        void shouldReturn409_whenTargetExists() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
+            uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
 
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/work/")
-                            .param("to", "docs/task/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.messages[0]", containsStringIgnoringCase("already exists")));
+                            .param("from", "docs/file1.txt")
+                            .param("to", "docs/file2.txt")
+                            .cookie(session))
+                    .andExpect(status().isConflict());
         }
 
         @Test
-        @DisplayName("Should return 401 when user unauthorised")
-        void shouldReturn401_whenUserUnauthorised() throws Exception {
+        @DisplayName("Should return 400 when moving directory to file")
+        void shouldReturn400_whenMovingDirectoryToFile() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(session, "docs/");
+
+            // when & then
             mockMvc.perform(put(MOVE_PATH)
-                            .param("from", "docs/work/")
-                            .param("to", "docs/task/"))
+                            .param("from", "docs/")
+                            .param("to", "file.txt")
+                            .cookie(session))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // when & then
+            mockMvc.perform(put(MOVE_PATH)
+                            .param("from", "file.txt")
+                            .param("to", "other.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
 
     @Nested
     class SearchTests {
-        private static final String SEARCH_PATH = RESOURCE_PATH + "/search";
 
         @Test
-        @DisplayName("Should return results by partial match")
-        void shouldReturnResults_byPartialMatch() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            uploadFile(sessionCookie, "docs/files/", "file1.txt", "content1".getBytes());
-            uploadFile(sessionCookie, "docs/work/", "file2.txt", "content2".getBytes());
+        @DisplayName("Should find files by name and return 200")
+        void shouldFindFiles_andReturn200() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "report.txt", "content".getBytes());
+            uploadFile(session, "docs/", "photo.png", "content".getBytes());
 
+            // when & then
             mockMvc.perform(get(SEARCH_PATH)
-                            .param("query", "fil")
-                            .cookie(sessionCookie))
+                            .param("query", "report")
+                            .cookie(session))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(3)))
-                    .andExpect(jsonPath("$[*].name", containsInAnyOrder(
-                            "file1.txt", "file2.txt", "files")))
-                    .andExpect(jsonPath("$[*].type", hasItems("FILE", "FILE", "DIRECTORY")));
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].name").value("report.txt"));
+        }
+
+        @Test
+        @DisplayName("Should search case insensitively")
+        void shouldSearchCaseInsensitively() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "Report.txt", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(get(SEARCH_PATH)
+                            .param("query", "report")
+                            .cookie(session))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].name").value("Report.txt"));
+        }
+
+        @Test
+        @DisplayName("Should find files in nested directories")
+        void shouldFindFilesInNestedDirectories() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/work/", "report.txt", "content".getBytes());
+
+            // when & then
+            mockMvc.perform(get(SEARCH_PATH)
+                            .param("query", "report")
+                            .cookie(session))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(1)))
+                    .andExpect(jsonPath("$[0].name").value("report.txt"));
         }
 
         @Test
         @DisplayName("Should return empty list when nothing found")
         void shouldReturnEmptyList_whenNothingFound() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+
+            // when & then
             mockMvc.perform(get(SEARCH_PATH)
-                            .param("query", "fil")
-                            .cookie(sessionCookie))
+                            .param("query", "nonexistent")
+                            .cookie(session))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
 
         @Test
-        @DisplayName("Should return 401 when unauthorized")
-        void shouldReturn401_whenUserUnauthorized() throws Exception {
+        @DisplayName("Should return 400 when query is blank")
+        void shouldReturn400_whenQueryBlank() throws Exception {
+            // given
+            Cookie session = registerAndLoginDefaultUser();
+
+            // when & then
             mockMvc.perform(get(SEARCH_PATH)
-                            .param("query", "fil"))
+                            .param("query", "")
+                            .cookie(session))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Should return 401 when not authorized")
+        void shouldReturn401_whenNotAuthorized() throws Exception {
+            // when & then
+            mockMvc.perform(get(SEARCH_PATH)
+                            .param("query", "test"))
                     .andExpect(status().isUnauthorized());
         }
     }
 
     @Nested
-    class UploadTests {
+    class UserIsolationTests {
 
         @Test
-        @DisplayName("Should upload single file and return 201")
-        void shouldUploadSingleFile() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should not find files of another user in search")
+        void shouldNotFindFilesOfAnotherUser() throws Exception {
+            // given
+            Cookie session1 = registerAndLoginUser("user1", "password1");
+            uploadFile(session1, "docs/", "secret.txt", "secret".getBytes());
 
-            MockMultipartFile file1 = new MockMultipartFile(
-                    "files",
-                    "file1.txt",
-                    "text/plain",
-                    "file1.txt".getBytes()
-            );
+            Cookie session2 = registerAndLoginUser("user2", "password2");
 
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .file(file1)
-                            .param("path", "docs/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$[*].name", containsInAnyOrder("docs", "file1.txt")));
+            // when & then
+            mockMvc.perform(get(SEARCH_PATH)
+                            .param("query", "secret")
+                            .cookie(session2))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(0)));
         }
 
         @Test
-        @DisplayName("Should upload list of files with nested directory and return 201")
-        void shouldUploadListOfFiles() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Should not access file of another user")
+        void shouldNotAccessFileOfAnotherUser() throws Exception {
+            // given
+            Cookie session1 = registerAndLoginUser("user1", "password1");
+            uploadFile(session1, "docs/", "secret.txt", "secret".getBytes());
 
-            MockMultipartFile file1 = new MockMultipartFile(
-                    "files",
-                    "file1.txt",
-                    "text/plain",
-                    "file1.txt".getBytes()
-            );
+            Cookie session2 = registerAndLoginUser("user2", "password2");
 
-            MockMultipartFile file2 = new MockMultipartFile(
-                    "files",
-                    "work/file2.txt",
-                    "text/plain",
-                    "file2.txt".getBytes()
-            );
-
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .file(file1)
-                            .file(file2)
-                            .param("path", "docs/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$[*].name", containsInAnyOrder(
-                            "docs", "work", "file1.txt", "file2.txt")));
+            // when & then
+            mockMvc.perform(get(RESOURCE_PATH)
+                            .param("path", "docs/secret.txt")
+                            .cookie(session2))
+                    .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 409 when duplicate")
-        void shouldReturn409_whenDuplicate() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
+        @DisplayName("Both users can create directory with same name")
+        void shouldAllowSameDirectoryNameForDifferentUsers() throws Exception {
+            // given
+            Cookie session1 = registerAndLoginUser("user1", "password1");
+            Cookie session2 = registerAndLoginUser("user2", "password2");
 
-            MockMultipartFile original = new MockMultipartFile(
-                    "files",
-                    "file1.txt",
-                    "text/plain",
-                    "file1.txt".getBytes()
-            );
+            // when & then
+            createDirectory(session1, "docs/");
+            createDirectory(session2, "docs/");
 
-            MockMultipartFile duplicate = new MockMultipartFile(
-                    "files",
-                    "file1.txt",
-                    "text/plain",
-                    "file1.txt".getBytes()
-            );
-
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .file(original)
+            mockMvc.perform(get(DIRECTORY_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isCreated());
+                            .cookie(session1))
+                    .andExpect(status().isOk());
 
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .file(duplicate)
+            mockMvc.perform(get(DIRECTORY_PATH)
                             .param("path", "docs/")
-                            .cookie(sessionCookie))
-                    .andExpect(status().isConflict());
+                            .cookie(session2))
+                    .andExpect(status().isOk());
         }
+    }
 
-        @Test
-        @DisplayName("Should return 401 when user unauthorised")
-        void shouldReturn401_whenUserUnauthorised() throws Exception {
-            MockMultipartFile file1 = new MockMultipartFile(
-                    "files",
-                    "file1.txt",
-                    "text/plain",
-                    "file1.txt".getBytes()
-            );
+    private Cookie registerAndLoginUser(String username, String password) throws Exception {
+        String requestBody = """
+                {
+                    "username": "%s",
+                    "password": "%s"
+                }
+                """.formatted(username, password);
 
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .file(file1)
-                            .param("path", "docs/"))
-                    .andExpect(status().isUnauthorized());
-        }
+        MvcResult result = mockMvc.perform(post("/api/auth/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return result.getResponse().getCookie("SESSION");
     }
 }

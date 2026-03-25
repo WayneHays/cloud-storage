@@ -2,7 +2,6 @@ package com.waynehays.cloudfilestorage.unit.service.resource;
 
 
 import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
-import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -27,7 +26,7 @@ import static org.mockito.Mockito.when;
 class ResourceInfoProviderTest {
 
     @Mock
-    private ResourceMetadataServiceApi service;
+    private ResourceMetadataServiceApi metadataService;
 
     @Mock
     private ResourceDtoConverterApi converter;
@@ -48,7 +47,7 @@ class ResourceInfoProviderTest {
             metadata.setSize(100L);
             ResourceDto expectedDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
             when(converter.fileFromPath(path, 100L)).thenReturn(expectedDto);
 
             // when
@@ -63,8 +62,8 @@ class ResourceInfoProviderTest {
             // given
             String path = "directory/file.txt";
 
-            when(service.findOrThrow(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + path));
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenThrow(new ResourceNotFoundException("Resource not found: " + path));
 
             // when & then
             assertThatThrownBy(() -> resourceInfoProvider.getInfo(USER_ID, path))
@@ -83,7 +82,7 @@ class ResourceInfoProviderTest {
             ResourceMetadata metadata = new ResourceMetadata();
             ResourceDto expectedDto = new ResourceDto("directory/", "subdirectory", null, ResourceType.DIRECTORY);
 
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
             when(converter.directoryFromPath(path)).thenReturn(expectedDto);
 
             // when

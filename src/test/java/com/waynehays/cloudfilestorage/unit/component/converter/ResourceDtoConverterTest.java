@@ -55,7 +55,7 @@ class ResourceDtoConverterTest {
 
             // then
             assertThat(result.path()).isEqualTo("directory/");
-            assertThat(result.name()).isEqualTo("subdirectory");
+            assertThat(result.name()).isEqualTo("subdirectory/");
             assertThat(result.size()).isNull();
             assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
         }
@@ -126,7 +126,7 @@ class ResourceDtoConverterTest {
 
             // then
             assertThat(result.path()).isEqualTo("directory/");
-            assertThat(result.name()).isEqualTo("subdirectory");
+            assertThat(result.name()).isEqualTo("subdirectory/");
             assertThat(result.size()).isNull();
             assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
         }
@@ -141,7 +141,7 @@ class ResourceDtoConverterTest {
 
             // then
             assertThat(result.path()).isEmpty();
-            assertThat(result.name()).isEqualTo("directory");
+            assertThat(result.name()).isEqualTo("directory/");
             assertThat(result.size()).isNull();
             assertThat(result.type()).isEqualTo(ResourceType.DIRECTORY);
         }

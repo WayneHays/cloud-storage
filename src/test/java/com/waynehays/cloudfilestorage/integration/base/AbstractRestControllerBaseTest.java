@@ -49,7 +49,7 @@ public abstract class AbstractRestControllerBaseTest extends AbstractIntegration
 
     protected void uploadFile(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "files",
+                "object",
                 filename,
                 "text/plain",
                 content);
@@ -70,7 +70,7 @@ public abstract class AbstractRestControllerBaseTest extends AbstractIntegration
 
     protected void createDirectoryAndExpectSuccess(Cookie sessionCookie, String path) throws Exception {
         String parentPath = PathUtils.extractParentPath(path);
-        String name = PathUtils.extractFilename(PathUtils.removeTrailingSeparator(path));
+        String name = PathUtils.extractFilename(path) + "/";
 
         mockMvc.perform(post(DIRECTORY_PATH)
                         .param("path", path)

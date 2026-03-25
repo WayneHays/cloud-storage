@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 class ResourceSearcherTest {
 
     @Mock
-    private ResourceMetadataServiceApi service;
+    private ResourceMetadataServiceApi metadataService;
 
     @Mock
     private ResourceDtoConverterApi converter;
@@ -43,7 +43,7 @@ class ResourceSearcherTest {
             metadata.setPath("directory/report.pdf");
             ResourceDto expectedDto = new ResourceDto("directory/", "report.pdf", 100L, ResourceType.FILE);
 
-            when(service.findByNameContaining(USER_ID, query)).thenReturn(List.of(metadata));
+            when(metadataService.findByNameContaining(USER_ID, query)).thenReturn(List.of(metadata));
             when(converter.fromMetadata(metadata)).thenReturn(expectedDto);
 
             // when
@@ -58,7 +58,7 @@ class ResourceSearcherTest {
             // given
             String query = "nonexistent";
 
-            when(service.findByNameContaining(USER_ID, query)).thenReturn(List.of());
+            when(metadataService.findByNameContaining(USER_ID, query)).thenReturn(List.of());
 
             // when
             List<ResourceDto> result = resourceSearcher.search(USER_ID, query);

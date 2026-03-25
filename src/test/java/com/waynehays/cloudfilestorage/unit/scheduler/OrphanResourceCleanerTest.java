@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.unit.scheduler;
 
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.exception.FileStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.sheduler.OrphanResourceCleaner;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
@@ -58,7 +58,7 @@ class OrphanResourceCleanerTest {
 
             // then
             InOrder inOrder = inOrder(storage, service);
-            inOrder.verify(storage).delete("user-1-files/directory/file.txt");
+            inOrder.verify(storage).deleteObject("user-1-files/directory/file.txt");
             inOrder.verify(service).deleteById(1L);
         }
 
@@ -71,7 +71,7 @@ class OrphanResourceCleanerTest {
             cleaner.clean();
 
             // then
-            verify(storage, never()).delete(any());
+            verify(storage, never()).deleteObject(any());
             verify(service, never()).deleteById(any());
         }
 
@@ -83,8 +83,8 @@ class OrphanResourceCleanerTest {
             when(service.findMarkedForDeletion()).thenReturn(List.of(orphan));
             when(keyResolver.resolveKey(orphan.getUserId(), orphan.getPath()))
                     .thenReturn("user-1-files/directory/file.txt");
-            doThrow(new FileStorageException("MinIO unavailable"))
-                    .when(storage).delete("user-1-files/directory/file.txt");
+            doThrow(new ResourceStorageException("MinIO unavailable"))
+                    .when(storage).deleteObject("user-1-files/directory/file.txt");
 
             // when
             cleaner.clean();
@@ -104,15 +104,15 @@ class OrphanResourceCleanerTest {
                     .thenReturn("user-1-files/directory/file1.txt");
             when(keyResolver.resolveKey(orphan2.getUserId(), orphan2.getPath()))
                     .thenReturn("user-1-files/directory/file2.txt");
-            doThrow(new FileStorageException("MinIO unavailable"))
-                    .when(storage).delete("user-1-files/directory/file1.txt");
+            doThrow(new ResourceStorageException("MinIO unavailable"))
+                    .when(storage).deleteObject("user-1-files/directory/file1.txt");
 
             // when
             cleaner.clean();
 
             // then
             verify(service, never()).deleteById(1L);
-            verify(storage).delete("user-1-files/directory/file2.txt");
+            verify(storage).deleteObject("user-1-files/directory/file2.txt");
             verify(service).deleteById(2L);
         }
 

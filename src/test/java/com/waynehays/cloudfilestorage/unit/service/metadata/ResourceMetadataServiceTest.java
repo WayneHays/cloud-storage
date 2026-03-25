@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.unit.service.metadata;
 
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataService;
@@ -19,7 +20,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -97,15 +102,126 @@ class ResourceMetadataServiceTest {
     }
 
     @Nested
+    class ThrowIfExists {
+
+        @Test
+        void shouldThrowWhenResourceExists() {
+            // given
+            String path = "directory/file.txt";
+
+            when(repository.existsByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, path))
+                    .thenReturn(true);
+
+            // when & then
+            assertThatThrownBy(() -> service.throwIfExists(USER_ID, path))
+                    .isInstanceOf(ResourceAlreadyExistsException.class)
+                    .hasMessageContaining(path);
+        }
+
+        @Test
+        void shouldNotThrowWhenResourceNotExists() {
+            // given
+            String path = "directory/file.txt";
+
+            when(repository.existsByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, path))
+                    .thenReturn(false);
+
+            // when & then
+            assertThatCode(() -> service.throwIfExists(USER_ID, path))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class ThrowIfAnyExists {
+
+        @Test
+        void shouldThrowWhenAnyPathExists() {
+            // given
+            List<String> paths = List.of("directory/file1.txt", "directory/file2.txt");
+
+            when(repository.existsByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, "directory/file1.txt"))
+                    .thenReturn(false);
+            when(repository.existsByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, "directory/file2.txt"))
+                    .thenReturn(true);
+
+            // when & then
+            assertThatThrownBy(() -> service.throwIfAnyExists(USER_ID, paths))
+                    .isInstanceOf(ResourceAlreadyExistsException.class)
+                    .hasMessageContaining("file2.txt");
+        }
+
+        @Test
+        void shouldNotThrowWhenNoneExist() {
+            // given
+            List<String> paths = List.of("directory/file1.txt", "directory/file2.txt");
+
+            when(repository.existsByUserIdAndPathAndMarkedForDeletionFalse(eq(USER_ID), any()))
+                    .thenReturn(false);
+
+            // when & then
+            assertThatCode(() -> service.throwIfAnyExists(USER_ID, paths))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class ValidateParentExists {
+
+        @Test
+        void shouldThrowWhenParentNotFound() {
+            // given
+            String path = "directory/subdirectory/";
+
+            when(repository.findByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, "directory/"))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> service.ensureParentExists(USER_ID, path))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("directory/");
+        }
+
+        @Test
+        void shouldNotCheckParentForRootLevel() {
+            // given
+            String path = "directory/";
+
+            // when
+            service.ensureParentExists(USER_ID, path);
+
+            // then
+            verify(repository, never()).findByUserIdAndPathAndMarkedForDeletionFalse(any(), any());
+        }
+
+        @Test
+        void shouldPassWhenParentExists() {
+            // given
+            String path = "directory/subdirectory/";
+            ResourceMetadata parentMetadata = createDirectoryMetadata("directory/");
+
+            when(repository.findByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, "directory/"))
+                    .thenReturn(Optional.of(parentMetadata));
+
+            // when & then
+            assertThatCode(() -> service.ensureParentExists(USER_ID, path))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
     class FindDirectChildren {
 
         @Test
         void shouldReturnDirectChildren() {
             // given
             String directoryPath = "directory/";
+            ResourceMetadata dirMetadata = createDirectoryMetadata(directoryPath);
             ResourceMetadata child1 = createFileMetadata("directory/file.txt");
             ResourceMetadata child2 = createDirectoryMetadata("directory/sub/");
 
+            when(repository.findByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, directoryPath))
+                    .thenReturn(Optional.of(dirMetadata));
             when(repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(USER_ID, directoryPath))
                     .thenReturn(List.of(child1, child2));
 
@@ -117,10 +233,13 @@ class ResourceMetadataServiceTest {
         }
 
         @Test
-        void shouldReturnEmptyListWhenNoChildren() {
+        void shouldReturnEmptyListForEmptyDirectory() {
             // given
             String directoryPath = "empty/";
+            ResourceMetadata dirMetadata = createDirectoryMetadata(directoryPath);
 
+            when(repository.findByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, directoryPath))
+                    .thenReturn(Optional.of(dirMetadata));
             when(repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(USER_ID, directoryPath))
                     .thenReturn(List.of());
 
@@ -129,6 +248,37 @@ class ResourceMetadataServiceTest {
 
             // then
             assertThat(result).isEmpty();
+        }
+
+        @Test
+        void shouldThrowWhenDirectoryNotFound() {
+            // given
+            String directoryPath = "nonexistent/";
+
+            when(repository.findByUserIdAndPathAndMarkedForDeletionFalse(USER_ID, directoryPath))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> service.findDirectChildren(USER_ID, directoryPath))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining(directoryPath);
+        }
+
+        @Test
+        void shouldSkipExistenceCheckForRoot() {
+            // given
+            String rootPath = "";
+            ResourceMetadata child = createFileMetadata("file.txt");
+
+            when(repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(USER_ID, rootPath))
+                    .thenReturn(List.of(child));
+
+            // when
+            List<ResourceMetadata> result = service.findDirectChildren(USER_ID, rootPath);
+
+            // then
+            assertThat(result).containsExactly(child);
+            verify(repository, never()).findByUserIdAndPathAndMarkedForDeletionFalse(any(), any());
         }
     }
 
@@ -294,6 +444,7 @@ class ResourceMetadataServiceTest {
             assertThat(metadata.getPath()).isEqualTo("other/new.txt");
             assertThat(metadata.getName()).isEqualTo("new.txt");
             assertThat(metadata.getParentPath()).isEqualTo("other/");
+            assertThat(metadata.isMarkedForDeletion()).isFalse();
             verify(repository).save(metadata);
         }
 
@@ -326,7 +477,7 @@ class ResourceMetadataServiceTest {
             List<ResourceMetadata> content = List.of(file, subDir);
 
             // when
-            service.updateContentPaths(content, "old/", "new/");
+            service.batchUpdatePaths(content, "old/", "new/");
 
             // then
             assertThat(file.getPath()).isEqualTo("new/file.txt");
@@ -350,7 +501,7 @@ class ResourceMetadataServiceTest {
             List<ResourceMetadata> content = List.of(file);
 
             // when
-            service.updateContentPaths(content, "docs/work/", "archive/work/");
+            service.batchUpdatePaths(content, "docs/work/", "archive/work/");
 
             // then
             assertThat(file.getPath()).isEqualTo("archive/work/reports/file.txt");

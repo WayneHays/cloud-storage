@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
@@ -29,7 +28,7 @@ class ResourceDeleterTest {
     private ResourceStorageApi storage;
 
     @Mock
-    private ResourceMetadataServiceApi service;
+    private ResourceMetadataServiceApi metadataService;
 
     @Mock
     private StorageKeyResolverApi keyResolver;
@@ -50,16 +49,16 @@ class ResourceDeleterTest {
             ResourceMetadata metadata = new ResourceMetadata();
 
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
 
             // when
             resourceDeleter.delete(USER_ID, path);
 
             // then
-            InOrder inOrder = inOrder(service, storage);
-            inOrder.verify(service).markForDeletion(USER_ID, path);
-            inOrder.verify(storage).delete(objectKey);
-            inOrder.verify(service).delete(USER_ID, path);
+            InOrder inOrder = inOrder(metadataService, storage);
+            inOrder.verify(metadataService).markForDeletion(USER_ID, path);
+            inOrder.verify(storage).deleteObject(objectKey);
+            inOrder.verify(metadataService).delete(USER_ID, path);
         }
 
         @Test
@@ -67,16 +66,16 @@ class ResourceDeleterTest {
             // given
             String path = "directory/file.txt";
 
-            when(service.findOrThrow(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException(Messages.NOT_FOUND + path));
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenThrow(new ResourceNotFoundException("Resource not found: " + path));
 
             // when & then
             assertThatThrownBy(() -> resourceDeleter.delete(USER_ID, path))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining(path);
 
-            verify(storage, never()).delete(any());
-            verify(service, never()).markForDeletion(any(), any());
+            verify(storage, never()).deleteObject(any());
+            verify(metadataService, never()).markForDeletion(any(), any());
         }
     }
 
@@ -91,16 +90,16 @@ class ResourceDeleterTest {
             ResourceMetadata metadata = new ResourceMetadata();
 
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(service.findOrThrow(USER_ID, path)).thenReturn(metadata);
+            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
 
             // when
             resourceDeleter.delete(USER_ID, path);
 
             // then
-            InOrder inOrder = inOrder(service, storage);
-            inOrder.verify(service).markForDeletionByPrefix(USER_ID, path);
+            InOrder inOrder = inOrder(metadataService, storage);
+            inOrder.verify(metadataService).markForDeletionByPrefix(USER_ID, path);
             inOrder.verify(storage).deleteByPrefix(objectKey);
-            inOrder.verify(service).deleteByPrefix(USER_ID, path);
+            inOrder.verify(metadataService).deleteByPrefix(USER_ID, path);
         }
     }
 }

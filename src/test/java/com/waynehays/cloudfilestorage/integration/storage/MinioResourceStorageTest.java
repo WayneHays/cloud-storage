@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.storage;
 
-import com.waynehays.cloudfilestorage.exception.FileStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.integration.base.AbstractIntegrationBaseTest;
 import com.waynehays.cloudfilestorage.integration.base.MinioTestCleaner;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
@@ -97,7 +97,7 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
             storage.putObject(new ByteArrayInputStream("content".getBytes()), key, 7, "text/plain");
 
             // when
-            storage.delete(key);
+            storage.deleteObject(key);
 
             // then
             Optional<StorageItem> result = storage.getObject(key);
@@ -110,7 +110,7 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
             String key = "user-1-files/nonexistent.txt";
 
             // when & then
-            assertThatCode(() -> storage.delete(key))
+            assertThatCode(() -> storage.deleteObject(key))
                     .doesNotThrowAnyException();
         }
     }
@@ -166,7 +166,7 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
             storage.putObject(new ByteArrayInputStream(content), sourceKey, content.length, "text/plain");
 
             // when
-            storage.move(sourceKey, targetKey);
+            storage.moveObject(sourceKey, targetKey);
 
             // then
             assertThat(storage.getObject(sourceKey)).isEmpty();
@@ -185,8 +185,8 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
             String targetKey = "user-1-files/other/file.txt";
 
             // when & then
-            assertThatThrownBy(() -> storage.move(sourceKey, targetKey))
-                    .isInstanceOf(FileStorageException.class);
+            assertThatThrownBy(() -> storage.moveObject(sourceKey, targetKey))
+                    .isInstanceOf(ResourceStorageException.class);
         }
     }
 }

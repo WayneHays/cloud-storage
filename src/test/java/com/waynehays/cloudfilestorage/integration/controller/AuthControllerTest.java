@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,7 +52,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(duplicate))
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.messages[0]", containsString("Username already taken")));
+                    .andExpect(jsonPath("$.message", containsString("Username already taken")));
         }
 
         @Test
@@ -143,8 +144,9 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
             mockMvc.perform(post(SIGN_IN_PATH)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(signInBody))
+                    .andDo(print())
                     .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.messages[0]").value("Invalid credentials"));
+                    .andExpect(jsonPath("$.message").value("Invalid credentials"));
         }
 
         @Test
@@ -161,7 +163,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(signInBody))
                     .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.messages[0]").value("Invalid credentials"));
+                    .andExpect(jsonPath("$.message").value("Invalid credentials"));
         }
 
         @Test
@@ -177,7 +179,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(signInBody))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.messages[0]", containsString("username")));
+                    .andExpect(jsonPath("$.message", containsString("username")));
         }
 
         @Test
@@ -193,7 +195,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(signInBody))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.messages[0]", containsString("password")));
+                    .andExpect(jsonPath("$.message", containsString("password")));
         }
 
         @Test
