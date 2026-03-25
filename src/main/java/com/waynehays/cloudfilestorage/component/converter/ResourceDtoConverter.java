@@ -10,32 +10,41 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ResourceDtoConverter implements ResourceDtoConverterApi {
+    private static final String SLASH = "/";
 
     public ResourceDto fromMetadata(ResourceMetadata resourceMetadata) {
-        return ResourceDto.builder()
-                .path(PathUtils.extractParentPath(resourceMetadata.getPath()))
-                .name(resourceMetadata.getName())
-                .size(resourceMetadata.getSize())
-                .type(resourceMetadata.getType())
-                .build();
+        String name = resourceMetadata.isFile()
+                ? resourceMetadata.getName()
+                : resourceMetadata.getName() + SLASH;
+
+        return createDto(
+                PathUtils.extractParentPath(resourceMetadata.getPath()),
+                name,
+                resourceMetadata.getSize(),
+                resourceMetadata.getType()
+        );
     }
 
     @Override
     public ResourceDto fileFromPath(String path, Long size) {
-        return buildDto(path, size, ResourceType.FILE);
+        return createDto(
+                PathUtils.extractParentPath(path),
+                PathUtils.extractFilename(path),
+                size,
+                ResourceType.FILE
+        );
     }
 
     @Override
     public ResourceDto directoryFromPath(String path) {
-        return buildDto(path, null, ResourceType.DIRECTORY);
+        return createDto(
+                PathUtils.extractParentPath(path),
+                PathUtils.extractFilename(path) + SLASH,
+                null,
+                ResourceType.DIRECTORY);
     }
 
-    private ResourceDto buildDto (String path, Long size, ResourceType type) {
-        return ResourceDto.builder()
-                .path(PathUtils.extractParentPath(path))
-                .name(PathUtils.extractFilename(path))
-                .size(size)
-                .type(type)
-                .build();
+    private ResourceDto createDto(String path, String name, Long size, ResourceType type) {
+        return new ResourceDto(path, name, size, type);
     }
 }
