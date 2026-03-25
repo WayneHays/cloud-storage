@@ -111,7 +111,7 @@ class PathUtilsTest {
         })
         void shouldRemoveTrailingSeparator(String input, String expected) {
             // given & when
-            String result = PathUtils.removeTrailingSeparator(input);
+            String result = PathUtils.removeTrailingSlash(input);
 
             // then
             assertThat(result).isEqualTo(expected);

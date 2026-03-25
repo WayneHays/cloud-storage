@@ -9,14 +9,14 @@ import java.util.List;
 
 @UtilityClass
 public class PathUtils {
-    private static final String SEPARATOR = "/";
+    private static final String SLASH = "/";
 
-    public static String ensureTrailingSeparator(String path) {
-        return path.endsWith(SEPARATOR) ? path : path + SEPARATOR;
+    public static String ensureTrailingSlash(String path) {
+        return path.endsWith(SLASH) ? path : path + SLASH;
     }
 
     public static boolean isDirectory(String path) {
-        return path.endsWith(SEPARATOR);
+        return path.endsWith(SLASH);
     }
 
     public static boolean isFile(String path) {
@@ -28,14 +28,14 @@ public class PathUtils {
             return List.of();
         }
 
-        String cleanPath = removeTrailingSeparator(path);
-        String[] parts = cleanPath.split(SEPARATOR);
+        String cleanPath = removeTrailingSlash(path);
+        String[] parts = cleanPath.split(SLASH);
         List<String> directories = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
 
         for (String part : parts) {
             if (!sb.isEmpty()) {
-                sb.append(SEPARATOR);
+                sb.append(SLASH);
             }
             sb.append(part);
             directories.add(sb.toString());
@@ -48,25 +48,25 @@ public class PathUtils {
         return FilenameUtils.separatorsToUnix(path);
     }
 
-    public static String removeTrailingSeparator(String path) {
-        return StringUtils.stripEnd(path, SEPARATOR);
+    public static String removeTrailingSlash(String path) {
+        return StringUtils.stripEnd(path, SLASH);
     }
 
     public static String extractParentPath(String path) {
-        String cleanPath = path.endsWith(SEPARATOR)
+        String cleanPath = path.endsWith(SLASH)
                 ? path.substring(0, path.length() - 1)
                 : path;
         return FilenameUtils.getPath(cleanPath);
     }
 
     public static String extractFilename(String path) {
-        String cleanPath = removeTrailingSeparator(path);
+        String cleanPath = removeTrailingSlash(path);
         return FilenameUtils.getName(cleanPath);
     }
 
     public static String combine(String base, String sub) {
-        String cleanBase = removeTrailingSeparator(base);
-        String cleanSub = removeTrailingSeparator(sub);
+        String cleanBase = removeTrailingSlash(base);
+        String cleanSub = removeTrailingSlash(sub);
 
         if (cleanBase.isEmpty()) {
             return cleanSub;
@@ -74,6 +74,6 @@ public class PathUtils {
         if (cleanSub.isEmpty()) {
             return cleanBase;
         }
-        return cleanBase + SEPARATOR + cleanSub;
+        return cleanBase + SLASH + cleanSub;
     }
 }
