@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "cleanup")
 public record CleanupProperties(
 
-        @Size(min = 60000, max = 12000000, message = "Cleanup interval must be more than 60000 and less than 12000000")
+        @Size(min = 60, max = 180, message = "Cleanup interval must be more than 60 and less than 180")
         Long interval
 ) {
 }
