@@ -2,7 +2,6 @@ package com.waynehays.cloudfilestorage.dto.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 public record SignUpRequest(
         @NotBlank(message = "Username must not be empty")
@@ -10,7 +9,7 @@ public record SignUpRequest(
         String username,
 
         @NotBlank(message = "Password cannot be empty")
-        @Size(min = 6, max = 128, message = "Password must be at least 6 and max 128 symbols")
+        @Pattern(regexp = "^\\w{6,128}$", message = "Password must be 6-128 characters, letters, digits, underscore only")
         String password
 ) {
 }

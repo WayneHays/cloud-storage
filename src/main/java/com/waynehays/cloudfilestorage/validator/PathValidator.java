@@ -7,7 +7,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.regex.Pattern;
 
 public class PathValidator implements ConstraintValidator<ValidPath, String> {
-    private static final Pattern ALLOWED_CHARACTERS = Pattern.compile("^[a-zA-Z0-9._\\-]+$");
+    private static final Pattern ALLOWED_CHARACTERS = Pattern.compile("^[\\p{L}\\p{N}._\\- ]+$");
     private static final String SEPARATOR = "/";
     private static final String CURRENT_DIR = ".";
     private static final String PARENT_DIR = "..";
