@@ -1,9 +1,6 @@
 package com.waynehays.cloudfilestorage.dto;
 
-import lombok.Builder;
-
-@Builder
-public record FileData(
+public record ObjectData(
         String originalFilename,
         String filename,
         String directory,

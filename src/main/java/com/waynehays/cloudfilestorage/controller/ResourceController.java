@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.controller;
 
-import com.waynehays.cloudfilestorage.dto.FileData;
+import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.request.resource.DeleteRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.DownloadRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.GetInfoRequest;
@@ -81,12 +81,12 @@ public class ResourceController {
     @PostMapping()
     public ResponseEntity<List<ResourceDto>> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid UploadRequest uploadRequest,
-                                                            @RequestParam("files") List<MultipartFile> files) {
-        List<FileData> fileDataList = files.stream()
+                                                            @RequestParam("object") List<MultipartFile> objects) {
+        List<ObjectData> objectDataList = objects.stream()
                 .map(file -> multipartFileDataParser.parse(file, uploadRequest.path()))
                 .toList();
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resourceService.upload(userDetails.id(), fileDataList));
+                .body(resourceService.upload(userDetails.id(), objectDataList));
     }
 }
