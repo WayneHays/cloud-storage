@@ -8,6 +8,12 @@ public interface ResourceMetadataServiceApi {
 
     ResourceMetadata findOrThrow(Long userId, String path);
 
+    void throwIfExists(Long userId, String path);
+
+    void throwIfAnyExists(Long userId, List<String> paths);
+
+    void ensureParentExists(Long userId, String directoryPath);
+
     boolean exists(Long userId, String path);
 
     List<ResourceMetadata> findDirectChildren(Long userId, String directoryPath);
@@ -28,7 +34,7 @@ public interface ResourceMetadataServiceApi {
 
     void updatePath(Long userId, String pathFrom, String pathTo);
 
-    void updateContentPaths(List<ResourceMetadata> content, String prefixFrom, String prefixTo);
+    void batchUpdatePaths(List<ResourceMetadata> resourcesToUpdate, String prefixFrom, String prefixTo);
 
     void delete(Long userId, String path);
 

@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.constant.Messages;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
@@ -8,6 +7,8 @@ import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +19,42 @@ import java.util.List;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ResourceMetadataService implements ResourceMetadataServiceApi {
+    private static final String MSG_NOT_FOUND = "Resource not found: userId=%d, path=%s";
+    private static final String MSG_ALREADY_EXISTS = "Resources already exist: userId=%d, paths=%s";
+
     private final ResourceMetadataRepository repository;
 
     @Override
     public ResourceMetadata findOrThrow(Long userId, String path) {
         return repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
-                .orElseThrow(() -> new ResourceNotFoundException(Messages.NOT_FOUND + path));
+                .orElseThrow(() -> new ResourceNotFoundException(MSG_NOT_FOUND.formatted(userId, path)));
+    }
+
+    @Override
+    public void throwIfExists(Long userId, String path) {
+        if (exists(userId, path)) {
+            throw new ResourceAlreadyExistsException(MSG_ALREADY_EXISTS.formatted(userId, path));
+        }
+    }
+
+    @Override
+    public void throwIfAnyExists(Long userId, List<String> paths) {
+        List<String> existingPaths = paths.stream()
+                .filter(path -> exists(userId, path))
+                .toList();
+
+        if (ObjectUtils.isNotEmpty(existingPaths)) {
+            throw new ResourceAlreadyExistsException(MSG_ALREADY_EXISTS.formatted(userId, existingPaths));
+        }
+    }
+
+    @Override
+    public void ensureParentExists(Long userId, String directoryPath) {
+        String parentPath = PathUtils.extractParentPath(directoryPath);
+
+        if (StringUtils.isNotEmpty(parentPath)) {
+            findOrThrow(userId, parentPath);
+        }
     }
 
     @Override
@@ -33,6 +64,9 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     public List<ResourceMetadata> findDirectChildren(Long userId, String directoryPath) {
+        if (StringUtils.isNotEmpty(directoryPath)) {
+            findOrThrow(userId, directoryPath);
+        }
         return repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(userId, directoryPath);
     }
 
@@ -78,21 +112,16 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void updatePath(Long userId, String pathFrom, String pathTo) {
-        ResourceMetadata metadata = repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, pathFrom)
-                .orElseThrow(() -> new ResourceNotFoundException(Messages.NOT_FOUND + pathFrom));
-
+        ResourceMetadata metadata = findOrThrow(userId, pathFrom);
         applyNewPath(metadata, pathFrom, pathTo);
         repository.save(metadata);
     }
 
     @Override
     @Transactional
-    public void updateContentPaths(List<ResourceMetadata> content, String prefixFrom, String prefixTo) {
-        for (ResourceMetadata metadata : content) {
-            applyNewPath(metadata, prefixFrom, prefixTo);
-        }
-
-        repository.saveAll(content);
+    public void batchUpdatePaths(List<ResourceMetadata> resourcesToUpdate, String prefixFrom, String prefixTo) {
+        resourcesToUpdate.forEach(resource -> applyNewPath(resource, prefixFrom, prefixTo));
+        repository.saveAll(resourcesToUpdate);
     }
 
     @Override
