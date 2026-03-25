@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,10 +23,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+    private static final String MSG_SIGN_UP_SUCCESS = "User registered: {}";
+    private static final String MSG_SIGN_IN_SUCCESS = "User signed in: {}";
+    
     private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
@@ -36,8 +41,9 @@ public class AuthController {
                                           HttpServletRequest request,
                                           HttpServletResponse response) {
         UserDto registeredUser = userService.signUp(dto);
-        processLogin(dto.username(), dto.password(), request, response);
+        log.info(MSG_SIGN_UP_SUCCESS, dto.username());
 
+        processLogin(dto.username(), dto.password(), request, response);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
@@ -45,13 +51,11 @@ public class AuthController {
     public ResponseEntity<UserDto> signIn(@RequestBody @Valid SignInRequest dto,
                                           HttpServletRequest request,
                                           HttpServletResponse response) {
-        Authentication authentication = processLogin(dto.username(), dto.password(), request, response);
-
-        UserDto userDto = new UserDto(authentication.getName());
-        return ResponseEntity.ok(userDto);
+        processLogin(dto.username(), dto.password(), request, response);
+        return ResponseEntity.ok(new UserDto(dto.username()));
     }
 
-    private Authentication processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
+    private void processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
         Authentication authentication = authenticationManager.authenticate(token);
 
@@ -59,6 +63,7 @@ public class AuthController {
         context.setAuthentication(authentication);
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
-        return authentication;
+
+        log.info(MSG_SIGN_IN_SUCCESS, username);
     }
 }

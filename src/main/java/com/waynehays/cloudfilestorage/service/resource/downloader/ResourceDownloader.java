@@ -1,27 +1,29 @@
 package com.waynehays.cloudfilestorage.service.resource.downloader;
 
-import com.waynehays.cloudfilestorage.constant.Messages;
+import com.waynehays.cloudfilestorage.component.archiver.ArchiveItem;
 import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.component.archiver.ArchiveItem;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
-import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.InputStream;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+    private static final String MSG_NOT_FOUND = "Resource not found in storage: userId=%d, path=%s";
 
     private final ArchiverApi archiver;
     private final ResourceStorageApi fileStorage;
@@ -41,6 +43,8 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     }
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
+        log.info("Start download file: userId={}, path={}", userId, path);
+
         String objectKey = keyResolver.resolveKey(userId, path);
         StorageItem item = fileStorage.getObject(objectKey).orElseThrow();
 
@@ -50,10 +54,13 @@ public class ResourceDownloader implements ResourceDownloaderApi {
             }
         };
 
+        log.info("Successfully downloaded file: userId={}, path={}", userId, path);
         return new DownloadResult(body, filename, DEFAULT_CONTENT_TYPE);
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
+        log.info("Start download directory: userId={}, path={}", userId, path);
+
         List<ArchiveItem> archiveItems = metadataService.findDirectoryContent(userId, path)
                 .stream()
                 .filter(ResourceMetadata::isFile)
@@ -61,6 +68,8 @@ public class ResourceDownloader implements ResourceDownloaderApi {
                 .toList();
 
         StreamingResponseBody body = outputStream -> archiver.archiveResources(archiveItems, outputStream);
+
+        log.info("Successfully download directory: userId={}, path={}", userId, path);
         return new DownloadResult(body, directoryName + archiver.getExtension(), archiver.getContentType());
     }
 
@@ -70,7 +79,8 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
         return new ArchiveItem(entryName, resourceMetadata.getSize(),
                 () -> fileStorage.getObject(storageKey)
-                        .orElseThrow(() -> new ResourceNotFoundException(Messages.NOT_FOUND + resourceMetadata.getPath()))
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                MSG_NOT_FOUND.formatted(userId, resourceMetadata.getPath())))
                         .inputStream());
     }
 }

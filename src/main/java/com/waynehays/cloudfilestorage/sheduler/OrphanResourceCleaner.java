@@ -10,20 +10,22 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrphanResourceCleaner {
+    private static final String LOG_CLEANUP_START = "Cleanup started: {} orphans found";
     private static final String LOG_CLEANUP_FAILED = "Cleanup job failed";
     private static final String LOG_FAILED_CLEAN_ORPHAN = "Failed to clean orphan: {}";
-    private static final String LOG_SUCCESSFUL_CLEANUP = "Cleanup completed: {}/{} orphans processed";
+    private static final String LOG_SUCCESS_CLEANUP = "Cleanup completed: {}/{} orphans processed";
 
     private final ResourceStorageApi storage;
     private final StorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
-    @Scheduled(fixedRateString = "${cleanup.interval}")
+    @Scheduled(fixedRateString = "${cleanup.interval}", timeUnit = TimeUnit.SECONDS)
     public void clean() {
         try {
             processOrphans();
@@ -39,12 +41,14 @@ public class OrphanResourceCleaner {
             return;
         }
 
+        log.info(LOG_CLEANUP_START, orphans.size());
+
         int cleaned = 0;
 
         for (ResourceMetadata orphan : orphans) {
             try {
                 String storageKey = keyResolver.resolveKey(orphan.getUserId(), orphan.getPath());
-                storage.delete(storageKey);
+                storage.deleteObject(storageKey);
                 metadataService.deleteById(orphan.getId());
                 cleaned++;
             } catch (Exception e) {
@@ -52,6 +56,6 @@ public class OrphanResourceCleaner {
             }
         }
 
-        log.info(LOG_SUCCESSFUL_CLEANUP, cleaned, orphans.size());
+        log.info(LOG_SUCCESS_CLEANUP, cleaned, orphans.size());
     }
 }

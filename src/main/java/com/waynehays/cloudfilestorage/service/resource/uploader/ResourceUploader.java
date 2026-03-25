@@ -2,15 +2,16 @@ package com.waynehays.cloudfilestorage.service.resource.uploader;
 
 import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.dto.FileData;
+import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.exception.FileStorageException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,10 +26,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
-    private static final String MSG_LIST_ALREADY_EXISTS = "Resources are already exist by paths: ";
-    private static final String MSG_FAILED_PROCESS_STREAM = "Failed to process file stream";
-    private static final String MSG_DUPLICATE_FILES = "Duplicate files in request";
+    private static final String LOG_UPLOAD_START = "Upload started: userId={}, objects count={}";
+    private static final String LOG_UPLOAD_SUCCESS = "Upload completed: userId={}, objects count={}, created directories={}";
+    private static final String LOG_UPLOAD_FAILED = "Upload failed for userId={}, initiating rollback";
     private static final String LOG_FAILED_ROLLBACK = "Failed to rollback key: {}";
+    private static final String MSG_DUPLICATE_PATHS = "Duplicate paths in upload request: userId=%d, paths=%s";
+    private static final String MSG_FAILED_PROCESS_STREAM = "Failed to process file stream";
 
     private final ResourceStorageApi fileStorage;
     private final StorageKeyResolverApi keyResolver;
@@ -36,71 +39,77 @@ public class ResourceUploader implements ResourceUploaderApi {
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
-    public List<ResourceDto> upload(Long userId, List<FileData> files) {
-        checkForDuplicates(userId, files);
+    public List<ResourceDto> upload(Long userId, List<ObjectData> objects) {
+        log.info(LOG_UPLOAD_START, userId, objects.size());
+
+        checkForDuplicates(userId, objects);
         UploadContext context = new UploadContext();
 
         try {
-            List<ResourceDto> uploadedFiles = uploadFiles(userId, files, context);
+            List<ResourceDto> uploadedFiles = uploadFiles(userId, objects, context);
             List<ResourceDto> createdDirectories = createDirectories(userId, uploadedFiles, context);
             List<ResourceDto> result = new ArrayList<>(createdDirectories);
             result.addAll(uploadedFiles);
+
+            log.info(LOG_UPLOAD_SUCCESS, userId, uploadedFiles.size(), createdDirectories.size());
             return result;
         } catch (Exception e) {
+            log.warn(LOG_UPLOAD_FAILED, userId);
             rollback(userId, context);
             throw e;
         }
     }
 
-    private void checkForDuplicates(Long userId, List<FileData> files) {
-        List<String> paths = files.stream()
-                .map(FileData::fullPath)
+    private void checkForDuplicates(Long userId, List<ObjectData> objects) {
+        List<String> paths = objects.stream()
+                .map(ObjectData::fullPath)
                 .toList();
-        Set<String> uniquePaths = new HashSet<>(paths);
+        Set<String> seen = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
 
-        if (uniquePaths.size() != paths.size()) {
-            throw new ResourceAlreadyExistsException(MSG_DUPLICATE_FILES);
+        for (String path : paths) {
+            if (!seen.add(path)) {
+                duplicates.add(path);
+            }
         }
 
-        List<String> existingPaths = paths.stream()
-                .filter(path -> metadataService.exists(userId, path))
-                .toList();
-
-        if (!existingPaths.isEmpty()) {
-            throw new ResourceAlreadyExistsException(MSG_LIST_ALREADY_EXISTS + existingPaths);
+        if (ObjectUtils.isNotEmpty(duplicates)) {
+            throw new ResourceAlreadyExistsException(MSG_DUPLICATE_PATHS.formatted(userId, duplicates));
         }
+
+        metadataService.throwIfAnyExists(userId, paths);
     }
 
-    private List<ResourceDto> uploadFiles(Long userId, List<FileData> files, UploadContext context) {
+    private List<ResourceDto> uploadFiles(Long userId, List<ObjectData> objects, UploadContext context) {
         List<ResourceDto> result = new ArrayList<>();
 
-        for (FileData file : files) {
-            String storageKey = keyResolver.resolveKey(userId, file.fullPath());
-            putObjectOrThrow(file, storageKey);
+        for (ObjectData object : objects) {
+            String storageKey = keyResolver.resolveKey(userId, object.fullPath());
+            putObjectOrThrow(object, storageKey);
             context.addStorageKey(storageKey);
 
-            metadataService.saveFile(userId, file.fullPath(), file.size());
-            context.addMetadataPath(file.fullPath());
+            metadataService.saveFile(userId, object.fullPath(), object.size());
+            context.addMetadataPath(object.fullPath());
 
-            ResourceDto dto = dtoConverter.fileFromPath(file.fullPath(), file.size());
+            ResourceDto dto = dtoConverter.fileFromPath(object.fullPath(), object.size());
             result.add(dto);
         }
 
         return result;
     }
 
-    private void putObjectOrThrow(FileData fileData, String storageKey) {
-        try (InputStream inputStream = fileData.inputStreamSupplier().get()) {
-            fileStorage.putObject(inputStream, storageKey, fileData.size(), fileData.contentType());
+    private void putObjectOrThrow(ObjectData object, String storageKey) {
+        try (InputStream inputStream = object.inputStreamSupplier().get()) {
+            fileStorage.putObject(inputStream, storageKey, object.size(), object.contentType());
         } catch (IOException e) {
-            throw new FileStorageException(MSG_FAILED_PROCESS_STREAM, e);
+            throw new ResourceStorageException(MSG_FAILED_PROCESS_STREAM);
         }
     }
 
     private List<ResourceDto> createDirectories(Long userId, List<ResourceDto> uploadedFiles, UploadContext context) {
         Set<String> uniqueDirectories = uploadedFiles.stream()
                 .flatMap(file -> PathUtils.getAllDirectories(file.path()).stream())
-                .map(PathUtils::ensureTrailingSeparator)
+                .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
 
         List<ResourceDto> result = new ArrayList<>();
@@ -123,7 +132,7 @@ public class ResourceUploader implements ResourceUploaderApi {
 
     private void rollback(Long userId, UploadContext context) {
         context.getStorageKeys()
-                .forEach(key -> tryDelete(() -> fileStorage.delete(key), key));
+                .forEach(key -> tryDelete(() -> fileStorage.deleteObject(key), key));
         context.getMetadataPaths()
                 .forEach(path -> tryDelete(() -> metadataService.delete(userId, path), path));
     }
