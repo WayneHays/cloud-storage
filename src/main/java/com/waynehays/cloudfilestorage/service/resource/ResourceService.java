@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource;
 
-import com.waynehays.cloudfilestorage.dto.FileData;
+import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.resource.deleter.ResourceDeleterApi;
@@ -50,7 +50,7 @@ public class ResourceService implements ResourceServiceApi {
     }
 
     @Override
-    public List<ResourceDto> upload(Long userId, List<FileData> files) {
+    public List<ResourceDto> upload(Long userId, List<ObjectData> files) {
         return uploader.upload(userId, files);
     }
 }
