@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
-import com.waynehays.cloudfilestorage.exception.FileStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import io.minio.CopyObjectArgs;
@@ -35,7 +35,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
     private static final String MSG_KEY_NOT_EXISTS = "NoSuchKey";
     private static final String MSG_FAILED_GET = "Failed to get object with key: ";
     private static final String MSG_FAILED_PUT = "Failed to put object with key: ";
-    private static final String MSG_FAILED_MOVE = "Failed to move from %s to %s";
+    private static final String MSG_FAILED_MOVE = "Failed to moveObject from %s to %s";
     private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
     private static final String MSG_FAILED_DELETE_OBJECTS = "Failed to delete objects: ";
@@ -61,9 +61,9 @@ public class MinioResourceStorage implements ResourceStorageApi {
             if (MSG_KEY_NOT_EXISTS.equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new FileStorageException(MSG_FAILED_GET + objectKey, e);
+            throw new ResourceStorageException(MSG_FAILED_GET + objectKey, e);
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_GET + objectKey, e);
+            throw new ResourceStorageException(MSG_FAILED_GET + objectKey, e);
         }
     }
 
@@ -77,7 +77,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_PUT + objectKey, e);
+            throw new ResourceStorageException(MSG_FAILED_PUT + objectKey, e);
         }
     }
 
@@ -93,23 +93,23 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build()
             );
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_CREATE_DIRECTORY + objectKey, e);
+            throw new ResourceStorageException(MSG_FAILED_CREATE_DIRECTORY + objectKey, e);
         }
     }
 
     @Override
-    public void move(String sourceKey, String targetKey) {
+    public void moveObject(String sourceKey, String targetKey) {
         copyObject(sourceKey, targetKey);
         try {
-            delete(sourceKey);
+            deleteObject(sourceKey);
         } catch (Exception e) {
             rollbackCopy(targetKey);
-            throw new FileStorageException(MSG_FAILED_MOVE.formatted(sourceKey, targetKey), e);
+            throw new ResourceStorageException(MSG_FAILED_MOVE.formatted(sourceKey, targetKey), e);
         }
     }
 
     @Override
-    public void delete(String objectKey) {
+    public void deleteObject(String objectKey) {
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -117,15 +117,16 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .object(objectKey)
                             .build());
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_DELETE + objectKey, e);
+            throw new ResourceStorageException(MSG_FAILED_DELETE + objectKey, e);
         }
     }
 
     @Override
     public void deleteByPrefix(String prefix) {
         List<DeleteObject> batch = new ArrayList<>();
+        Iterable<Result<Item>> objectsToDelete = listObjects(prefix);
 
-        for (Result<Item> result : listObjects(prefix)) {
+        for (Result<Item> result : objectsToDelete) {
             try {
                 batch.add(new DeleteObject(result.get().objectName()));
 
@@ -133,7 +134,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                     flushDeleteBatch(batch);
                 }
             } catch (Exception e) {
-                throw new FileStorageException(MSG_FAILED_DELETE + prefix, e);
+                throw new ResourceStorageException(MSG_FAILED_DELETE + prefix, e);
             }
         }
 
@@ -153,13 +154,13 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build())
                     .build());
         } catch (Exception e) {
-            throw new FileStorageException(MSG_FAILED_COPY.formatted(sourceKey, targetKey), e);
+            throw new ResourceStorageException(MSG_FAILED_COPY.formatted(sourceKey, targetKey), e);
         }
     }
 
     private void rollbackCopy(String targetKey) {
         try {
-            delete(targetKey);
+            deleteObject(targetKey);
         } catch (Exception e) {
             log.warn(LOG_FAILED_ROLLBACK_COPY, targetKey, e);
         }
@@ -174,7 +175,6 @@ public class MinioResourceStorage implements ResourceStorageApi {
                         .build()
         );
     }
-
 
     private void flushDeleteBatch(List<DeleteObject> batch) {
         Iterable<Result<DeleteError>> results = minioClient.removeObjects(
@@ -199,7 +199,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
         batch.clear();
 
         if (!failedKeys.isEmpty()) {
-            throw new FileStorageException(MSG_FAILED_DELETE_OBJECTS + failedKeys);
+            throw new ResourceStorageException(MSG_FAILED_DELETE_OBJECTS + failedKeys);
         }
     }
 }
