@@ -12,28 +12,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ResourceMetadataService implements ResourceMetadataServiceApi {
-    private static final String MSG_NOT_FOUND = "Resource not found: userId=%d, path=%s";
-    private static final String MSG_ALREADY_EXISTS = "Resources already exist: userId=%d, paths=%s";
-
     private final ResourceMetadataRepository repository;
 
     @Override
     public ResourceMetadata findOrThrow(Long userId, String path) {
         return repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
-                .orElseThrow(() -> new ResourceNotFoundException(MSG_NOT_FOUND.formatted(userId, path)));
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
     }
 
     @Override
     public void throwIfExists(Long userId, String path) {
         if (exists(userId, path)) {
-            throw new ResourceAlreadyExistsException(MSG_ALREADY_EXISTS.formatted(userId, path));
+            throw new ResourceAlreadyExistsException("Resource already exist", path);
         }
     }
 
@@ -44,7 +40,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
                 .toList();
 
         if (ObjectUtils.isNotEmpty(existingPaths)) {
-            throw new ResourceAlreadyExistsException(MSG_ALREADY_EXISTS.formatted(userId, existingPaths));
+            throw new ResourceAlreadyExistsException("Resources already exist", existingPaths);
         }
     }
 
@@ -159,7 +155,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         resourceMetadata.setSize(size);
         resourceMetadata.setType(type);
         resourceMetadata.setMarkedForDeletion(false);
-        resourceMetadata.setCreatedAt(Instant.now());
         repository.save(resourceMetadata);
     }
 }

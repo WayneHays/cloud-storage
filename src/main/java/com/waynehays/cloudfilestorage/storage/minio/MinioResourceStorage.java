@@ -17,6 +17,7 @@ import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,17 +33,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MinioResourceStorage implements ResourceStorageApi {
     private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
-    private static final String MSG_KEY_NOT_EXISTS = "NoSuchKey";
     private static final String MSG_FAILED_GET = "Failed to get object with key: ";
-    private static final String MSG_FAILED_PUT = "Failed to put object with key: ";
-    private static final String MSG_FAILED_MOVE = "Failed to moveObject from %s to %s";
-    private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
-    private static final String MSG_FAILED_DELETE_OBJECTS = "Failed to delete objects: ";
-    private static final String MSG_FAILED_CREATE_DIRECTORY = "Failed to create directory with key: ";
-    private static final String LOG_FAILED_ROLLBACK_COPY = "Failed to rollback copy: {}";
-    private static final String LOG_FAILED_DELETE_OBJECT = "Failed to delete object: {}";
-    private static final String LOG_FAILED_PROCESS_DELETE_RESULT = "Error while processing delete object result";
 
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
@@ -58,7 +50,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
             );
             return Optional.of(new StorageItem(inputStream));
         } catch (ErrorResponseException e) {
-            if (MSG_KEY_NOT_EXISTS.equals(e.errorResponse().code())) {
+            if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
             throw new ResourceStorageException(MSG_FAILED_GET + objectKey, e);
@@ -77,7 +69,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_PUT + objectKey, e);
+            throw new ResourceStorageException("Failed to put object with key: " + objectKey, e);
         }
     }
 
@@ -93,7 +85,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build()
             );
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_CREATE_DIRECTORY + objectKey, e);
+            throw new ResourceStorageException("Failed to create directory with key: " + objectKey, e);
         }
     }
 
@@ -104,7 +96,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
             deleteObject(sourceKey);
         } catch (Exception e) {
             rollbackCopy(targetKey);
-            throw new ResourceStorageException(MSG_FAILED_MOVE.formatted(sourceKey, targetKey), e);
+            throw new ResourceStorageException("Failed to move object from %s to %s"
+                    .formatted(sourceKey, targetKey), e);
         }
     }
 
@@ -128,7 +121,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
         for (Result<Item> result : objectsToDelete) {
             try {
-                batch.add(new DeleteObject(result.get().objectName()));
+                DeleteObject deleteObject = new DeleteObject(result.get().objectName());
+                batch.add(deleteObject);
 
                 if (batch.size() >= properties.batchSize()) {
                     flushDeleteBatch(batch);
@@ -154,7 +148,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build())
                     .build());
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_COPY.formatted(sourceKey, targetKey), e);
+            throw new ResourceStorageException("Failed to copy object from %s to %s"
+                    .formatted(sourceKey, targetKey), e);
         }
     }
 
@@ -162,7 +157,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
         try {
             deleteObject(targetKey);
         } catch (Exception e) {
-            log.warn(LOG_FAILED_ROLLBACK_COPY, targetKey, e);
+            log.warn("Failed to rollback copy: {}", targetKey, e);
         }
     }
 
@@ -190,16 +185,16 @@ public class MinioResourceStorage implements ResourceStorageApi {
             try {
                 DeleteError error = result.get();
                 failedKeys.add(error.objectName());
-                log.error(LOG_FAILED_DELETE_OBJECT, error.objectName());
+                log.error("Failed to delete object: {}", error.objectName());
             } catch (Exception e) {
-                log.error(LOG_FAILED_PROCESS_DELETE_RESULT, e);
+                log.error("Error while processing delete object result", e);
             }
         }
 
         batch.clear();
 
         if (!failedKeys.isEmpty()) {
-            throw new ResourceStorageException(MSG_FAILED_DELETE_OBJECTS + failedKeys);
+            throw new ResourceStorageException("Failed to delete objects: " + failedKeys);
         }
     }
 }

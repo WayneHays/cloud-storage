@@ -15,9 +15,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class MinioBucketInitializer {
-    private static final String MSG_INIT_FAILED = "Failed to initialize MinIO bucket: ";
-    private static final String LOG_BUCKET_CREATED = "Created bucket: {}";
-
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
 
@@ -33,10 +30,11 @@ public class MinioBucketInitializer {
                                 .bucket(properties.bucketName())
                                 .build()
                 );
-                log.info(LOG_BUCKET_CREATED, properties.bucketName());
+                log.info("Created bucket: {}", properties.bucketName());
             }
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_INIT_FAILED + properties.bucketName());
+            log.error("Failed to initialize MinIO bucket: {}", properties.bucketName());
+            throw new ResourceStorageException( "Failed to initialize MinIO bucket: " + properties.bucketName());
         }
     }
 }

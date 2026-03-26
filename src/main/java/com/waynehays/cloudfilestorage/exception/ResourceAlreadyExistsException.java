@@ -1,8 +1,20 @@
 package com.waynehays.cloudfilestorage.exception;
 
-public class ResourceAlreadyExistsException extends ApplicationException {
+import lombok.Getter;
 
-    public ResourceAlreadyExistsException(String message) {
+import java.util.List;
+
+@Getter
+public class ResourceAlreadyExistsException extends ApplicationException {
+    private final List<String> paths;
+
+    public ResourceAlreadyExistsException(String message, String path) {
         super(message);
+        this.paths = List.of(path);
+    }
+
+    public ResourceAlreadyExistsException(String message, List<String> paths) {
+        super(message);
+        this.paths = paths;
     }
 }

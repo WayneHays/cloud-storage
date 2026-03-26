@@ -18,12 +18,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
-    private static final String MSG_INVALID_MOVE = "Cannot move directory to file: userId=%d, '%s' -> '%s'";
-    private static final String LOG_START_MOVE_FILE = "Start move file: userId={}, from={}, to={}";
-    private static final String LOG_START_MOVE_DIRECTORY = "Start moving directory: userId={}, from={}, to={}";
-    private static final String LOG_SUCCESS_MOVE_FILE = "Successfully moved file: userId={}, from={}, to={}";
-    private static final String LOG_SUCCESS_MOVE_DIRECTORY = "Successfully moved directory: userId={}, from={}, to={}";
-
     private final ResourceStorageApi fileStorage;
     private final ResourceMetadataServiceApi metadataService;
     private final StorageKeyResolverApi keyResolver;
@@ -48,22 +42,22 @@ public class ResourceMover implements ResourceMoverApi {
 
     private void validatePaths(Long userId, String pathFrom, String pathTo) {
         if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
-            throw new InvalidMoveException(MSG_INVALID_MOVE.formatted(userId, pathFrom, pathTo));
+            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
         }
         metadataService.throwIfExists(userId, pathTo);
     }
 
     private void moveFile(Long userId, String pathFrom, String pathTo, String keyFrom, String keyTo) {
-        log.info(LOG_START_MOVE_FILE, userId, pathFrom, pathTo);
+        log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
         fileStorage.moveObject(keyFrom, keyTo);
         metadataService.updatePath(userId, pathFrom, pathTo);
 
-        log.info(LOG_SUCCESS_MOVE_FILE, userId, pathFrom, pathTo);
+        log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
     private void moveDirectory(Long userId, String pathFrom, String pathTo, String keyFrom, String keyTo) {
-        log.info(LOG_START_MOVE_DIRECTORY, userId, pathFrom, pathTo);
+        log.info("Start move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
         List<ResourceMetadata> content = metadataService.findDirectoryContent(userId, pathFrom);
         metadataService.markForDeletionByPrefix(userId, pathFrom);
@@ -73,7 +67,7 @@ public class ResourceMover implements ResourceMoverApi {
 
         metadataService.batchUpdatePaths(content, pathFrom, pathTo);
 
-        log.info(LOG_SUCCESS_MOVE_DIRECTORY, userId, pathFrom, pathTo);
+        log.info("Successfully moved directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
     private void recreateDirectoryMarker(String oldKey, String newKey) {

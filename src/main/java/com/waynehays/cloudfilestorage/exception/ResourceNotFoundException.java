@@ -1,8 +1,13 @@
 package com.waynehays.cloudfilestorage.exception;
 
-public class ResourceNotFoundException extends ApplicationException {
+import lombok.Getter;
 
-    public ResourceNotFoundException(String message) {
+@Getter
+public class ResourceNotFoundException extends ApplicationException {
+    private final String path;
+
+    public ResourceNotFoundException(String message, String path) {
         super(message);
+        this.path = path;
     }
 }

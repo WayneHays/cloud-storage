@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.sheduler;
+package com.waynehays.cloudfilestorage.scheduler;
 
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -16,11 +16,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class OrphanResourceCleaner {
-    private static final String LOG_CLEANUP_START = "Cleanup started: {} orphans found";
-    private static final String LOG_CLEANUP_FAILED = "Cleanup job failed";
-    private static final String LOG_FAILED_CLEAN_ORPHAN = "Failed to clean orphan: {}";
-    private static final String LOG_SUCCESS_CLEANUP = "Cleanup completed: {}/{} orphans processed";
-
     private final ResourceStorageApi storage;
     private final StorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
@@ -30,7 +25,7 @@ public class OrphanResourceCleaner {
         try {
             processOrphans();
         } catch (Exception e) {
-            log.error(LOG_CLEANUP_FAILED, e);
+            log.error("Cleanup job failed", e);
         }
     }
 
@@ -41,7 +36,7 @@ public class OrphanResourceCleaner {
             return;
         }
 
-        log.info(LOG_CLEANUP_START, orphans.size());
+        log.info("Cleanup started: {} orphans found", orphans.size());
 
         int cleaned = 0;
 
@@ -52,10 +47,10 @@ public class OrphanResourceCleaner {
                 metadataService.deleteById(orphan.getId());
                 cleaned++;
             } catch (Exception e) {
-                log.warn(LOG_FAILED_CLEAN_ORPHAN, orphan.getPath(), e);
+                log.warn("Failed to clean orphan: {}", orphan.getPath(), e);
             }
         }
 
-        log.info(LOG_SUCCESS_CLEANUP, cleaned, orphans.size());
+        log.info("Cleanup completed: {}/{} orphans processed", cleaned, orphans.size());
     }
 }

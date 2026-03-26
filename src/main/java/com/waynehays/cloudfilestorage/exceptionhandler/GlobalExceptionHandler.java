@@ -2,10 +2,12 @@ package com.waynehays.cloudfilestorage.exceptionhandler;
 
 import com.waynehays.cloudfilestorage.dto.response.ErrorDto;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
+import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
+import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
@@ -13,9 +15,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -27,15 +33,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    private static final String MSG_INVALID_UPLOAD = "Invalid resources to upload";
-    private static final String MSG_SIZE_EXCEEDED = "File size exceeds the allowed limit";
-    private static final String MSG_INVALID_MOVE = "Invalid move operation - can't move directory to file";
-    private static final String MSG_NOT_FOUND = "Resource not found";
-    private static final String MSG_ALREADY_EXISTS = "Resource already exists";
-    private static final String MSG_USERNAME_TAKEN = "Username already taken";
-    private static final String MSG_INVALID_CREDENTIALS = "Invalid credentials";
-    private static final String MSG_STORAGE_ERROR = "Failed to process file operation";
-    private static final String MSG_INTERNAL_ERROR = "Internal server error";
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(@NotNull HttpMessageNotReadableException ex,
+                                                                            @NotNull HttpHeaders headers,
+                                                                            @NotNull HttpStatusCode status,
+                                                                            @NotNull WebRequest request) {
+        log.error("Failed to parse JSON: {}", ex.getMessage());
+        ErrorDto error = createErrorDto("Invalid JSON format");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
@@ -47,9 +55,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        log.warn("Validation failed: {}", message);
 
-        return new ResponseEntity<>(new ErrorDto(message), HttpStatus.BAD_REQUEST);
+        log.warn("Validation failed for user: {}, {}", getCurrentUserInfo(), message);
+        ErrorDto error = createErrorDto(message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
     @Override
@@ -57,8 +67,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                                @NotNull HttpHeaders headers,
                                                                                @NotNull HttpStatusCode status,
                                                                                @NotNull WebRequest request) {
-        log.warn("Empty or missing upload part");
-        return buildBadRequestResponse(MSG_INVALID_UPLOAD);
+        log.warn("Empty or missing upload part for user: {}", getCurrentUserInfo());
+        ErrorDto error = createErrorDto("Invalid resources to upload");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
     @Override
@@ -66,58 +78,86 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                                     @NotNull HttpHeaders headers,
                                                                                     @NotNull HttpStatusCode status,
                                                                                     @NotNull WebRequest request) {
-        log.warn("Upload size exceeded");
-        return buildBadRequestResponse(MSG_SIZE_EXCEEDED);
+        log.warn("Upload size exceeded for user: {}", getCurrentUserInfo());
+        ErrorDto error = createErrorDto("File size exceeds the allowed limit");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
     @ExceptionHandler(InvalidMoveException.class)
-    public ResponseEntity<ErrorDto> handleInvalidMoveException(InvalidMoveException e) {
-        log.warn(e.getMessage());
-        return buildErrorResponse(MSG_INVALID_MOVE, HttpStatus.BAD_REQUEST);
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorDto handleInvalidMoveException(InvalidMoveException e) {
+        log.warn("{}: {}, '{}' -> '{}'", e.getMessage(), getCurrentUserInfo(), e.getFrom(), e.getTo());
+        String clientMessage = "Cannot move directory to file: '%s' -> '%s'".formatted(e.getFrom(), e.getTo());
+        return createErrorDto(clientMessage);
     }
 
+    @ExceptionHandler(MultipartValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorDto handleMultipartValidationException(MultipartValidationException e) {
+        log.warn("Multipart file validation failed for user: {}, {}", getCurrentUserInfo(), e.getMessage());
+        return createErrorDto(e.getMessage());
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleResourceNotFound(ResourceNotFoundException e) {
-        log.warn(e.getMessage());
-        return buildErrorResponse(MSG_NOT_FOUND, HttpStatus.NOT_FOUND);
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorDto handleResourceNotFound(ResourceNotFoundException e) {
+        log.warn("{}: {}, path='{}'", e.getMessage(), getCurrentUserInfo(), e.getPath());
+        return createErrorDto("Resource not found: " + e.getPath());
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
-    public ResponseEntity<ErrorDto> handleResourceAlreadyExists(ResourceAlreadyExistsException e) {
-        log.warn(e.getMessage());
-        return buildErrorResponse(MSG_ALREADY_EXISTS, HttpStatus.CONFLICT);
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorDto handleResourceAlreadyExists(ResourceAlreadyExistsException e) {
+        log.warn("{}: {}, paths={}", e.getMessage(), getCurrentUserInfo(), e.getPaths());
+        return createErrorDto("Resources already exists: " + e.getPaths());
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorDto> handleUserAlreadyExists(UserAlreadyExistsException e) {
-        log.warn(e.getMessage());
-        return buildErrorResponse(MSG_USERNAME_TAKEN, HttpStatus.CONFLICT);
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorDto handleUserAlreadyExists(UserAlreadyExistsException e) {
+        log.warn("{}", e.getMessage());
+        return createErrorDto(e.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException e) {
-        log.warn("Failed authentication attempt");
-        return buildErrorResponse(MSG_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorDto handleBadCredentials(BadCredentialsException e) {
+        log.warn("Failed authentication attempt", e);
+        return createErrorDto("Invalid credentials");
     }
 
     @ExceptionHandler(ResourceStorageException.class)
-    public ResponseEntity<ErrorDto> handleResourceStorageException(ResourceStorageException e) {
-        log.error(e.getMessage(), e);
-        return buildErrorResponse(MSG_STORAGE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorDto handleResourceStorageException(ResourceStorageException e) {
+        log.error("{}: {}", e.getMessage(), getCurrentUserInfo(), e);
+        return createErrorDto("Failed to process operation");
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorDto> handleException(Exception e) {
-        log.error("Unexpected exception", e);
-        return buildErrorResponse(MSG_INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorDto handleException(Exception e) {
+        log.error("Unexpected exception: {}", getCurrentUserInfo(), e);
+        return createErrorDto("Internal server error");
     }
 
-    private ResponseEntity<ErrorDto> buildErrorResponse(String message, HttpStatus status) {
-        return ResponseEntity.status(status).body(new ErrorDto(message));
+    private ErrorDto createErrorDto(String message) {
+        return new ErrorDto(message);
     }
 
-    private ResponseEntity<Object> buildBadRequestResponse(String message) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDto(message));
+    private UserInfo getCurrentUserInfo() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails user) {
+            return new UserInfo(user.id(), user.username());
+        }
+        return new UserInfo(null, "anonymous");
+    }
+
+    private record UserInfo(Long id, String username) {
+        @Override
+        public String toString() {
+            return "user='%s', userId=%s".formatted(username, id != null ? id : "N/A");
+        }
     }
 }

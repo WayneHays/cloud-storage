@@ -23,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    private static final String MSG_NOT_FOUND = "Resource not found in storage: userId=%d, path=%s";
 
     private final ArchiverApi archiver;
     private final ResourceStorageApi fileStorage;
@@ -69,7 +68,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
         StreamingResponseBody body = outputStream -> archiver.archiveResources(archiveItems, outputStream);
 
-        log.info("Successfully download directory: userId={}, path={}", userId, path);
+        log.info("Successfully downloaded directory: userId={}, path={}", userId, path);
         return new DownloadResult(body, directoryName + archiver.getExtension(), archiver.getContentType());
     }
 
@@ -80,7 +79,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         return new ArchiveItem(entryName, resourceMetadata.getSize(),
                 () -> fileStorage.getObject(storageKey)
                         .orElseThrow(() -> new ResourceNotFoundException(
-                                MSG_NOT_FOUND.formatted(userId, resourceMetadata.getPath())))
+                                "Resource not found in storage", resourceMetadata.getPath()))
                         .inputStream());
     }
 }

@@ -26,13 +26,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
-    private static final String LOG_UPLOAD_START = "Upload started: userId={}, objects count={}";
-    private static final String LOG_UPLOAD_SUCCESS = "Upload completed: userId={}, objects count={}, created directories={}";
-    private static final String LOG_UPLOAD_FAILED = "Upload failed for userId={}, initiating rollback";
-    private static final String LOG_FAILED_ROLLBACK = "Failed to rollback key: {}";
-    private static final String MSG_DUPLICATE_PATHS = "Duplicate paths in upload request: userId=%d, paths=%s";
-    private static final String MSG_FAILED_PROCESS_STREAM = "Failed to process file stream";
-
     private final ResourceStorageApi fileStorage;
     private final StorageKeyResolverApi keyResolver;
     private final ResourceDtoConverterApi dtoConverter;
@@ -40,7 +33,7 @@ public class ResourceUploader implements ResourceUploaderApi {
 
     @Override
     public List<ResourceDto> upload(Long userId, List<ObjectData> objects) {
-        log.info(LOG_UPLOAD_START, userId, objects.size());
+        log.info("Upload started: userId={}, objects count={}", userId, objects.size());
 
         checkForDuplicates(userId, objects);
         UploadContext context = new UploadContext();
@@ -51,10 +44,10 @@ public class ResourceUploader implements ResourceUploaderApi {
             List<ResourceDto> result = new ArrayList<>(createdDirectories);
             result.addAll(uploadedFiles);
 
-            log.info(LOG_UPLOAD_SUCCESS, userId, uploadedFiles.size(), createdDirectories.size());
+            log.info("Upload completed: userId={}, objects count={}, created directories={}", userId, uploadedFiles.size(), createdDirectories.size());
             return result;
         } catch (Exception e) {
-            log.warn(LOG_UPLOAD_FAILED, userId);
+            log.warn("Upload failed for userId={}, initiating rollback", userId);
             rollback(userId, context);
             throw e;
         }
@@ -74,7 +67,7 @@ public class ResourceUploader implements ResourceUploaderApi {
         }
 
         if (ObjectUtils.isNotEmpty(duplicates)) {
-            throw new ResourceAlreadyExistsException(MSG_DUPLICATE_PATHS.formatted(userId, duplicates));
+            throw new ResourceAlreadyExistsException("Duplicate paths in upload request", duplicates.stream().toList());
         }
 
         metadataService.throwIfAnyExists(userId, paths);
@@ -102,7 +95,7 @@ public class ResourceUploader implements ResourceUploaderApi {
         try (InputStream inputStream = object.inputStreamSupplier().get()) {
             fileStorage.putObject(inputStream, storageKey, object.size(), object.contentType());
         } catch (IOException e) {
-            throw new ResourceStorageException(MSG_FAILED_PROCESS_STREAM);
+            throw new ResourceStorageException("Failed to process file stream");
         }
     }
 
@@ -141,7 +134,7 @@ public class ResourceUploader implements ResourceUploaderApi {
         try {
             action.run();
         } catch (Exception e) {
-            log.warn(LOG_FAILED_ROLLBACK, identifier, e);
+            log.warn("Failed to rollback key: {}", identifier, e);
         }
     }
 }

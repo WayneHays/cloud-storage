@@ -12,11 +12,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceDeleter implements ResourceDeleterApi {
-    private static final String LOG_FILE_DELETE_START = "Start delete file: userId={}, path={}";
-    private static final String LOG_DIRECTORY_DELETE_START = "Start delete directory: userId={}, path={}";
-    private static final String LOG_FILE_DELETE_SUCCESS = "Successfully deleted file: userId={}, path={}";
-    private static final String LOG_DIRECTORY_DELETE_SUCCESS = "Successfully delete directory: userId={}, path={}";
-
     private final ResourceStorageApi fileStorage;
     private final ResourceMetadataServiceApi metadataService;
     private final StorageKeyResolverApi keyResolver;
@@ -34,22 +29,22 @@ public class ResourceDeleter implements ResourceDeleterApi {
     }
 
     private void deleteFile(Long userId, String path, String objectKey) {
-        log.info(LOG_FILE_DELETE_START, userId, path);
+        log.info("Start delete file: userId={}, path={}", userId, path);
 
         metadataService.markForDeletion(userId, path);
         fileStorage.deleteObject(objectKey);
         metadataService.delete(userId, path);
 
-        log.info(LOG_FILE_DELETE_SUCCESS, userId, path);
+        log.info("Successfully deleted file: userId={}, path={}", userId, path);
     }
 
     private void deleteDirectory(Long userId, String path, String objectKey) {
-        log.info(LOG_DIRECTORY_DELETE_START, userId, path);
+        log.info("Start delete directory: userId={}, path={}", userId, path);
 
         metadataService.markForDeletionByPrefix(userId, path);
         fileStorage.deleteByPrefix(objectKey);
         metadataService.deleteByPrefix(userId, path);
 
-        log.info(LOG_DIRECTORY_DELETE_SUCCESS, userId, path);
+        log.info("Successfully deleted directory: userId={}, path={}", userId, path);
     }
 }

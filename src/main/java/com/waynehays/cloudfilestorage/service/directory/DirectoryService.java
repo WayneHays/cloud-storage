@@ -15,9 +15,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DirectoryService implements DirectoryServiceApi {
-    private static final String LOG_START_CREATE_DIRECTORY = "Start create directory: userId={}, path={}";
-    private static final String LOG_SUCCESS_CREATED = "Successfully created directory: userId={}, path={}";
-
     private final ResourceStorageApi fileStorage;
     private final ResourceMetadataServiceApi metadataService;
     private final ResourceDtoConverterApi dtoConverter;
@@ -33,7 +30,7 @@ public class DirectoryService implements DirectoryServiceApi {
 
     @Override
     public ResourceDto createDirectory(Long userId, String directoryPath) {
-        log.info(LOG_START_CREATE_DIRECTORY, userId, directoryPath);
+        log.info("Start create directory: userId={}, path={}", userId, directoryPath);
 
         metadataService.throwIfExists(userId, directoryPath);
         metadataService.ensureParentExists(userId, directoryPath);
@@ -42,7 +39,7 @@ public class DirectoryService implements DirectoryServiceApi {
         fileStorage.createDirectory(storageKey);
         metadataService.saveDirectory(userId, directoryPath);
 
-        log.info(LOG_SUCCESS_CREATED, userId, directoryPath);
+        log.info("Successfully created directory: userId={}, path={}", userId, directoryPath);
         return dtoConverter.directoryFromPath(directoryPath);
     }
 }
