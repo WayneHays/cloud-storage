@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.validator;
+package com.waynehays.cloudfilestorage.component.validator;
 
 import com.waynehays.cloudfilestorage.annotation.ValidPath;
 import jakarta.validation.ConstraintValidator;

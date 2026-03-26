@@ -26,3 +26,4 @@ minio:
 logging:
   level:
     root: info
+
