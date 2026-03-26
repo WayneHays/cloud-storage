@@ -3,7 +3,15 @@ spring:
     name: cloud-file-storage
   profiles:
     default: dev
+
 streaming:
   buffer-size: 8192
+
 cleanup:
-  interval: 1200000
+  interval: 600
+
+minio:
+  storage:
+    limits:
+      max-path-length: 500
+      max-filename-length: 200

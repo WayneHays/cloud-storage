@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.entity;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -12,6 +13,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
@@ -20,6 +24,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class ResourceMetadata {
 
     @Id
@@ -29,13 +34,13 @@ public class ResourceMetadata {
     @Column(nullable = false)
     private Long userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String path;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String parentPath;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String name;
 
     private Long size;
@@ -47,8 +52,13 @@ public class ResourceMetadata {
     @Column(nullable = false)
     private boolean markedForDeletion;
 
-    @Column(nullable = false)
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private Instant updatedAt;
 
     @Override
     public boolean equals(Object o) {

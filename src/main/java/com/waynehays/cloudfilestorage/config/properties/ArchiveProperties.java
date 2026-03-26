@@ -1,14 +1,18 @@
 package com.waynehays.cloudfilestorage.config.properties;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @ConfigurationProperties(prefix = "streaming")
 public record ArchiveProperties(
 
-        @NotBlank(message = "Buffer size must be set")
-        @Size(min = 1024, max = 8192, message = "Buffer size must be more than 1024 and less than 8192")
-        int bufferSize
+        @NotNull(message = "Buffer size must be set")
+        @Min(value = 1024, message = "Buffer size must be >= 1024")
+        @Max(value = 8192, message = "Buffer size must be <= 8192")
+        Integer bufferSize
 ) {
 }

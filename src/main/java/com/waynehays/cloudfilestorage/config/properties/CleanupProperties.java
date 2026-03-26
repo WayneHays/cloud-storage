@@ -1,12 +1,18 @@
 package com.waynehays.cloudfilestorage.config.properties;
 
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @ConfigurationProperties(prefix = "cleanup")
 public record CleanupProperties(
 
-        @Size(min = 60, max = 180, message = "Cleanup interval must be more than 60 and less than 180")
-        Long interval
+        @NotNull(message = "Cleanup interval must be set")
+        @Min(value = 600, message = "Cleanup interval must be >= 600")
+        @Max(value = 3600, message = "Cleanup interval must be <= 3600")
+        Integer interval
 ) {
 }

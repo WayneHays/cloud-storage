@@ -3,13 +3,17 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
   jpa:
     hibernate:
       ddl-auto: validate
   servlet:
     multipart:
-      max-file-size: 30MB
-      max-request-size: 50MB
+      max-file-size: 100MB
+      max-request-size: 200MB
 minio:
   security:
     url: ${MINIO_URL}
@@ -17,8 +21,8 @@ minio:
     secretKey: ${MINIO_SECRET_KEY}
   storage:
     bucketName: files
-    batch-size: 10
+    batch-size: 50
+
 logging:
   level:
     root: info
-
