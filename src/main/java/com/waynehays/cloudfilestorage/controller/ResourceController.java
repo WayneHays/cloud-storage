@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -41,17 +42,16 @@ public class ResourceController {
     private final MultipartFileDataParserApi multipartFileDataParser;
 
     @GetMapping()
-    public ResponseEntity<ResourceDto> getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,
+    public ResourceDto getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                        @Valid GetInfoRequest getInfoRequest) {
-        return ResponseEntity.ok()
-                .body(resourceService.getInfo(userDetails.id(), getInfoRequest.path()));
+        return resourceService.getInfo(userDetails.id(), getInfoRequest.path());
     }
 
     @DeleteMapping()
-    public ResponseEntity<Void> deleteResource(@AuthenticationPrincipal CustomUserDetails userDetails,
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                @Valid DeleteRequest deleteRequest) {
         resourceService.delete(userDetails.id(), deleteRequest.path());
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/download")
@@ -66,27 +66,25 @@ public class ResourceController {
     }
 
     @PutMapping("/move")
-    public ResponseEntity<ResourceDto> moveOrRenameResource(@AuthenticationPrincipal CustomUserDetails userDetails,
+    public ResourceDto moveOrRenameResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid MoveRequest moveRequest) {
-        return ResponseEntity.ok()
-                .body(resourceService.move(userDetails.id(), moveRequest.from(), moveRequest.to()));
+        return resourceService.move(userDetails.id(), moveRequest.from(), moveRequest.to());
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ResourceDto>> searchResource(@AuthenticationPrincipal CustomUserDetails userDetails,
+    public List<ResourceDto> searchResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid SearchRequest searchRequest) {
-        return ResponseEntity.ok().body(resourceService.search(userDetails.id(), searchRequest.query()));
+        return resourceService.search(userDetails.id(), searchRequest.query());
     }
 
     @PostMapping()
-    public ResponseEntity<List<ResourceDto>> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid UploadRequest uploadRequest,
                                                             @RequestParam("object") List<MultipartFile> objects) {
         List<ObjectData> objectDataList = objects.stream()
                 .map(file -> multipartFileDataParser.parse(file, uploadRequest.path()))
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resourceService.upload(userDetails.id(), objectDataList));
+        return resourceService.upload(userDetails.id(), objectDataList);
     }
 }
