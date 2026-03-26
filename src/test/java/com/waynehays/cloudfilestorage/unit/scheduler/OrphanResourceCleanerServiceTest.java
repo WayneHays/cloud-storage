@@ -5,7 +5,6 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.service.OrphanResourceCleanerService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.scheduler.OrphanResourceCleaner;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
