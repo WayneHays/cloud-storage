@@ -68,8 +68,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.findOrThrow(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(path);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -114,8 +113,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.throwIfExists(USER_ID, path))
-                    .isInstanceOf(ResourceAlreadyExistsException.class)
-                    .hasMessageContaining(path);
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
         }
 
         @Test
@@ -147,8 +145,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.throwIfAnyExists(USER_ID, paths))
-                    .isInstanceOf(ResourceAlreadyExistsException.class)
-                    .hasMessageContaining("file2.txt");
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
         }
 
         @Test
@@ -178,8 +175,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.ensureParentExists(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("directory/");
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
@@ -260,8 +256,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.findDirectChildren(USER_ID, directoryPath))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(directoryPath);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
@@ -366,7 +361,6 @@ class ResourceMetadataServiceTest {
             assertThat(saved.getSize()).isEqualTo(size);
             assertThat(saved.getType()).isEqualTo(ResourceType.FILE);
             assertThat(saved.isMarkedForDeletion()).isFalse();
-            assertThat(saved.getCreatedAt()).isNotNull();
         }
     }
 
@@ -459,8 +453,7 @@ class ResourceMetadataServiceTest {
 
             // when & then
             assertThatThrownBy(() -> service.updatePath(USER_ID, pathFrom, pathTo))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(pathFrom);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 

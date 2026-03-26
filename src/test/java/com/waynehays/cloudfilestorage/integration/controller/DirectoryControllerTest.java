@@ -53,7 +53,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
                             .param("path", "docs/")
                             .cookie(session))
                     .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.message").value("Resource already exists"));
+                    .andExpect(jsonPath("$.message").value("Resources already exists: [docs/]"));
         }
 
         @Test
@@ -67,7 +67,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
                             .param("path", "docs/work/")
                             .cookie(session))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found"));
+                    .andExpect(jsonPath("$.message").value("Resource not found: docs/"));
         }
 
         @Test
@@ -209,7 +209,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
                             .param("path", "nonexistent/")
                             .cookie(session))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found"));
+                    .andExpect(jsonPath("$.message").value("Resource not found: nonexistent/"));
         }
 
         @Test

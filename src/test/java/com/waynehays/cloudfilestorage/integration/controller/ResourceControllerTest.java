@@ -190,7 +190,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                             .param("path", "nonexistent.txt")
                             .cookie(session))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found"));
+                    .andExpect(jsonPath("$.message").value("Resource not found: nonexistent.txt"));
         }
 
         @Test

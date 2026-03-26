@@ -132,13 +132,12 @@ class ResourceUploaderTest {
             String fullPath = "directory/file.txt";
             ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
 
-            doThrow(new ResourceAlreadyExistsException("Already exists: " + fullPath))
+            doThrow(new ResourceAlreadyExistsException("Resource already exists", fullPath))
                     .when(metadataService).throwIfAnyExists(eq(USER_ID), any());
 
             // when & then
             assertThatThrownBy(() -> resourceUploader.upload(USER_ID, List.of(objectData)))
-                    .isInstanceOf(ResourceAlreadyExistsException.class)
-                    .hasMessageContaining(fullPath);
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
 
             verify(storage, never()).putObject(any(), any(), anyLong(), any());
         }

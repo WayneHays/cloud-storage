@@ -1,12 +1,13 @@
 package com.waynehays.cloudfilestorage.unit.component.parser;
 
-import com.waynehays.cloudfilestorage.component.parser.MultipartFileDataParserApi;
 import com.waynehays.cloudfilestorage.component.parser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
-import org.junit.jupiter.api.BeforeEach;
+import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -18,12 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class MultipartFileDataParserTest {
 
-    private MultipartFileDataParserApi parser;
+    @Mock
+    private MultipartFileValidator validator;
 
-    @BeforeEach
-    void setUp() {
-        parser = new MultipartFileDataParser();
-    }
+    @InjectMocks
+    private MultipartFileDataParser parser;
 
     @Nested
     class Parse {

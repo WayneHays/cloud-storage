@@ -100,12 +100,11 @@ class ResourceDownloaderTest {
             String path = "directory/file.txt";
 
             when(metadataService.findOrThrow(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException("Resource not found: " + path));
+                    .thenThrow(new ResourceNotFoundException("Resource not found", path));
 
             // when & then
             assertThatThrownBy(() -> resourceDownloader.download(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(path);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 

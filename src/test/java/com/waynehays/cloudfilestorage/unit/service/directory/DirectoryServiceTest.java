@@ -90,12 +90,11 @@ class DirectoryServiceTest {
             // given
             String path = "nonexistent/";
             when(metadataService.findDirectChildren(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException("Resource not found: " + path));
+                    .thenThrow(new ResourceNotFoundException("Resource not found", path));
 
             // when & then
             assertThatThrownBy(() -> directoryService.getContent(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(path);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -149,13 +148,12 @@ class DirectoryServiceTest {
             // given
             String path = "directory/";
 
-            doThrow(new ResourceAlreadyExistsException("Resource already exists: " + path))
+            doThrow(new ResourceAlreadyExistsException("Resource already exists", path))
                     .when(metadataService).throwIfExists(USER_ID, path);
 
             // when & then
             assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))
-                    .isInstanceOf(ResourceAlreadyExistsException.class)
-                    .hasMessageContaining(path);
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
 
             verify(storage, never()).createDirectory(any());
             verify(metadataService, never()).saveDirectory(any(), any());
@@ -166,7 +164,7 @@ class DirectoryServiceTest {
             // given
             String path = "directory/subdirectory/";
 
-            doThrow(new ResourceNotFoundException("Resource not found: directory/"))
+            doThrow(new ResourceNotFoundException("Resource not found", "directory/"))
                     .when(metadataService).ensureParentExists(USER_ID, path);
 
             // when & then

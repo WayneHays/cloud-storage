@@ -87,12 +87,11 @@ class ResourceMoverTest {
             String pathTo = "other/file.txt";
 
             when(metadataService.findOrThrow(USER_ID, pathFrom))
-                    .thenThrow(new ResourceNotFoundException("Resource not found: " + pathFrom));
+                    .thenThrow(new ResourceNotFoundException("Resource not found", pathFrom));
 
             // when & then
             assertThatThrownBy(() -> resourceMover.move(USER_ID, pathFrom, pathTo))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining(pathFrom);
+                    .isInstanceOf(ResourceNotFoundException.class);
 
             verify(storage, never()).moveObject(any(), any());
         }
@@ -105,13 +104,12 @@ class ResourceMoverTest {
             ResourceMetadata metadata = new ResourceMetadata();
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(metadata);
-            doThrow(new ResourceAlreadyExistsException("Resource already exists: " + pathTo))
+            doThrow(new ResourceAlreadyExistsException("Resource already exists", pathTo))
                     .when(metadataService).throwIfExists(USER_ID, pathTo);
 
             // when & then
             assertThatThrownBy(() -> resourceMover.move(USER_ID, pathFrom, pathTo))
-                    .isInstanceOf(ResourceAlreadyExistsException.class)
-                    .hasMessageContaining(pathTo);
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
 
             verify(storage, never()).moveObject(any(), any());
         }

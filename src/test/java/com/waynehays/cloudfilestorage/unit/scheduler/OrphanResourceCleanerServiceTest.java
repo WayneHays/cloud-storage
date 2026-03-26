@@ -3,8 +3,9 @@ package com.waynehays.cloudfilestorage.unit.scheduler;
 import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.service.OrphanResourceCleanerService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.sheduler.OrphanResourceCleaner;
+import com.waynehays.cloudfilestorage.scheduler.OrphanResourceCleaner;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,10 +26,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OrphanResourceCleanerTest {
+class OrphanResourceCleanerServiceTest {
 
     @Mock
-    private ResourceMetadataServiceApi service;
+    private ResourceMetadataServiceApi metadataService;
 
     @Mock
     private ResourceStorageApi storage;
@@ -37,7 +38,7 @@ class OrphanResourceCleanerTest {
     private StorageKeyResolverApi keyResolver;
 
     @InjectMocks
-    private OrphanResourceCleaner cleaner;
+    private OrphanResourceCleanerService cleanerService;
 
     private static final Long USER_ID = 1L;
 
@@ -49,30 +50,30 @@ class OrphanResourceCleanerTest {
             // given
             ResourceMetadata orphan = createOrphan(1L, "directory/file.txt");
 
-            when(service.findMarkedForDeletion()).thenReturn(List.of(orphan));
+            when(metadataService.findMarkedForDeletion()).thenReturn(List.of(orphan));
             when(keyResolver.resolveKey(orphan.getUserId(), orphan.getPath()))
                     .thenReturn("user-1-files/directory/file.txt");
 
             // when
-            cleaner.clean();
+            cleanerService.clean();
 
             // then
-            InOrder inOrder = inOrder(storage, service);
+            InOrder inOrder = inOrder(storage, metadataService);
             inOrder.verify(storage).deleteObject("user-1-files/directory/file.txt");
-            inOrder.verify(service).deleteById(1L);
+            inOrder.verify(metadataService).deleteById(1L);
         }
 
         @Test
         void shouldDoNothing_whenNoOrphans() {
             // given
-            when(service.findMarkedForDeletion()).thenReturn(List.of());
+            when(metadataService.findMarkedForDeletion()).thenReturn(List.of());
 
             // when
-            cleaner.clean();
+            cleanerService.clean();
 
             // then
             verify(storage, never()).deleteObject(any());
-            verify(service, never()).deleteById(any());
+            verify(metadataService, never()).deleteById(any());
         }
 
         @Test
@@ -80,17 +81,17 @@ class OrphanResourceCleanerTest {
             // given
             ResourceMetadata orphan = createOrphan(1L, "directory/file.txt");
 
-            when(service.findMarkedForDeletion()).thenReturn(List.of(orphan));
+            when(metadataService.findMarkedForDeletion()).thenReturn(List.of(orphan));
             when(keyResolver.resolveKey(orphan.getUserId(), orphan.getPath()))
                     .thenReturn("user-1-files/directory/file.txt");
             doThrow(new ResourceStorageException("MinIO unavailable"))
                     .when(storage).deleteObject("user-1-files/directory/file.txt");
 
             // when
-            cleaner.clean();
+            cleanerService.clean();
 
             // then
-            verify(service, never()).deleteById(any());
+            verify(metadataService, never()).deleteById(any());
         }
 
         @Test
@@ -99,7 +100,7 @@ class OrphanResourceCleanerTest {
             ResourceMetadata orphan1 = createOrphan(1L, "directory/file1.txt");
             ResourceMetadata orphan2 = createOrphan(2L, "directory/file2.txt");
 
-            when(service.findMarkedForDeletion()).thenReturn(List.of(orphan1, orphan2));
+            when(metadataService.findMarkedForDeletion()).thenReturn(List.of(orphan1, orphan2));
             when(keyResolver.resolveKey(orphan1.getUserId(), orphan1.getPath()))
                     .thenReturn("user-1-files/directory/file1.txt");
             when(keyResolver.resolveKey(orphan2.getUserId(), orphan2.getPath()))
@@ -108,22 +109,22 @@ class OrphanResourceCleanerTest {
                     .when(storage).deleteObject("user-1-files/directory/file1.txt");
 
             // when
-            cleaner.clean();
+            cleanerService.clean();
 
             // then
-            verify(service, never()).deleteById(1L);
+            verify(metadataService, never()).deleteById(1L);
             verify(storage).deleteObject("user-1-files/directory/file2.txt");
-            verify(service).deleteById(2L);
+            verify(metadataService).deleteById(2L);
         }
 
         @Test
         void shouldNotThrow_whenFindMarkedFails() {
             // given
-            when(service.findMarkedForDeletion())
+            when(metadataService.findMarkedForDeletion())
                     .thenThrow(new RuntimeException("DB unavailable"));
 
             // when & then
-            assertThatCode(() -> cleaner.clean()).doesNotThrowAnyException();
+            assertThatCode(() -> cleanerService.clean()).doesNotThrowAnyException();
         }
     }
 

@@ -541,7 +541,6 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryBaseTest {
         metadata.setType(type);
         metadata.setSize(type == ResourceType.FILE ? 100L : null);
         metadata.setMarkedForDeletion(markedForDeletion);
-        metadata.setCreatedAt(Instant.now());
         return entityManager.persistAndFlush(metadata);
     }
 

@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.storage;
 
+import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.integration.base.AbstractIntegrationBaseTest;
 import com.waynehays.cloudfilestorage.integration.base.MinioTestCleaner;
@@ -27,6 +28,9 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
 
     @Autowired
     private MinioResourceStorage storage;
+
+    @Autowired
+    private MinioStorageProperties properties;
 
     @Autowired
     private MinioTestCleaner cleaner;
@@ -151,6 +155,23 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
 
             // then
             assertThat(storage.getObject("user-1-files/other/file.txt")).isPresent();
+        }
+
+        @Test
+        void shouldDeleteMoreObjectsThanBatchSize() {
+            // given
+            int objectCount = properties.batchSize() + 2;
+
+            for (int i = 0; i < objectCount; i++) {
+                storage.putObject(new ByteArrayInputStream("content".getBytes()),
+                        "user-1-files/directory/file%d".formatted(i), 1, "text/plain");
+            }
+
+            // when
+            storage.deleteByPrefix("user-1-files/directory/");
+
+            // then
+            assertThat(storage.getObject("user-1-files/directory/")).isEmpty();
         }
     }
 
