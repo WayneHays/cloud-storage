@@ -35,6 +35,7 @@ dependencies {
 	implementation("commons-io:commons-io:2.21.0")
 	implementation 'org.mapstruct:mapstruct:1.6.3'
 	implementation 'io.minio:minio:8.6.0'
+	implementation 'com.bucket4j:bucket4j_jdk17-core:8.17.0'
 
 	compileOnly 'org.projectlombok:lombok'
 
