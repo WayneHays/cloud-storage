@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
-@ConfigurationProperties(prefix = "minio.storage.limits")
+@ConfigurationProperties(prefix = "multipart.limits")
 public record MultipartFileLimitsProperties(
 
         @NotNull(message = "Max path length must be set")

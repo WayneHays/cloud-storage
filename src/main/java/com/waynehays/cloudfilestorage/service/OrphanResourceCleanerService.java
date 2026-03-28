@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.service;
 
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,8 +14,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrphanResourceCleanerService {
-    private final ResourceStorageApi storage;
-    private final StorageKeyResolverApi keyResolver;
+    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageKeyResolver keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
     public void clean() {
@@ -39,7 +39,7 @@ public class OrphanResourceCleanerService {
         for (ResourceMetadata orphan : orphans) {
             try {
                 String storageKey = keyResolver.resolveKey(orphan.getUserId(), orphan.getPath());
-                storage.deleteObject(storageKey);
+                resourceStorage.deleteObject(storageKey);
                 metadataService.deleteById(orphan.getId());
                 cleaned++;
             } catch (Exception e) {
