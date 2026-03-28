@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.deleter;
 
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
@@ -12,9 +12,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceDeleter implements ResourceDeleterApi {
-    private final ResourceStorageApi fileStorage;
+    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageKeyResolver keyResolver;
     private final ResourceMetadataServiceApi metadataService;
-    private final StorageKeyResolverApi keyResolver;
 
     @Override
     public void delete(Long userId, String path) {
@@ -32,7 +32,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
         log.info("Start delete file: userId={}, path={}", userId, path);
 
         metadataService.markForDeletion(userId, path);
-        fileStorage.deleteObject(objectKey);
+        resourceStorage.deleteObject(objectKey);
         metadataService.delete(userId, path);
 
         log.info("Successfully deleted file: userId={}, path={}", userId, path);
@@ -42,7 +42,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
         metadataService.markForDeletionByPrefix(userId, path);
-        fileStorage.deleteByPrefix(objectKey);
+        resourceStorage.deleteByPrefix(objectKey);
         metadataService.deleteByPrefix(userId, path);
 
         log.info("Successfully deleted directory: userId={}, path={}", userId, path);

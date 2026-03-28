@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.component.keyresolver;
 
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.minio.MinioKeyResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,9 +12,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class StorageKeyResolverTest {
+class MinioKeyResolverTest {
 
-    private final StorageKeyResolverApi keyResolver = new StorageKeyResolver();
+    private final MinioKeyResolver keyResolver = new MinioKeyResolver();
 
     @Nested
     class GenerateKeyTest {

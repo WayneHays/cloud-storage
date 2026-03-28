@@ -2,12 +2,12 @@ package com.waynehays.cloudfilestorage.service.resource.downloader;
 
 import com.waynehays.cloudfilestorage.component.archiver.ArchiveItem;
 import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +24,10 @@ import java.util.List;
 public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    private final ArchiverApi archiver;
-    private final ResourceStorageApi fileStorage;
-    private final StorageKeyResolverApi keyResolver;
+    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageKeyResolver keyResolver;
     private final ResourceMetadataServiceApi metadataService;
+    private final ArchiverApi archiver;
 
     @Override
     public DownloadResult download(Long userId, String path) {
@@ -45,7 +45,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         log.info("Start download file: userId={}, path={}", userId, path);
 
         String objectKey = keyResolver.resolveKey(userId, path);
-        StorageItem item = fileStorage.getObject(objectKey).orElseThrow();
+        StorageItem item = resourceStorage.getObject(objectKey).orElseThrow();
 
         StreamingResponseBody body = outputStream -> {
             try (InputStream inputStream = item.inputStream()) {
@@ -77,7 +77,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         String entryName = resourceMetadata.getPath().substring(directoryPath.length());
 
         return new ArchiveItem(entryName, resourceMetadata.getSize(),
-                () -> fileStorage.getObject(storageKey)
+                () -> resourceStorage.getObject(storageKey)
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Resource not found in storage", resourceMetadata.getPath()))
                         .inputStream());

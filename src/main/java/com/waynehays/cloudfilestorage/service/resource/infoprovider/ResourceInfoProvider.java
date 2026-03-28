@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.infoprovider;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceInfoProvider implements ResourceInfoProviderApi {
+    private final ResourceDtoConverter dtoConverter;
     private final ResourceMetadataServiceApi metadataService;
-    private final ResourceDtoConverterApi dtoConverter;
 
     @Override
     public ResourceDto getInfo(Long userId, String path) {

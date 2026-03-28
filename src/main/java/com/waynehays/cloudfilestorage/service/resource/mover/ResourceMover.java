@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.service.resource.mover;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +18,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
-    private final ResourceStorageApi fileStorage;
+    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageKeyResolver keyResolver;
+    private final ResourceDtoConverter dtoConverter;
     private final ResourceMetadataServiceApi metadataService;
-    private final StorageKeyResolverApi keyResolver;
-    private final ResourceDtoConverterApi dtoConverter;
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
@@ -50,7 +50,7 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveFile(Long userId, String pathFrom, String pathTo, String keyFrom, String keyTo) {
         log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
-        fileStorage.moveObject(keyFrom, keyTo);
+        resourceStorage.moveObject(keyFrom, keyTo);
         metadataService.updatePath(userId, pathFrom, pathTo);
 
         log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
@@ -71,8 +71,8 @@ public class ResourceMover implements ResourceMoverApi {
     }
 
     private void recreateDirectoryMarker(String oldKey, String newKey) {
-        fileStorage.createDirectory(newKey);
-        fileStorage.deleteObject(oldKey);
+        resourceStorage.createDirectory(newKey);
+        resourceStorage.deleteObject(oldKey);
     }
 
     private void moveContent(Long userId, List<ResourceMetadata> resourcesToMove, String pathFrom, String pathTo) {
@@ -82,7 +82,7 @@ public class ResourceMover implements ResourceMoverApi {
             String newKey = keyResolver.resolveKey(userId, newPath);
 
             if (metadata.isFile()) {
-                fileStorage.moveObject(oldKey, newKey);
+                resourceStorage.moveObject(oldKey, newKey);
             } else {
                 recreateDirectoryMarker(oldKey, newKey);
             }

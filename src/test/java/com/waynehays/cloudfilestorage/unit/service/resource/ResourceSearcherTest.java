@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -25,7 +25,7 @@ class ResourceSearcherTest {
     private ResourceMetadataServiceApi metadataService;
 
     @Mock
-    private ResourceDtoConverterApi converter;
+    private ResourceDtoConverter converter;
 
     @InjectMocks
     private ResourceSearcher resourceSearcher;
