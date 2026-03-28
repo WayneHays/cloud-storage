@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
-import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import io.minio.CopyObjectArgs;
@@ -52,9 +52,9 @@ public class MinioResourceStorage implements ResourceStorageApi {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new ResourceStorageException(MSG_FAILED_GET + objectKey, e);
+            throw new ResourceStorageOperationException(MSG_FAILED_GET + objectKey, e);
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_GET + objectKey, e);
+            throw new ResourceStorageOperationException(MSG_FAILED_GET + objectKey, e);
         }
     }
 
@@ -68,7 +68,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
-            throw new ResourceStorageException("Failed to put object with key: " + objectKey, e);
+            throw new ResourceStorageOperationException("Failed to put object with key: " + objectKey, e);
         }
     }
 
@@ -84,7 +84,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build()
             );
         } catch (Exception e) {
-            throw new ResourceStorageException("Failed to create directory with key: " + objectKey, e);
+            throw new ResourceStorageOperationException("Failed to create directory with key: " + objectKey, e);
         }
     }
 
@@ -95,7 +95,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
             deleteObject(sourceKey);
         } catch (Exception e) {
             rollbackCopy(targetKey);
-            throw new ResourceStorageException("Failed to move object from %s to %s"
+            throw new ResourceStorageOperationException("Failed to move object from %s to %s"
                     .formatted(sourceKey, targetKey), e);
         }
     }
@@ -109,7 +109,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .object(objectKey)
                             .build());
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_DELETE + objectKey, e);
+            throw new ResourceStorageOperationException(MSG_FAILED_DELETE + objectKey, e);
         }
     }
 
@@ -127,7 +127,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                     flushDeleteBatch(batch);
                 }
             } catch (Exception e) {
-                throw new ResourceStorageException(MSG_FAILED_DELETE + prefix, e);
+                throw new ResourceStorageOperationException(MSG_FAILED_DELETE + prefix, e);
             }
         }
 
@@ -147,7 +147,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .build())
                     .build());
         } catch (Exception e) {
-            throw new ResourceStorageException("Failed to copy object from %s to %s"
+            throw new ResourceStorageOperationException("Failed to copy object from %s to %s"
                     .formatted(sourceKey, targetKey), e);
         }
     }
@@ -193,7 +193,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
         batch.clear();
 
         if (!failedKeys.isEmpty()) {
-            throw new ResourceStorageException("Failed to delete objects: " + failedKeys);
+            throw new ResourceStorageOperationException("Failed to delete objects: " + failedKeys);
         }
     }
 }
