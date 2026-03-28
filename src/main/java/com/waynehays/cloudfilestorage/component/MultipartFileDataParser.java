@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.component.parser;
+package com.waynehays.cloudfilestorage.component;
 
+import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
-import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,12 +11,11 @@ import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
-public class MultipartFileDataParser implements MultipartFileDataParserApi {
+public class MultipartFileDataParser {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final MultipartFileValidator validator;
 
-    @Override
     public ObjectData parse(MultipartFile file, String directory) {
         String originalFilename = file.getOriginalFilename();
         String normalizedFilename = PathUtils.normalizeSeparators(originalFilename);
@@ -26,7 +25,7 @@ public class MultipartFileDataParser implements MultipartFileDataParserApi {
         String fullPath = PathUtils.combine(finalDirectory, filename);
         String contentType = resolveContentType(file.getContentType());
 
-        validator.validate(file, fullPath);
+        validator.validate(originalFilename, fullPath);
 
         return new ObjectData(
                 originalFilename,
