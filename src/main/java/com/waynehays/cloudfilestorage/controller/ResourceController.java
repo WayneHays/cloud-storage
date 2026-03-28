@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.controller;
 
+import com.waynehays.cloudfilestorage.component.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.request.resource.DeleteRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.DownloadRequest;
@@ -10,7 +11,6 @@ import com.waynehays.cloudfilestorage.dto.request.resource.UploadRequest;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.resource.ResourceServiceApi;
-import com.waynehays.cloudfilestorage.component.parser.MultipartFileDataParserApi;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResourceController {
     private final ResourceServiceApi resourceService;
-    private final MultipartFileDataParserApi multipartFileDataParser;
+    private final MultipartFileDataParser multipartFileDataParser;
 
     @GetMapping()
     public ResourceDto getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,

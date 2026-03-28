@@ -1,15 +1,16 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverterApi;
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
-import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.uploader.ResourceUploader;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 
@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,13 +37,16 @@ import static org.mockito.Mockito.when;
 class ResourceUploaderTest {
 
     @Mock
-    private ResourceStorageApi storage;
+    private UploadValidator uploadValidator;
 
     @Mock
-    private StorageKeyResolverApi keyResolver;
+    private ResourceStorageApi resourceStorage;
 
     @Mock
-    private ResourceDtoConverterApi converter;
+    private ResourceStorageKeyResolver keyResolver;
+
+    @Mock
+    private ResourceDtoConverter dtoConverter;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -52,108 +56,108 @@ class ResourceUploaderTest {
 
     private static final Long USER_ID = 1L;
 
+    private ObjectData createObject(String fullPath, long size) {
+        return new ObjectData("file.txt", "file.txt", "dir/", fullPath, size,
+                "text/plain", InputStream::nullInputStream);
+    }
+
     @Nested
-    class Upload {
+    class SuccessfulUpload {
 
         @Test
-        void shouldUploadFileAndReturnResult() {
+        void shouldUploadSingleFile() {
             // given
-            String fullPath = "directory/file.txt";
-            String storageKey = "user-1-files/directory/file.txt";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-            ResourceDto fileDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
+            ObjectData object = createObject("dir/file.txt", 100);
+            List<ObjectData> objects = List.of(object);
+            ResourceDto fileDto = new ResourceDto("dir/", "file.txt", 100L, ResourceType.FILE);
 
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(converter.fileFromPath(fullPath, 100L)).thenReturn(fileDto);
+            when(keyResolver.resolveKey(USER_ID, "dir/file.txt")).thenReturn("1/dir/file.txt");
+            when(dtoConverter.fileFromPath("dir/file.txt", 100L)).thenReturn(fileDto);
+            when(metadataService.exists(USER_ID, "dir/")).thenReturn(false);
+            when(keyResolver.resolveKey(USER_ID, "dir/")).thenReturn("1/dir/");
+            when(dtoConverter.directoryFromPath("dir/")).thenReturn(
+                    new ResourceDto("", "dir/", null, ResourceType.DIRECTORY));
 
             // when
-            List<ResourceDto> result = resourceUploader.upload(USER_ID, List.of(objectData));
+            List<ResourceDto> result = resourceUploader.upload(USER_ID, objects);
 
             // then
-            assertThat(result).contains(fileDto);
-            verify(metadataService).throwIfAnyExists(eq(USER_ID), any());
-            verify(storage).putObject(any(InputStream.class), eq(storageKey), eq(100L), eq("text/plain"));
-            verify(metadataService).saveFile(USER_ID, fullPath, 100L);
+            assertThat(result).hasSize(2);
+            verify(uploadValidator).validate(USER_ID, objects);
+            verify(resourceStorage).putObject(any(InputStream.class),
+                    eq("1/dir/file.txt"), eq(100L), eq("text/plain"));
+            verify(metadataService).saveFile(USER_ID, "dir/file.txt", 100L);
         }
 
         @Test
         void shouldUploadMultipleFiles() {
             // given
-            String path1 = "directory/file1.txt";
-            String path2 = "directory/file2.txt";
-            String key1 = "user-1-files/directory/file1.txt";
-            String key2 = "user-1-files/directory/file2.txt";
-            ObjectData data1 = createObjectData(path1, 100L, "text/plain");
-            ObjectData data2 = createObjectData(path2, 200L, "text/plain");
-            ResourceDto dto1 = new ResourceDto("directory/", "file1.txt", 100L, ResourceType.FILE);
-            ResourceDto dto2 = new ResourceDto("directory/", "file2.txt", 200L, ResourceType.FILE);
+            ObjectData object1 = createObject("dir/a.txt", 100);
+            ObjectData object2 = createObject("dir/b.txt", 200);
+            List<ObjectData> objects = List.of(object1, object2);
 
-            when(keyResolver.resolveKey(USER_ID, path1)).thenReturn(key1);
-            when(keyResolver.resolveKey(USER_ID, path2)).thenReturn(key2);
-            when(converter.fileFromPath(path1, 100L)).thenReturn(dto1);
-            when(converter.fileFromPath(path2, 200L)).thenReturn(dto2);
+            ResourceDto fileDto1 = new ResourceDto("dir/", "a.txt", 100L, ResourceType.FILE);
+            ResourceDto fileDto2 = new ResourceDto("dir/", "b.txt", 200L, ResourceType.FILE);
+
+            when(keyResolver.resolveKey(USER_ID, "dir/a.txt")).thenReturn("1/dir/a.txt");
+            when(keyResolver.resolveKey(USER_ID, "dir/b.txt")).thenReturn("1/dir/b.txt");
+            when(dtoConverter.fileFromPath("dir/a.txt", 100L)).thenReturn(fileDto1);
+            when(dtoConverter.fileFromPath("dir/b.txt", 200L)).thenReturn(fileDto2);
+            when(metadataService.exists(USER_ID, "dir/")).thenReturn(false);
+            when(keyResolver.resolveKey(USER_ID, "dir/")).thenReturn("1/dir/");
+            when(dtoConverter.directoryFromPath("dir/")).thenReturn(
+                    new ResourceDto("", "dir/", null, ResourceType.DIRECTORY));
 
             // when
-            List<ResourceDto> result = resourceUploader.upload(USER_ID, List.of(data1, data2));
+            List<ResourceDto> result = resourceUploader.upload(USER_ID, objects);
 
             // then
-            assertThat(result).contains(dto1, dto2);
-            verify(storage).putObject(any(), eq(key1), eq(100L), any());
-            verify(storage).putObject(any(), eq(key2), eq(200L), any());
-            verify(metadataService).saveFile(USER_ID, path1, 100L);
-            verify(metadataService).saveFile(USER_ID, path2, 200L);
+            assertThat(result).hasSize(3);
+            verify(resourceStorage, times(2))
+                    .putObject(any(), any(), anyLong(), any());
+            verify(metadataService).saveFile(USER_ID, "dir/a.txt", 100L);
+            verify(metadataService).saveFile(USER_ID, "dir/b.txt", 200L);
         }
 
         @Test
-        void shouldUseDefaultContentTypeWhenProvided() {
+        void shouldSkipExistingDirectories() {
             // given
-            String fullPath = "directory/file.txt";
-            String storageKey = "user-1-files/directory/file.txt";
-            ObjectData objectData = createObjectData(fullPath, 50L, "application/octet-stream");
-            ResourceDto fileDto = new ResourceDto("directory/", "file.txt", 50L, ResourceType.FILE);
+            ObjectData object = createObject("dir/file.txt", 100);
+            List<ObjectData> objects = List.of(object);
+            ResourceDto fileDto = new ResourceDto("dir/", "file.txt", 100L, ResourceType.FILE);
 
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(converter.fileFromPath(fullPath, 50L)).thenReturn(fileDto);
+            when(keyResolver.resolveKey(USER_ID, "dir/file.txt")).thenReturn("1/dir/file.txt");
+            when(dtoConverter.fileFromPath("dir/file.txt", 100L)).thenReturn(fileDto);
+            when(metadataService.exists(USER_ID, "dir/")).thenReturn(true);
 
             // when
-            resourceUploader.upload(USER_ID, List.of(objectData));
+            List<ResourceDto> result = resourceUploader.upload(USER_ID, objects);
 
             // then
-            verify(storage).putObject(any(InputStream.class), eq(storageKey), eq(50L), eq("application/octet-stream"));
+            assertThat(result).hasSize(1);
+            verify(resourceStorage, never()).createDirectory(any());
+            verify(metadataService, never()).saveDirectory(any(), any());
         }
     }
 
     @Nested
-    class CheckForDuplicates {
+    class ValidationFailure {
 
         @Test
-        void shouldThrowWhenDuplicateExistsInStorage() {
+        void shouldPropagateValidationException() {
             // given
-            String fullPath = "directory/file.txt";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-
-            doThrow(new ResourceAlreadyExistsException("Resource already exists", fullPath))
-                    .when(metadataService).throwIfAnyExists(eq(USER_ID), any());
+            List<ObjectData> objects = List.of(createObject("dir/file.txt", 100));
+            doThrow(new ResourceStorageLimitException("No space", 100L, 0L))
+                    .when(uploadValidator).validate(USER_ID, objects);
 
             // when & then
-            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, List.of(objectData)))
-                    .isInstanceOf(ResourceAlreadyExistsException.class);
+            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, objects))
+                    .isInstanceOf(ResourceStorageLimitException.class);
 
-            verify(storage, never()).putObject(any(), any(), anyLong(), any());
-        }
-
-        @Test
-        void shouldThrowWhenDuplicateFilesInRequest() {
-            // given
-            ObjectData data1 = createObjectData("directory/file.txt", 100L, "text/plain");
-            ObjectData data2 = createObjectData("directory/file.txt", 200L, "text/plain");
-
-            // when & then
-            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, List.of(data1, data2)))
-                    .isInstanceOf(ResourceAlreadyExistsException.class);
-
-            verify(storage, never()).putObject(any(), any(), anyLong(), any());
-            verify(metadataService, never()).throwIfAnyExists(any(), any());
+            verify(resourceStorage, never())
+                    .putObject(any(), any(), anyLong(), any());
+            verify(metadataService, never())
+                    .saveFile(any(), any(), anyLong());
         }
     }
 
@@ -161,147 +165,52 @@ class ResourceUploaderTest {
     class Rollback {
 
         @Test
-        void shouldRollbackStorageAndMetadataOnFailure() {
+        void shouldRollbackOnStorageFailure() {
             // given
-            String path1 = "directory/file1.txt";
-            String path2 = "directory/file2.txt";
-            String key1 = "user-1-files/directory/file1.txt";
-            String key2 = "user-1-files/directory/file2.txt";
-            ObjectData data1 = createObjectData(path1, 100L, "text/plain");
-            ObjectData data2 = createObjectData(path2, 200L, "text/plain");
+            ObjectData object1 = createObject("dir/a.txt", 100);
+            ObjectData object2 = createObject("dir/b.txt", 200);
+            List<ObjectData> objects = List.of(object1, object2);
 
-            when(keyResolver.resolveKey(USER_ID, path1)).thenReturn(key1);
-            when(keyResolver.resolveKey(USER_ID, path2)).thenReturn(key2);
-            when(converter.fileFromPath(path1, 100L)).thenReturn(
-                    new ResourceDto("directory/", "file1.txt", 100L, ResourceType.FILE));
-            doNothing().when(storage).putObject(any(), eq(key1), eq(100L), any());
-            doThrow(new ResourceStorageException("Storage error"))
-                    .when(storage).putObject(any(), eq(key2), eq(200L), any());
+            when(keyResolver.resolveKey(USER_ID, "dir/a.txt")).thenReturn("1/dir/a.txt");
+            when(keyResolver.resolveKey(USER_ID, "dir/b.txt")).thenReturn("1/dir/b.txt");
+            when(dtoConverter.fileFromPath("dir/a.txt", 100L))
+                    .thenReturn(new ResourceDto("dir/", "a.txt", 100L, ResourceType.FILE));
+
+            doNothing().when(resourceStorage).putObject(any(), eq("1/dir/a.txt"), eq(100L), any());
+            doThrow(new ResourceStorageOperationException("Storage error"))
+                    .when(resourceStorage).putObject(any(), eq("1/dir/b.txt"), eq(200L), any());
 
             // when & then
-            List<ObjectData> files = List.of(data1, data2);
-            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, files))
-                    .isInstanceOf(ResourceStorageException.class);
+            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, objects))
+                    .isInstanceOf(ResourceStorageOperationException.class);
 
-            verify(storage).deleteObject(key1);
-            verify(storage, never()).deleteObject(key2);
-            verify(metadataService).delete(USER_ID, path1);
-            verify(metadataService, never()).delete(USER_ID, path2);
+            verify(resourceStorage).deleteObject("1/dir/a.txt");
+            verify(metadataService).delete(USER_ID, "dir/a.txt");
         }
 
         @Test
-        void shouldRollbackStorageAndMetadataWhenDirectoryCreationFails() {
+        void shouldContinueRollbackWhenDeleteFails() {
             // given
-            String fullPath = "directory/subdirectory/file.txt";
-            String storageKey = "user-1-files/directory/subdirectory/file.txt";
-            String dirKey = "user-1-files/directory/";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-            ResourceDto fileDto = new ResourceDto("directory/subdirectory/", "file.txt", 100L, ResourceType.FILE);
+            ObjectData object1 = createObject("dir/a.txt", 100);
+            ObjectData object2 = createObject("dir/b.txt", 200);
+            List<ObjectData> objects = List.of(object1, object2);
 
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(converter.fileFromPath(fullPath, 100L)).thenReturn(fileDto);
-            when(metadataService.exists(USER_ID, "directory/")).thenReturn(false);
-            when(keyResolver.resolveKey(USER_ID, "directory/")).thenReturn(dirKey);
-            doThrow(new ResourceStorageException("Storage error"))
-                    .when(storage).createDirectory(dirKey);
+            when(keyResolver.resolveKey(USER_ID, "dir/a.txt")).thenReturn("1/dir/a.txt");
+            when(keyResolver.resolveKey(USER_ID, "dir/b.txt")).thenReturn("1/dir/b.txt");
+            when(dtoConverter.fileFromPath("dir/a.txt", 100L))
+                    .thenReturn(new ResourceDto("dir/", "a.txt", 100L, ResourceType.FILE));
+
+            doNothing().when(resourceStorage).putObject(any(), eq("1/dir/a.txt"), eq(100L), any());
+            doThrow(new ResourceStorageOperationException("Storage error"))
+                    .when(resourceStorage).putObject(any(), eq("1/dir/b.txt"), eq(200L), any());
+            doThrow(new RuntimeException("Delete failed"))
+                    .when(resourceStorage).deleteObject("1/dir/a.txt");
 
             // when & then
-            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, List.of(objectData)))
-                    .isInstanceOf(ResourceStorageException.class);
+            assertThatThrownBy(() -> resourceUploader.upload(USER_ID, objects))
+                    .isInstanceOf(ResourceStorageOperationException.class);
 
-            verify(storage).deleteObject(storageKey);
-            verify(metadataService).delete(USER_ID, fullPath);
+            verify(metadataService).delete(USER_ID, "dir/a.txt");
         }
-    }
-
-    @Nested
-    class CreateDirectories {
-
-        @Test
-        void shouldCreateNewDirectories() {
-            // given
-            String fullPath = "directory/subdirectory/file.txt";
-            String storageKey = "user-1-files/directory/subdirectory/file.txt";
-            String dirKey1 = "user-1-files/directory/";
-            String dirKey2 = "user-1-files/directory/subdirectory/";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-            ResourceDto fileDto = new ResourceDto("directory/subdirectory/", "file.txt", 100L, ResourceType.FILE);
-            ResourceDto dirDto1 = new ResourceDto("", "directory/", null, ResourceType.DIRECTORY);
-            ResourceDto dirDto2 = new ResourceDto("directory/", "subdirectory/", null, ResourceType.DIRECTORY);
-
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(keyResolver.resolveKey(USER_ID, "directory/")).thenReturn(dirKey1);
-            when(keyResolver.resolveKey(USER_ID, "directory/subdirectory/")).thenReturn(dirKey2);
-            when(converter.fileFromPath(fullPath, 100L)).thenReturn(fileDto);
-            when(metadataService.exists(USER_ID, "directory/")).thenReturn(false);
-            when(metadataService.exists(USER_ID, "directory/subdirectory/")).thenReturn(false);
-            when(converter.directoryFromPath("directory/")).thenReturn(dirDto1);
-            when(converter.directoryFromPath("directory/subdirectory/")).thenReturn(dirDto2);
-
-            // when
-            List<ResourceDto> result = resourceUploader.upload(USER_ID, List.of(objectData));
-
-            // then
-            assertThat(result).contains(dirDto1, dirDto2);
-            verify(storage).createDirectory(dirKey1);
-            verify(storage).createDirectory(dirKey2);
-            verify(metadataService).saveDirectory(USER_ID, "directory/");
-            verify(metadataService).saveDirectory(USER_ID, "directory/subdirectory/");
-        }
-
-        @Test
-        void shouldNotCreateExistingDirectories() {
-            // given
-            String fullPath = "directory/file.txt";
-            String storageKey = "user-1-files/directory/file.txt";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-            ResourceDto fileDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
-
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(converter.fileFromPath(fullPath, 100L)).thenReturn(fileDto);
-            when(metadataService.exists(USER_ID, "directory/")).thenReturn(true);
-
-            // when
-            resourceUploader.upload(USER_ID, List.of(objectData));
-
-            // then
-            verify(storage, never()).createDirectory(any());
-            verify(metadataService, never()).saveDirectory(any(), any());
-        }
-
-        @Test
-        void shouldTrackCreatedDirectoriesInContext() {
-            // given
-            String fullPath = "directory/file.txt";
-            String storageKey = "user-1-files/directory/file.txt";
-            String dirKey = "user-1-files/directory/";
-            ObjectData objectData = createObjectData(fullPath, 100L, "text/plain");
-            ResourceDto fileDto = new ResourceDto("directory/", "file.txt", 100L, ResourceType.FILE);
-            ResourceDto dirDto = new ResourceDto("", "directory/", null, ResourceType.DIRECTORY);
-
-            when(keyResolver.resolveKey(USER_ID, fullPath)).thenReturn(storageKey);
-            when(keyResolver.resolveKey(USER_ID, "directory/")).thenReturn(dirKey);
-            when(converter.fileFromPath(fullPath, 100L)).thenReturn(fileDto);
-            when(metadataService.exists(USER_ID, "directory/")).thenReturn(false);
-            when(converter.directoryFromPath("directory/")).thenReturn(dirDto);
-
-            // when
-            List<ResourceDto> result = resourceUploader.upload(USER_ID, List.of(objectData));
-
-            // then
-            assertThat(result).contains(dirDto, fileDto);
-        }
-    }
-
-    private ObjectData createObjectData(String fullPath, long size, String contentType) {
-        return new ObjectData(
-                null,
-                null,
-                null,
-                fullPath,
-                size,
-                contentType,
-                () -> new ByteArrayInputStream(new byte[0])
-        );
     }
 }

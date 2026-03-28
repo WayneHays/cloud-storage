@@ -6,7 +6,8 @@ import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
 import com.waynehays.cloudfilestorage.exception.RateLimitException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletResponse;
@@ -80,10 +81,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                                     @NotNull HttpHeaders headers,
                                                                                     @NotNull HttpStatusCode status,
                                                                                     @NotNull WebRequest request) {
-        log.warn("Upload size exceeded for user: {}", getCurrentUserInfo());
-        ErrorDto error = createErrorDto("File size exceeds the allowed limit");
+        log.warn("Too large size of uploaded resource for user: {}", getCurrentUserInfo());
+        ErrorDto error = createErrorDto("File size is too large");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    @ExceptionHandler(ResourceStorageLimitException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorDto handleResourceStorageLimitException(ResourceStorageLimitException e) {
+        log.warn("Not enough storage space for user: {}. Upload size: {}, free space: {}",
+                getCurrentUserInfo(), e.getUploadSize(), e.getFreeSpace());
+        return createErrorDto("Not enough storage space. Free space: " + e.getFreeSpace());
     }
 
     @ExceptionHandler(RateLimitException.class)
@@ -138,9 +147,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createErrorDto("Invalid credentials");
     }
 
-    @ExceptionHandler(ResourceStorageException.class)
+    @ExceptionHandler(ResourceStorageOperationException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorDto handleResourceStorageException(ResourceStorageException e) {
+    public ErrorDto handleResourceStorageException(ResourceStorageOperationException e) {
         log.error("{}: {}", e.getMessage(), getCurrentUserInfo(), e);
         return createErrorDto("Failed to process operation");
     }
