@@ -21,6 +21,11 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private final ResourceMetadataRepository repository;
 
     @Override
+    public long getUsedSpace(Long userId) {
+        return repository.sumSizeByUserId(userId, ResourceType.FILE);
+    }
+
+    @Override
     public ResourceMetadata findOrThrow(Long userId, String path) {
         return repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));

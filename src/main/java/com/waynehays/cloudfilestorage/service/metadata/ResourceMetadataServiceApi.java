@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface ResourceMetadataServiceApi {
 
+    long getUsedSpace(Long userId);
+
     ResourceMetadata findOrThrow(Long userId, String path);
 
     void throwIfExists(Long userId, String path);
