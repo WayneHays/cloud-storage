@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.service.user;
 
+import com.waynehays.cloudfilestorage.config.properties.UserStorageLimitProperties;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
@@ -40,6 +41,9 @@ class UserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private UserStorageLimitProperties properties;
+
     @InjectMocks
     private UserService userService;
 
@@ -62,6 +66,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
+            when(properties.defaultLimitBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(expectedDto);
 
@@ -85,6 +90,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
+            when(properties.defaultLimitBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(new UserDto("testuser"));
 
@@ -93,6 +99,7 @@ class UserServiceTest {
 
             // then
             assertThat(mappedUser.getPassword()).isEqualTo("encoded_password");
+            assertThat(mappedUser.getStorageLimit()).isEqualTo(100L);
         }
 
         @Test
@@ -103,6 +110,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
+            when(properties.defaultLimitBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser))
                     .thenThrow(new DataIntegrityViolationException("unique constraint"));
 
@@ -112,6 +120,22 @@ class UserServiceTest {
                     .hasMessageContaining("existinguser");
 
             verify(eventPublisher, never()).publishEvent(any());
+        }
+    }
+
+    @Nested
+    class GetUserStorageLimit {
+
+        @Test
+        void shouldReturnStorageLimit() {
+            // given
+            when(userRepository.getStorageLimitById(1L)).thenReturn(100L);
+
+            // when
+            Long result = userService.getUserStorageLimit(1L);
+
+            // then
+            assertThat(result).isEqualTo(100L);
         }
     }
 }

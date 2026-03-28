@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changelogs/003_add_updated_at_to_resource_metadata_table.yaml
   - include:
       file: db/changelog/changelogs/004_add_created_at_updated_at_to_users_table.yaml
+  - include:
+      file: db/changelog/changelogs/005_add_storage_limit_to_users_table.yaml

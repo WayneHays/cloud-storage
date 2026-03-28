@@ -29,6 +29,7 @@ class UserRepositoryTest extends AbstractRepositoryBaseTest {
         User user = new User();
         user.setUsername(USERNAME);
         user.setPassword(PASSWORD);
+        user.setStorageLimit(10L);
 
         entityManager.persistAndFlush(user);
         entityManager.clear();

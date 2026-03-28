@@ -42,6 +42,9 @@ public class User {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Column(nullable = false)
+    private Long storageLimit;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

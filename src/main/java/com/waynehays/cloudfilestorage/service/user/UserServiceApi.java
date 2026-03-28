@@ -6,4 +6,6 @@ import com.waynehays.cloudfilestorage.dto.response.UserDto;
 public interface UserServiceApi {
 
     UserDto signUp(SignUpRequest dto);
+
+    Long getUserStorageLimit(Long userId);
 }

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-storage-limit-to-users-table
+      author: waynehays
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: storage_limit
+                  type: BIGINT
+                  defaultValue: "104857600"
+                  constraints:
+                    nullable: false

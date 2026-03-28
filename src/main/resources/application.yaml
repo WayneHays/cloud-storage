@@ -10,11 +10,14 @@ streaming:
 cleanup:
   interval: 600
 
-minio:
+user:
   storage:
-    limits:
-      max-path-length: 500
-      max-filename-length: 200
+    default-limit-bytes: 104857600
+
+multipart:
+  limits:
+    max-path-length: 500
+    max-filename-length: 200
 
 rate-limit:
   rules:
