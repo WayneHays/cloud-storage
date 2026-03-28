@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.component.converter;
 
-import com.waynehays.cloudfilestorage.component.converter.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -12,12 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ResourceDtoConverterTest {
 
-    private ResourceDtoConverter converter;
-
-    @BeforeEach
-    void setUp() {
-        converter = new ResourceDtoConverter();
-    }
+    private final ResourceDtoConverter converter = new ResourceDtoConverter();
 
     @Nested
     class FromMetadata {

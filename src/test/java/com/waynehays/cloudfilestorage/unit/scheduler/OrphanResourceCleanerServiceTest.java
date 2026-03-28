@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.unit.scheduler;
 
-import com.waynehays.cloudfilestorage.component.keyresolver.StorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.service.OrphanResourceCleanerService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +34,7 @@ class OrphanResourceCleanerServiceTest {
     private ResourceStorageApi storage;
 
     @Mock
-    private StorageKeyResolverApi keyResolver;
+    private ResourceStorageKeyResolver keyResolver;
 
     @InjectMocks
     private OrphanResourceCleanerService cleanerService;
@@ -83,7 +83,7 @@ class OrphanResourceCleanerServiceTest {
             when(metadataService.findMarkedForDeletion()).thenReturn(List.of(orphan));
             when(keyResolver.resolveKey(orphan.getUserId(), orphan.getPath()))
                     .thenReturn("user-1-files/directory/file.txt");
-            doThrow(new ResourceStorageException("MinIO unavailable"))
+            doThrow(new ResourceStorageOperationException("MinIO unavailable"))
                     .when(storage).deleteObject("user-1-files/directory/file.txt");
 
             // when
@@ -104,7 +104,7 @@ class OrphanResourceCleanerServiceTest {
                     .thenReturn("user-1-files/directory/file1.txt");
             when(keyResolver.resolveKey(orphan2.getUserId(), orphan2.getPath()))
                     .thenReturn("user-1-files/directory/file2.txt");
-            doThrow(new ResourceStorageException("MinIO unavailable"))
+            doThrow(new ResourceStorageOperationException("MinIO unavailable"))
                     .when(storage).deleteObject("user-1-files/directory/file1.txt");
 
             // when

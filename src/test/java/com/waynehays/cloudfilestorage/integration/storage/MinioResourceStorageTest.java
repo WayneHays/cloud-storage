@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.storage;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
-import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.integration.base.AbstractIntegrationBaseTest;
 import com.waynehays.cloudfilestorage.integration.base.MinioTestCleaner;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
@@ -207,7 +207,7 @@ class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
 
             // when & then
             assertThatThrownBy(() -> storage.moveObject(sourceKey, targetKey))
-                    .isInstanceOf(ResourceStorageException.class);
+                    .isInstanceOf(ResourceStorageOperationException.class);
         }
     }
 }

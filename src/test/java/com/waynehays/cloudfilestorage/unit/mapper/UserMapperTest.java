@@ -1,10 +1,12 @@
 package com.waynehays.cloudfilestorage.unit.mapper;
 
+import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.mapper.UserMapperImpl;
+import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,30 @@ class UserMapperTest {
             // then
             assertThat(result.username()).isEqualTo("testuser");
         }
+
+        @Test
+        void shouldMapSignInRequestToDto() {
+            // given
+            SignInRequest request = new SignInRequest("testuser", "password123");
+
+            // when
+            UserDto result = userMapper.toDto(request);
+
+            // then
+            assertThat(result.username()).isEqualTo("testuser");
+        }
+
+        @Test
+        void shouldMapCustomUserDetailsToDto() {
+            // given
+            CustomUserDetails userDetails = new CustomUserDetails(1L, "testuser", "encoded_password");
+
+            // when
+            UserDto result = userMapper.toDto(userDetails);
+
+            // then
+            assertThat(result.username()).isEqualTo("testuser");
+        }
     }
 
     @Nested
@@ -54,6 +80,7 @@ class UserMapperTest {
             assertThat(result.getUsername()).isEqualTo("testuser");
             assertThat(result.getId()).isNull();
             assertThat(result.getPassword()).isNull();
+            assertThat(result.getStorageLimit()).isNull();
         }
     }
 }

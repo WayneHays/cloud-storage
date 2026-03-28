@@ -3,7 +3,6 @@ package com.waynehays.cloudfilestorage.unit.component.validator;
 import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import com.waynehays.cloudfilestorage.config.properties.MultipartFileLimitsProperties;
 import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -14,48 +13,39 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MultipartFileValidatorTest {
 
-    private MultipartFileValidator validator;
-
-    @BeforeEach
-    void setUp() {
-        MultipartFileLimitsProperties properties = new MultipartFileLimitsProperties(500, 200);
-        validator = new MultipartFileValidator(properties);
-    }
+    private final MultipartFileLimitsProperties properties = new MultipartFileLimitsProperties(
+            500, 200);
+    private final MultipartFileValidator validator = new MultipartFileValidator(properties);
 
     @Nested
     class ValidFiles {
 
         @Test
         void shouldPassForValidFile() {
-            // given
-            MultipartFile file = createMultipartFile("document.txt");
-
             // when & then
             assertThatNoException()
-                    .isThrownBy(() -> validator.validate(file, "directory/document.txt"));
+                    .isThrownBy(() -> validator.validate("document.txt", "directory/document.txt"));
         }
 
         @Test
         void shouldPassWhenFilenameIsExactlyMaxLength() {
             // given
-            String name = "a".repeat(196) + ".txt";
-            MultipartFile file = createMultipartFile(name);
+            String originalFilename = "a".repeat(196) + ".txt";
 
             // when & then
             assertThatNoException()
-                    .isThrownBy(() -> validator.validate(file, "dir/" + name));
+                    .isThrownBy(() -> validator.validate(originalFilename, "dir/" + originalFilename));
         }
 
         @Test
         void shouldPassWhenFullPathIsExactlyMaxLength() {
             // given
             String directory = "a/".repeat(246);
-            String name = "file.txt";
-            MultipartFile file = createMultipartFile(name);
+            String originalFilename = "file.txt";
 
             // when & then
             assertThatNoException()
-                    .isThrownBy(() -> validator.validate(file, directory + name));
+                    .isThrownBy(() -> validator.validate(originalFilename, directory + originalFilename));
         }
     }
 
@@ -64,31 +54,22 @@ class MultipartFileValidatorTest {
 
         @Test
         void shouldThrowWhenFilenameIsNull() {
-            // given
-            MultipartFile file = createMultipartFile(null);
-
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, "directory/"))
+            assertThatThrownBy(() -> validator.validate(null, "directory/"))
                     .isInstanceOf(MultipartValidationException.class);
         }
 
         @Test
         void shouldThrowWhenFilenameIsEmpty() {
-            // given
-            MultipartFile file = createMultipartFile("");
-
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, "directory/"))
+            assertThatThrownBy(() -> validator.validate("","directory/"))
                     .isInstanceOf(MultipartValidationException.class);
         }
 
         @Test
         void shouldThrowWhenFilenameIsBlank() {
-            // given
-            MultipartFile file = createMultipartFile("   ");
-
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, "directory/   "))
+            assertThatThrownBy(() -> validator.validate("   ", "directory/   "))
                     .isInstanceOf(MultipartValidationException.class);
         }
     }
@@ -100,10 +81,9 @@ class MultipartFileValidatorTest {
         void shouldThrowWhenFilenameExceedsMaxLength() {
             // given
             String longName = "a".repeat(201) + ".txt";
-            MultipartFile file = createMultipartFile(longName);
 
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, "directory/" + longName))
+            assertThatThrownBy(() -> validator.validate(longName, "directory/" + longName))
                     .isInstanceOf(MultipartValidationException.class);
         }
 
@@ -111,10 +91,9 @@ class MultipartFileValidatorTest {
         void shouldThrowWhenNestedFilenameExceedsMaxLength() {
             // given
             String longName = "a".repeat(201) + ".txt";
-            MultipartFile file = createMultipartFile("sub/dir/" + longName);
 
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, "directory/sub/dir/" + longName))
+            assertThatThrownBy(() -> validator.validate(longName, "directory/sub/dir/" + longName))
                     .isInstanceOf(MultipartValidationException.class);
         }
     }
@@ -126,10 +105,9 @@ class MultipartFileValidatorTest {
         void shouldThrowWhenOriginalFilenameExceedsMaxPathLength() {
             // given
             String longPath = "a/".repeat(250) + "file.txt";
-            MultipartFile file = createMultipartFile(longPath);
 
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, longPath))
+            assertThatThrownBy(() -> validator.validate(longPath, longPath))
                     .isInstanceOf(MultipartValidationException.class);
         }
     }
@@ -141,15 +119,10 @@ class MultipartFileValidatorTest {
         void shouldThrowWhenFullPathExceedsMaxLength() {
             // given
             String longDirectory = "a/".repeat(250);
-            MultipartFile file = createMultipartFile("file.txt");
 
             // when & then
-            assertThatThrownBy(() -> validator.validate(file, longDirectory + "file.txt"))
+            assertThatThrownBy(() -> validator.validate("file.txt", longDirectory + "file.txt"))
                     .isInstanceOf(MultipartValidationException.class);
         }
-    }
-
-    private MultipartFile createMultipartFile(String originalFilename) {
-        return new MockMultipartFile("file", originalFilename, "text/plain", "content".getBytes());
     }
 }

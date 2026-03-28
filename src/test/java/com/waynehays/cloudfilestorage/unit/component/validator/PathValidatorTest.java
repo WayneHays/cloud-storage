@@ -12,12 +12,7 @@ import static org.mockito.Mockito.when;
 
 class PathValidatorTest {
 
-    private PathValidator validator;
-
-    @BeforeEach
-    void setUp() {
-        validator = new PathValidator();
-    }
+    private final PathValidator validator = new PathValidator();
 
     @Nested
     class GeneralPath {

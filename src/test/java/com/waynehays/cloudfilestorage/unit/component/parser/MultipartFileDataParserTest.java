@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.component.parser;
 
-import com.waynehays.cloudfilestorage.component.parser.MultipartFileDataParser;
+import com.waynehays.cloudfilestorage.component.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import org.junit.jupiter.api.Nested;

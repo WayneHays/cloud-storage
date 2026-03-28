@@ -9,12 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PathNotEqualsValidatorTest {
 
-    private PathNotEqualsValidator validator;
-
-    @BeforeEach
-    void setUp() {
-        validator = new PathNotEqualsValidator();
-    }
+    private final PathNotEqualsValidator validator = new PathNotEqualsValidator();
 
     @Test
     void shouldAcceptDifferentPaths() {

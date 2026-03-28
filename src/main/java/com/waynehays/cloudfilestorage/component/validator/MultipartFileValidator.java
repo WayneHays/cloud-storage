@@ -6,15 +6,13 @@ import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 @Component
 @RequiredArgsConstructor
 public class MultipartFileValidator {
     private final MultipartFileLimitsProperties properties;
 
-    public void validate(MultipartFile file, String fullPath) {
-        String originalFilename = file.getOriginalFilename();
+    public void validate(String originalFilename, String fullPath) {
 
         if (StringUtils.isBlank(originalFilename)) {
             throwException("Uploaded file has no filename");

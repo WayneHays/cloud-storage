@@ -21,5 +21,6 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "storageLimit", ignore = true)
     User toEntity(SignUpRequest signUpRequest);
 }
