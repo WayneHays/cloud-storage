@@ -3,11 +3,13 @@ package com.waynehays.cloudfilestorage.exceptionhandler;
 import com.waynehays.cloudfilestorage.dto.response.ErrorDto;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
+import com.waynehays.cloudfilestorage.exception.RateLimitException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
@@ -82,6 +84,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorDto error = createErrorDto("File size exceeds the allowed limit");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    @ExceptionHandler(RateLimitException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorDto handleRateLimitException(RateLimitException e, HttpServletResponse response) {
+        response.addHeader("Retry-After", String.valueOf(e.getRetryAfter()));
+        log.warn("Rate limit exceeded: {}, endpoint={}, method={}, retryAfter={}s",
+                getCurrentUserInfo(), e.getEndpoint(), e.getHttpMethod(), e.getRetryAfter());
+        return createErrorDto(e.getMessage());
     }
 
     @ExceptionHandler(InvalidMoveException.class)

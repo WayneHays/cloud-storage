@@ -15,3 +15,15 @@ minio:
     limits:
       max-path-length: 500
       max-filename-length: 200
+
+rate-limit:
+  rules:
+    - endpoint: "/api/files/upload"
+      http-method: "POST"
+      capacity: 60
+      tokens-per-minute: 60
+    - endpoint: "/api/files/download"
+      http-method: "GET"
+      capacity: 10
+      tokens-per-minute: 10
+  bucket-expiration-minutes: 10
