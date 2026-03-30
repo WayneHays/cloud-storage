@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.integration.storage;
+package com.waynehays.cloudfilestorage.integration.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class MinioResourceStorageTest extends AbstractIntegrationBaseTest {
+class StorageTest extends AbstractIntegrationBaseTest {
 
     @Autowired
     private MinioResourceStorage storage;

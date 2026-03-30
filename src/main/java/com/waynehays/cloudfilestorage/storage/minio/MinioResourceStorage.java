@@ -5,6 +5,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationExceptio
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.minio.CopyObjectArgs;
 import io.minio.CopySource;
@@ -46,6 +47,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
     public Optional<StorageItem> getObject(String objectKey) {
         try {
             InputStream inputStream = minioClient.getObject(
@@ -82,6 +84,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
     public void createDirectory(String objectKey) {
         executePutObject(
                 PutObjectArgs.builder()
@@ -106,6 +109,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
     public void moveObject(String sourceKey, String targetKey) {
         copyObject(sourceKey, targetKey);
         try {
@@ -122,6 +126,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
     public void deleteObject(String objectKey) {
         try {
             minioClient.removeObject(
@@ -138,6 +143,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
     public void deleteByPrefix(String prefix) {
         List<DeleteObject> batch = new ArrayList<>();
         Iterable<Result<Item>> objectsToDelete = listObjects(prefix);

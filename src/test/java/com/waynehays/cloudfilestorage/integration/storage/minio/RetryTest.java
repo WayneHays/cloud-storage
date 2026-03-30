@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.integration.storage;
+package com.waynehays.cloudfilestorage.integration.storage.minio;
 
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
@@ -12,8 +12,6 @@ import io.minio.RemoveObjectArgs;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
@@ -22,16 +20,13 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class MinioResourceStorageRetryTest extends AbstractIntegrationBaseTest {
+class RetryTest extends AbstractIntegrationBaseTest {
     private static final int RETRY_ATTEMPTS = 3;
     private static final int ATTEMPTS_WITHOUT_RETRY = 1;
 
