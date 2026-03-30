@@ -2,9 +2,9 @@ package com.waynehays.cloudfilestorage.interceptor;
 
 import com.waynehays.cloudfilestorage.exception.RateLimitException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RequestData;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RateLimitCheckResult;
-import com.waynehays.cloudfilestorage.service.ratelimit.RateLimiter;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RequestData;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitCheckResult;
+import com.waynehays.cloudfilestorage.service.ratelimiter.ApiRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {
-    private final RateLimiter rateLimiter;
+    private final ApiRateLimiter rateLimiter;
 
     @Override
     public boolean preHandle(@NotNull HttpServletRequest request,

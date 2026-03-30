@@ -4,11 +4,13 @@ import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationExceptio
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.integration.base.AbstractIntegrationBaseTest;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.minio.CopyObjectArgs;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +36,15 @@ class RetryTest extends AbstractIntegrationBaseTest {
     private MinioClient minioClient;
 
     @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
     private ResourceStorageApi resourceStorage;
+
+    @BeforeEach
+    void resetCircuitBreaker() {
+        circuitBreakerRegistry.circuitBreaker("minioStorage").reset();
+    }
 
     @Nested
     class GetObject {

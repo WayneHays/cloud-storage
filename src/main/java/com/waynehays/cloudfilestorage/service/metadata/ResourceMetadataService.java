@@ -18,6 +18,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ResourceMetadataService implements ResourceMetadataServiceApi {
+    private static final String SLASH = "/";
+
     private final ResourceMetadataRepository repository;
 
     @Override
@@ -89,13 +91,18 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void saveFile(Long userId, String path, long size) {
+        if (path.endsWith(SLASH)) {
+            throw new IllegalArgumentException("File path must not end with %s : %s".formatted(SLASH, path));
+        }
+
         save(userId, path, size, ResourceType.FILE);
     }
 
     @Override
     @Transactional
     public void saveDirectory(Long userId, String path) {
-        save(userId, path, null, ResourceType.DIRECTORY);
+        String directoryPath = PathUtils.ensureTrailingSlash(path);
+        save(userId, directoryPath, null, ResourceType.DIRECTORY);
     }
 
     @Override

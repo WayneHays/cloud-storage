@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.unit.DataSize;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,7 +67,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimit().toBytes()).thenReturn(100L);
+            when(properties.defaultLimit()).thenReturn(DataSize.ofBytes(100L));
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(expectedDto);
 
@@ -90,7 +91,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimit().toBytes()).thenReturn(100L);
+            when(properties.defaultLimit()).thenReturn(DataSize.ofBytes(100L));
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(new UserDto("testuser"));
 
@@ -110,7 +111,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimit().toBytes()).thenReturn(100L);
+            when(properties.defaultLimit()).thenReturn(DataSize.ofBytes(100L));
             when(userRepository.save(mappedUser))
                     .thenThrow(new DataIntegrityViolationException("unique constraint"));
 
