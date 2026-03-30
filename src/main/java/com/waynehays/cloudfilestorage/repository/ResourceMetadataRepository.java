@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
 
     @Query("SELECT COALESCE(SUM (r.size), 0) FROM ResourceMetadata r WHERE r.userId = :userId AND r.type = :type")
-    long sumSizeByUserId(@Param("userId") Long userId, @Param("type")ResourceType type);
+    long sumSizeByUserId(@Param("userId") Long userId, @Param("type") ResourceType type);
 
     Optional<ResourceMetadata> findByUserIdAndPathAndMarkedForDeletionFalse(Long userId, String path);
 

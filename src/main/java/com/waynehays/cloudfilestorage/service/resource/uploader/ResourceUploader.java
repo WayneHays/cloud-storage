@@ -1,7 +1,8 @@
 package com.waynehays.cloudfilestorage.service.resource.uploader;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
 import com.waynehays.cloudfilestorage.dto.ObjectData;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
@@ -25,15 +26,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
     private final UploadValidator uploadValidator;
-    private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolver keyResolver;
     private final ResourceDtoConverter dtoConverter;
+    private final ResourceStorageApi resourceStorage;
+    private final StorageQuotaServiceApi quotaService;
+    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> upload(Long userId, List<ObjectData> objects) {
         log.info("Upload started: userId={}, objects count={}", userId, objects.size());
         uploadValidator.validate(userId, objects);
+
+        long totalSize = objects.stream()
+                .mapToLong(ObjectData::size)
+                .sum();
+        quotaService.reserveSpace(userId, totalSize);
 
         UploadContext context = new UploadContext();
 
@@ -48,7 +55,7 @@ public class ResourceUploader implements ResourceUploaderApi {
             return result;
         } catch (Exception e) {
             log.warn("Upload failed for userId={}, initiating rollback", userId);
-            rollback(userId, context);
+            rollback(userId, totalSize, context);
             throw e;
         }
     }
@@ -103,7 +110,8 @@ public class ResourceUploader implements ResourceUploaderApi {
         return result;
     }
 
-    private void rollback(Long userId, UploadContext context) {
+    private void rollback(Long userId, long totalSize, UploadContext context) {
+        quotaService.releaseSpace(userId, totalSize);
         context.getStorageKeys()
                 .forEach(key -> tryDelete(() -> resourceStorage.deleteObject(key), key));
         context.getMetadataPaths()

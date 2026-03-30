@@ -5,11 +5,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.Duration;
+
 @Validated
 @ConfigurationProperties(prefix = "user.storage")
-public record UserStorageLimitProperties(
+public record UserStorageProperties(
 
         @NotNull(message = "Default storage limit must be set")
-        DataSize defaultLimit
+        DataSize defaultLimit,
+
+        @NotNull(message = "Reconciliation interval must be set")
+        Duration reconciliationInterval
 ) {
 }

@@ -45,6 +45,9 @@ public class User {
     @Column(nullable = false)
     private Long storageLimit;
 
+    @Column(nullable = false)
+    private Long usedSpace = 0L;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -2,10 +2,10 @@ package com.waynehays.cloudfilestorage.unit.scheduler;
 
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.service.OrphanResourceCleanerService;
+import com.waynehays.cloudfilestorage.service.cleanup.OrphanResourceCleanerService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +34,7 @@ class OrphanResourceCleanerServiceTest {
     private ResourceStorageApi storage;
 
     @Mock
-    private ResourceStorageKeyResolver keyResolver;
+    private ResourceStorageKeyResolverApi keyResolver;
 
     @InjectMocks
     private OrphanResourceCleanerService cleanerService;

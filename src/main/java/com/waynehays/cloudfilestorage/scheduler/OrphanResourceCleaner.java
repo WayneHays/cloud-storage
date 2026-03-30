@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.scheduler;
 
 import com.waynehays.cloudfilestorage.config.properties.CleanupProperties;
-import com.waynehays.cloudfilestorage.service.OrphanResourceCleanerService;
+import com.waynehays.cloudfilestorage.service.cleanup.OrphanResourceCleanerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;

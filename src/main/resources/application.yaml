@@ -13,6 +13,7 @@ cleanup:
 user:
   storage:
     default-limit: 100MB
+    reconciliation-interval: 30m
 
 multipart:
   limits:

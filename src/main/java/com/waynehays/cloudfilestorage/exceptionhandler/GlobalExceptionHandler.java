@@ -9,6 +9,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
+import com.waynehays.cloudfilestorage.exception.UserNotFoundException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +86,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorDto error = createErrorDto("File size is too large");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    public ErrorDto handleUserNotFoundException(UserNotFoundException e) {
+        log.warn("User not found: userId={}", e.getUserId());
+        return createErrorDto("User not found");
     }
 
     @ExceptionHandler(ResourceStorageLimitException.class)
