@@ -88,6 +88,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorDto handleUserNotFoundException(UserNotFoundException e) {
         log.warn("User not found: userId={}", e.getUserId());
         return createErrorDto("User not found");

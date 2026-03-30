@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.security;
+package com.waynehays.cloudfilestorage.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

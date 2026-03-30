@@ -52,4 +52,14 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 5
         record-exceptions:
           - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
 
