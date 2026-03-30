@@ -66,7 +66,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimitBytes()).thenReturn(100L);
+            when(properties.defaultLimit().toBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(expectedDto);
 
@@ -90,7 +90,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimitBytes()).thenReturn(100L);
+            when(properties.defaultLimit().toBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser)).thenReturn(savedUser);
             when(userMapper.toDto(savedUser)).thenReturn(new UserDto("testuser"));
 
@@ -110,7 +110,7 @@ class UserServiceTest {
 
             when(userMapper.toEntity(request)).thenReturn(mappedUser);
             when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-            when(properties.defaultLimitBytes()).thenReturn(100L);
+            when(properties.defaultLimit().toBytes()).thenReturn(100L);
             when(userRepository.save(mappedUser))
                     .thenThrow(new DataIntegrityViolationException("unique constraint"));
 

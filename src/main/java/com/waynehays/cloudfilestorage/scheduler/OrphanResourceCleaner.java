@@ -8,8 +8,6 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -19,6 +17,6 @@ public class OrphanResourceCleaner implements SchedulingConfigurer {
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.addFixedRateTask(cleanerService::clean, Duration.ofSeconds(properties.interval()));
+        taskRegistrar.addFixedRateTask(cleanerService::clean, properties.interval());
     }
 }

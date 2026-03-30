@@ -2,8 +2,10 @@ package com.waynehays.cloudfilestorage.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
+import io.github.resilience4j.retry.annotation.Retry;
 import io.minio.CopyObjectArgs;
 import io.minio.CopySource;
 import io.minio.GetObjectArgs;
@@ -22,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +37,15 @@ public class MinioResourceStorage implements ResourceStorageApi {
     private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
     private static final String MSG_FAILED_GET = "Failed to get object with key: ";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
+    private static final String MSG_FAILED_PUT = "Failed to put object with key: ";
+    private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
+    private static final String MSG_FAILED_CREATE_DIRECTORY = "Failed to create directory with key: ";
 
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
 
     @Override
+    @Retry(name = "minioStorage")
     public Optional<StorageItem> getObject(String objectKey) {
         try {
             InputStream inputStream = minioClient.getObject(
@@ -53,6 +60,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
                 return Optional.empty();
             }
             throw new ResourceStorageOperationException(MSG_FAILED_GET + objectKey, e);
+        } catch (IOException e) {
+            throw new ResourceStorageTransientException(MSG_FAILED_GET + objectKey, e);
         } catch (Exception e) {
             throw new ResourceStorageOperationException(MSG_FAILED_GET + objectKey, e);
         }
@@ -60,39 +69,50 @@ public class MinioResourceStorage implements ResourceStorageApi {
 
     @Override
     public void putObject(InputStream inputStream, String objectKey, long size, String contentType) {
-        try {
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(properties.bucketName())
-                    .object(objectKey)
-                    .stream(inputStream, size, -1)
-                    .contentType(contentType)
-                    .build());
-        } catch (Exception e) {
-            throw new ResourceStorageOperationException("Failed to put object with key: " + objectKey, e);
-        }
+        executePutObject(
+                PutObjectArgs.builder()
+                        .bucket(properties.bucketName())
+                        .object(objectKey)
+                        .stream(inputStream, size, -1)
+                        .contentType(contentType)
+                        .build(),
+                MSG_FAILED_PUT + objectKey
+        );
     }
 
     @Override
+    @Retry(name = "minioStorage")
     public void createDirectory(String objectKey) {
+        executePutObject(
+                PutObjectArgs.builder()
+                        .bucket(properties.bucketName())
+                        .object(objectKey)
+                        .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
+                        .contentType(DIRECTORY_CONTENT_TYPE)
+                        .build(),
+                MSG_FAILED_CREATE_DIRECTORY + objectKey
+        );
+    }
+
+    private void executePutObject(PutObjectArgs args, String errorMessage) {
         try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(properties.bucketName())
-                            .object(objectKey)
-                            .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                            .contentType(DIRECTORY_CONTENT_TYPE)
-                            .build()
-            );
+            minioClient.putObject(args);
+        } catch (IOException e) {
+            throw new ResourceStorageTransientException(errorMessage, e);
         } catch (Exception e) {
-            throw new ResourceStorageOperationException("Failed to create directory with key: " + objectKey, e);
+            throw new ResourceStorageOperationException(errorMessage, e);
         }
     }
 
     @Override
+    @Retry(name = "minioStorage")
     public void moveObject(String sourceKey, String targetKey) {
         copyObject(sourceKey, targetKey);
         try {
             deleteObject(sourceKey);
+        } catch (ResourceStorageTransientException e) {
+            rollbackCopy(targetKey);
+            throw e;
         } catch (Exception e) {
             rollbackCopy(targetKey);
             throw new ResourceStorageOperationException("Failed to move object from %s to %s"
@@ -101,6 +121,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
+    @Retry(name = "minioStorage")
     public void deleteObject(String objectKey) {
         try {
             minioClient.removeObject(
@@ -108,12 +129,15 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .bucket(properties.bucketName())
                             .object(objectKey)
                             .build());
+        } catch (IOException e) {
+            throw new ResourceStorageTransientException(MSG_FAILED_DELETE + objectKey, e);
         } catch (Exception e) {
             throw new ResourceStorageOperationException(MSG_FAILED_DELETE + objectKey, e);
         }
     }
 
     @Override
+    @Retry(name = "minioStorage")
     public void deleteByPrefix(String prefix) {
         List<DeleteObject> batch = new ArrayList<>();
         Iterable<Result<Item>> objectsToDelete = listObjects(prefix);
@@ -126,6 +150,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
                 if (batch.size() >= properties.batchSize()) {
                     flushDeleteBatch(batch);
                 }
+            } catch (IOException e) {
+                throw new ResourceStorageTransientException(MSG_FAILED_DELETE + prefix, e);
             } catch (Exception e) {
                 throw new ResourceStorageOperationException(MSG_FAILED_DELETE + prefix, e);
             }
@@ -146,8 +172,11 @@ public class MinioResourceStorage implements ResourceStorageApi {
                             .object(sourceKey)
                             .build())
                     .build());
+        } catch (IOException e) {
+            throw new ResourceStorageTransientException(MSG_FAILED_COPY
+                    .formatted(sourceKey, targetKey), e);
         } catch (Exception e) {
-            throw new ResourceStorageOperationException("Failed to copy object from %s to %s"
+            throw new ResourceStorageOperationException(MSG_FAILED_COPY
                     .formatted(sourceKey, targetKey), e);
         }
     }
@@ -185,6 +214,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
                 DeleteError error = result.get();
                 failedKeys.add(error.objectName());
                 log.error("Failed to delete object: {}", error.objectName());
+            } catch (IOException e) {
+                throw new ResourceStorageTransientException("Failed to process batch delete results", e);
             } catch (Exception e) {
                 log.error("Error while processing delete object result", e);
             }

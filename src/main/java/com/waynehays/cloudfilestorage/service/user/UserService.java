@@ -29,7 +29,7 @@ public class UserService implements UserServiceApi {
     public UserDto signUp(SignUpRequest signUpRequest) {
         User user = userMapper.toEntity(signUpRequest);
         user.setPassword(passwordEncoder.encode(signUpRequest.password()));
-        user.setStorageLimit(properties.defaultLimitBytes());
+        user.setStorageLimit(properties.defaultLimit().toBytes());
 
         try {
             User saved = userRepository.save(user);
