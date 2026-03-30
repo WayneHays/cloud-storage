@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.ratelimit.dto;
+package com.waynehays.cloudfilestorage.service.ratelimiter.dto;
 
 public record RateLimitCheckResult(
         boolean allowed,

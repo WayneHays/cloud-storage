@@ -1,9 +1,9 @@
-package com.waynehays.cloudfilestorage.service.ratelimit;
+package com.waynehays.cloudfilestorage.service.ratelimiter;
 
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.config.properties.RateLimitProperties;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitRule;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -12,8 +12,9 @@ import java.util.stream.Collectors;
 public class RuleRegistry {
     private final Map<String, RateLimitRule> cache;
 
-    public RuleRegistry(List<RateLimitRule> rules) {
-        this.cache = rules.stream()
+    public RuleRegistry(RateLimitProperties properties) {
+        this.cache = properties.rules()
+                .stream()
                 .collect(Collectors.toMap(
                         r -> r.endpoint() + "|" + r.httpMethod(),
                         r -> r

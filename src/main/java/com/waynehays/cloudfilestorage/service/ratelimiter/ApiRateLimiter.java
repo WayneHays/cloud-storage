@@ -1,18 +1,19 @@
-package com.waynehays.cloudfilestorage.service.ratelimit;
+package com.waynehays.cloudfilestorage.service.ratelimiter;
 
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RequestData;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RateLimitCheckResult;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RequestData;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitCheckResult;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitRule;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class RateLimiter {
+public class ApiRateLimiter {
     private final RuleRegistry ruleRegistry;
     private final BucketRegistry bucketRegistry;
 
@@ -36,6 +37,6 @@ public class RateLimiter {
     }
 
     private long convertNanosToSeconds(long nanoseconds) {
-        return nanoseconds / 1_000_000_000;
+        return TimeUnit.NANOSECONDS.toSeconds(nanoseconds);
     }
 }

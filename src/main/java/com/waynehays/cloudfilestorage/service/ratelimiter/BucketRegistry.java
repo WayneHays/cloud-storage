@@ -1,19 +1,22 @@
-package com.waynehays.cloudfilestorage.service.ratelimit;
+package com.waynehays.cloudfilestorage.service.ratelimiter;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RateLimitRule;
-import com.waynehays.cloudfilestorage.service.ratelimit.dto.RequestData;
+import com.waynehays.cloudfilestorage.config.properties.RateLimitProperties;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RequestData;
 import io.github.bucket4j.Bucket;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+@Component
 public class BucketRegistry {
     private final Cache<RequestData, Bucket> buckets;
 
-    public BucketRegistry(Duration bucketExpiration) {
+    public BucketRegistry(RateLimitProperties properties) {
         this.buckets = Caffeine.newBuilder()
-                .expireAfterAccess(bucketExpiration)
+                .expireAfterAccess(properties.bucketExpiration())
                 .build();
     }
 
@@ -23,5 +26,4 @@ public class BucketRegistry {
                         .refillGreedy(rule.tokensPerMinute(), Duration.ofMinutes(1)))
                 .build());
     }
-
 }
