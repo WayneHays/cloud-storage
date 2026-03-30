@@ -22,6 +22,10 @@ minio:
   storage:
     bucketName: files
     batch-size: 50
+    connect-timeout: 5s
+    read-timeout: 30s
+    write-timeout: 30s
+    call-timeout: 30s
 
 logging:
   level:

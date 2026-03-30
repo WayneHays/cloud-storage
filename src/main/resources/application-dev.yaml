@@ -22,6 +22,10 @@ minio:
   storage:
     bucketName: dev-bucket
     batch-size: 10
+    connect-timeout: 2s
+    read-timeout: 10s
+    write-timeout: 10s
+    call-timeout: 20s
 
 server:
   tomcat:

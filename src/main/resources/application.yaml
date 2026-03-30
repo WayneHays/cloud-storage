@@ -8,11 +8,11 @@ streaming:
   buffer-size: 8192
 
 cleanup:
-  interval: 600
+  interval: 10m
 
 user:
   storage:
-    default-limit-bytes: 104857600
+    default-limit: 100MB
 
 multipart:
   limits:
@@ -29,4 +29,14 @@ rate-limit:
       http-method: "GET"
       capacity: 10
       tokens-per-minute: 10
-  bucket-expiration-minutes: 10
+  bucket-expiration: 5m
+
+resilience4j:
+  retry:
+    instances:
+      minioStorage:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
+

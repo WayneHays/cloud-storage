@@ -21,6 +21,6 @@ public class RateLimitConfig {
 
     @Bean
     public BucketRegistry bucketRegistry() {
-        return new BucketRegistry(properties.bucketExpirationMinutes());
+        return new BucketRegistry(properties.bucketExpiration());
     }
 }

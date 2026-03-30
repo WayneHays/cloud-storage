@@ -7,16 +7,16 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "minio.security")
-public record MinioSecurityProperties(
+public record MinioCredentialsProperties(
 
-        @NotBlank(message = "URL MinIO cannot be empty")
+        @NotBlank(message = "URL MinIO must be set")
         @Pattern(regexp = "https?://.+", message = "URL must begin with http:// or https://")
         String url,
 
-        @NotBlank(message = "Access key cannot be empty")
+        @NotBlank(message = "Access key must be set")
         String accessKey,
 
-        @NotBlank(message = "Secret key cannot be empty")
+        @NotBlank(message = "Secret key must be set")
         String secretKey
 ) {
 }

@@ -11,9 +11,9 @@ import java.time.Duration;
 public class BucketRegistry {
     private final Cache<RequestData, Bucket> buckets;
 
-    public BucketRegistry(int bucketExpirationMinutes) {
+    public BucketRegistry(Duration bucketExpiration) {
         this.buckets = Caffeine.newBuilder()
-                .expireAfterAccess(Duration.ofMinutes(bucketExpirationMinutes))
+                .expireAfterAccess(bucketExpiration)
                 .build();
     }
 

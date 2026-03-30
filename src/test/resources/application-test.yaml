@@ -11,3 +11,7 @@ spring:
 minio:
   storage:
     batch-size: 3
+    connect-timeout: 2s
+    read-timeout: 10s
+    write-timeout: 10s
+    call-timeout: 20s
