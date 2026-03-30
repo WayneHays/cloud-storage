@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.storage;
 
-public interface ResourceStorageKeyResolver {
+public interface ResourceStorageKeyResolverApi {
 
     String extractPath(Long userId, String objectKey);
 

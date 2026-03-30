@@ -7,7 +7,7 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolver keyResolver;
+    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
     private final ArchiverApi archiver;
 

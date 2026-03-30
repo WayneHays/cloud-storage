@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DirectoryService implements DirectoryServiceApi {
     private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolver keyResolver;
+    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceDtoConverter dtoConverter;
     private final ResourceMetadataServiceApi metadataService;
 

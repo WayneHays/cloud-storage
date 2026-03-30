@@ -6,7 +6,7 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
     private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolver keyResolver;
+    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceDtoConverter dtoConverter;
     private final ResourceMetadataServiceApi metadataService;
 

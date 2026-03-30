@@ -10,7 +10,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.mover.ResourceMover;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +41,7 @@ class ResourceMoverTest {
     private ResourceMetadataServiceApi metadataService;
 
     @Mock
-    private ResourceStorageKeyResolver keyResolver;
+    private ResourceStorageKeyResolverApi keyResolver;
 
     @Mock
     private ResourceDtoConverter converter;

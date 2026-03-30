@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.service.user;
 
-import com.waynehays.cloudfilestorage.config.properties.UserStorageLimitProperties;
+import com.waynehays.cloudfilestorage.config.properties.UserStorageProperties;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
@@ -43,7 +43,7 @@ class UserServiceTest {
     private UserMapper userMapper;
 
     @Mock
-    private UserStorageLimitProperties properties;
+    private UserStorageProperties properties;
 
     @InjectMocks
     private UserService userService;
@@ -121,22 +121,6 @@ class UserServiceTest {
                     .hasMessageContaining("existinguser");
 
             verify(eventPublisher, never()).publishEvent(any());
-        }
-    }
-
-    @Nested
-    class GetUserStorageLimit {
-
-        @Test
-        void shouldReturnStorageLimit() {
-            // given
-            when(userRepository.getStorageLimitById(1L)).thenReturn(100L);
-
-            // when
-            Long result = userService.getUserStorageLimit(1L);
-
-            // then
-            assertThat(result).isEqualTo(100L);
         }
     }
 }

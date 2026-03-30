@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.storage.minio;
 
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MinioKeyResolver implements ResourceStorageKeyResolver {
+public class MinioKeyResolver implements ResourceStorageKeyResolverApi {
     private static final String USER_DIRECTORY_FORMAT = "user-%d-files/%s";
     private static final String ROOT_DIRECTORY = "";
 

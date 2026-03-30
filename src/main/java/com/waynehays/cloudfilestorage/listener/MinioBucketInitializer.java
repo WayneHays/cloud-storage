@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.storage.minio;
+package com.waynehays.cloudfilestorage.listener;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
@@ -19,7 +19,7 @@ public class MinioBucketInitializer {
     private final MinioStorageProperties properties;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void init() {
+    public void createBucketIfNotExists() {
         try {
             if (!minioClient.bucketExists(
                     BucketExistsArgs.builder()

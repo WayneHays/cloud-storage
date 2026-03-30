@@ -9,7 +9,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.directory.DirectoryService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class DirectoryServiceTest {
     private ResourceDtoConverter converter;
 
     @Mock
-    private ResourceStorageKeyResolver keyResolver;
+    private ResourceStorageKeyResolverApi keyResolver;
 
     @InjectMocks
     private DirectoryService directoryService;

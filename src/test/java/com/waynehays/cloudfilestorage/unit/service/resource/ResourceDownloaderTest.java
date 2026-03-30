@@ -6,7 +6,7 @@ import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolver;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.downloader.ResourceDownloader;
@@ -39,7 +39,7 @@ class ResourceDownloaderTest {
     private ResourceStorageApi storage;
 
     @Mock
-    private ResourceStorageKeyResolver keyResolver;
+    private ResourceStorageKeyResolverApi keyResolver;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
