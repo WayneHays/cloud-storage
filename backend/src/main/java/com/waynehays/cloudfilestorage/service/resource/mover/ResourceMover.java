@@ -32,7 +32,7 @@ public class ResourceMover implements ResourceMoverApi {
         String keyTo = keyResolver.resolveKey(userId, pathTo);
 
         if (PathUtils.isDirectory(pathFrom)) {
-            moveDirectory(userId, pathFrom, pathTo, keyFrom, keyTo);
+            moveDirectory(userId, pathFrom, pathTo);
             return dtoConverter.directoryFromPath(pathTo);
         }
 
@@ -56,36 +56,24 @@ public class ResourceMover implements ResourceMoverApi {
         log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
-    private void moveDirectory(Long userId, String pathFrom, String pathTo, String keyFrom, String keyTo) {
+    private void moveDirectory(Long userId, String pathFrom, String pathTo) {
         log.info("Start move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
         List<ResourceMetadata> content = metadataService.findDirectoryContent(userId, pathFrom);
-        metadataService.markForDeletionByPrefix(userId, pathFrom);
-
-        recreateDirectoryMarker(keyFrom, keyTo);
         moveContent(userId, content, pathFrom, pathTo);
-
-        metadataService.batchUpdatePaths(content, pathFrom, pathTo);
+        metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
 
         log.info("Successfully moved directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
-    private void recreateDirectoryMarker(String oldKey, String newKey) {
-        resourceStorage.createDirectory(newKey);
-        resourceStorage.deleteObject(oldKey);
-    }
-
-    private void moveContent(Long userId, List<ResourceMetadata> resourcesToMove, String pathFrom, String pathTo) {
-        resourcesToMove.forEach(metadata -> {
-            String oldKey = keyResolver.resolveKey(userId, metadata.getPath());
-            String newPath = metadata.getPath().replace(pathFrom, pathTo);
-            String newKey = keyResolver.resolveKey(userId, newPath);
-
-            if (metadata.isFile()) {
-                resourceStorage.moveObject(oldKey, newKey);
-            } else {
-                recreateDirectoryMarker(oldKey, newKey);
-            }
-        });
+    private void moveContent(Long userId, List<ResourceMetadata> content, String pathFrom, String pathTo) {
+        content.stream()
+                .filter(ResourceMetadata::isFile)
+                .forEach(metadata -> {
+                    String oldKey = keyResolver.resolveKey(userId, metadata.getPath());
+                    String newPath = metadata.getPath().replace(pathFrom, pathTo);
+                    String newKey = keyResolver.resolveKey(userId, newPath);
+                    resourceStorage.moveObject(oldKey, newKey);
+                });
     }
 }

@@ -47,12 +47,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
     private void deleteDirectory(Long userId, String path, String objectKey) {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
-        List<ResourceMetadata> content = metadataService.findDirectoryContent(userId, path);
-        long totalSize = content.stream()
-                .filter(ResourceMetadata::isFile)
-                .mapToLong(ResourceMetadata::getSize)
-                .sum();
-
+        long totalSize = metadataService.sumResourceSizesByPrefix(userId, path);
         metadataService.markForDeletionByPrefix(userId, path);
         resourceStorage.deleteByPrefix(objectKey);
         metadataService.deleteByPrefix(userId, path);

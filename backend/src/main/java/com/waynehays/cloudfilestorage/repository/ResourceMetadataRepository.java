@@ -17,6 +17,17 @@ import java.util.Set;
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
 
     @Query("""
+            SELECT COALESCE(SUM(r.size), 0)
+            FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path LIKE CONCAT(:prefix, '%')
+            AND r.type = :type
+            """)
+    long sumSizeByPrefix(@Param("userId") Long userId,
+                         @Param("prefix") String prefix,
+                         @Param("type") ResourceType type);
+
+    @Query("""
             SELECT r.path FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND r.path IN :paths
@@ -68,4 +79,17 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             """)
     void markForDeletionByPrefix(@Param("userId") Long userId,
                                  @Param("prefix") String prefix);
+
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            UPDATE ResourceMetadata r
+            SET r.path = CONCAT(:prefixTo, SUBSTRING(r.path, LENGTH(:prefixFrom) + 1)),
+                r.parentPath = CONCAT(:prefixTo, SUBSTRING(r.parentPath, LENGTH(:prefixFrom) + 1))
+            WHERE r.userId = :userId
+            AND r.path LIKE CONCAT(:prefixFrom, '%')
+            """)
+    void updatePathsByPrefix(@Param("userId") Long userId,
+                             @Param("prefixFrom") String prefixFrom,
+                             @Param("prefixTo") String prefixTo);
 }

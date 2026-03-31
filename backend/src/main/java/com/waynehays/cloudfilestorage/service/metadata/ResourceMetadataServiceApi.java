@@ -8,6 +8,10 @@ import java.util.Set;
 
 public interface ResourceMetadataServiceApi {
 
+    long sumResourceSizesByPrefix(Long userId, String prefix);
+
+    void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo);
+
     void saveDirectories(Long userId, Set<String> paths);
 
     Set<String> findExistingPaths(Long userId, Set<String> paths);

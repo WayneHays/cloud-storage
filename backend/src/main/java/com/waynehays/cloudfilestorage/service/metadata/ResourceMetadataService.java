@@ -26,8 +26,17 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private final ResourceMetadataRepository repository;
 
     @Override
-    @Transactional
+    public long sumResourceSizesByPrefix(Long userId, String prefix) {
+        return repository.sumSizeByPrefix(userId, prefix, ResourceType.FILE);
+    }
 
+    @Override
+    public void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo) {
+        repository.updatePathsByPrefix(userId, prefixFrom, prefixTo);
+    }
+
+    @Override
+    @Transactional
     public void saveDirectories(Long userId, Set<String> paths) {
         List<ResourceMetadata> directories = paths.stream()
                 .map(path -> buildMetadata(userId, PathUtils.ensureTrailingSlash(path),
