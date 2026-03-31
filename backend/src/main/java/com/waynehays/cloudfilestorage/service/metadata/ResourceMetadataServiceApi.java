@@ -1,12 +1,13 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 
 import java.util.List;
 
 public interface ResourceMetadataServiceApi {
 
-    long getUsedSpace(Long userId);
+    List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds);
 
     ResourceMetadata findOrThrow(Long userId, String path);
 

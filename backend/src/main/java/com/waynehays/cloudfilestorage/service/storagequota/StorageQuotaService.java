@@ -16,8 +16,7 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
     @Override
     @Transactional
     public void reserveSpace(Long userId, long bytes) {
-        User user = userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found", userId));
+        User user = findOrThrow(userId);
         long freeSpace = user.getStorageLimit() - user.getUsedSpace();
 
         if (bytes > freeSpace) {
@@ -30,8 +29,12 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
     @Override
     @Transactional
     public void releaseSpace(Long userId, long bytes) {
-        User user = userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found", userId));
+        User user = findOrThrow(userId);
         user.setUsedSpace(Math.max(0, user.getUsedSpace() - bytes));
+    }
+
+    private User findOrThrow(Long userId) {
+        return userRepository.findByIdWithLock(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found", userId));
     }
 }

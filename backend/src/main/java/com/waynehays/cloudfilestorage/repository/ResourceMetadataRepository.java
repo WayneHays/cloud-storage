@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.repository;
 
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,8 +15,14 @@ import java.util.Optional;
 @Repository
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
 
-    @Query("SELECT COALESCE(SUM (r.size), 0) FROM ResourceMetadata r WHERE r.userId = :userId AND r.type = :type")
-    long sumSizeByUserId(@Param("userId") Long userId, @Param("type") ResourceType type);
+    @Query("""
+            SELECT r.userId AS userId, COALESCE(SUM(r.size), 0) AS totalSize
+            FROM ResourceMetadata r
+            WHERE r.type = :type AND userId IN :userIds
+            GROUP BY r.userId
+            """)
+    List<UsedSpace> sumSizeGroupByUserId(@Param("userIds") List<Long> userIds,
+                                         @Param("type") ResourceType type);
 
     Optional<ResourceMetadata> findByUserIdAndPathAndMarkedForDeletionFalse(Long userId, String path);
 

@@ -5,6 +5,7 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
+import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
@@ -23,8 +24,8 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private final ResourceMetadataRepository repository;
 
     @Override
-    public long getUsedSpace(Long userId) {
-        return repository.sumSizeByUserId(userId, ResourceType.FILE);
+    public List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds) {
+        return repository.sumSizeGroupByUserId(userIds, ResourceType.FILE);
     }
 
     @Override
