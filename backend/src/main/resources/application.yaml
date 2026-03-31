@@ -23,11 +23,11 @@ path:
 
 rate-limit:
   rules:
-    - endpoint: "/api/files/upload"
+    - endpoint: "/api/resource"
       http-method: "POST"
       capacity: 60
       tokens-per-minute: 60
-    - endpoint: "/api/files/download"
+    - endpoint: "/api/resource"
       http-method: "GET"
       capacity: 10
       tokens-per-minute: 10
