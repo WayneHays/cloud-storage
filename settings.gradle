@@ -1,1 +1,2 @@
-rootProject.name = 'cloud-file-storage'
+rootProject.name = 'cloud-storage'
+includeBuild('backend')

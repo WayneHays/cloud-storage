@@ -67,5 +67,3 @@ Desktop.ini
 .env.*.local
 
 .gitattributes
-
-frontend/
