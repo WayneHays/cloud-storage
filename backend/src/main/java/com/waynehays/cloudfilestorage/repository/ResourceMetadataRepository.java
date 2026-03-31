@@ -11,9 +11,18 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
+
+    @Query("""
+            SELECT r.path FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path IN :paths
+            AND r.markedForDeletion = false
+            """)
+    Set<String> findExistingPaths(@Param("userId") Long userId, @Param("paths") Set<String> paths);
 
     @Query("""
             SELECT r.userId AS userId, COALESCE(SUM(r.size), 0) AS totalSize

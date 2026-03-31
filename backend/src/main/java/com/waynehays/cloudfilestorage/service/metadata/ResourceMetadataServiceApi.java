@@ -4,8 +4,13 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ResourceMetadataServiceApi {
+
+    void saveDirectories(Long userId, Set<String> paths);
+
+    Set<String> findExistingPaths(Long userId, Set<String> paths);
 
     List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds);
 

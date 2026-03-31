@@ -86,28 +86,28 @@ public class ResourceUploader implements ResourceUploaderApi {
         }
     }
 
-    private List<ResourceDto> createDirectories(Long userId, List<ResourceDto> uploadedFiles, UploadContext context) {
-        Set<String> uniqueDirectories = uploadedFiles.stream()
-                .flatMap(file -> PathUtils.getAllDirectories(file.path()).stream())
+    private List<ResourceDto> createDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
+        Set<String> allDirectories = uploadedResources.stream()
+                .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
                 .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
 
-        List<ResourceDto> result = new ArrayList<>();
+        Set<String> existingPaths = metadataService.findExistingPaths(userId, allDirectories);
 
-        for (String directory : uniqueDirectories) {
-            if (!metadataService.exists(userId, directory)) {
-                String objectKey = keyResolver.resolveKey(userId, directory);
-                resourceStorage.createDirectory(objectKey);
-                context.addStorageKey(objectKey);
+        Set<String> newDirectories = allDirectories.stream()
+                .filter(d -> !existingPaths.contains(d))
+                .collect(Collectors.toSet());
 
-                metadataService.saveDirectory(userId, directory);
-                context.addMetadataPath(directory);
-
-                result.add(dtoConverter.directoryFromPath(directory));
-            }
+        if (newDirectories.isEmpty()) {
+            return List.of();
         }
 
-        return result;
+        metadataService.saveDirectories(userId, newDirectories);
+        newDirectories.forEach(context::addMetadataPath);
+
+        return newDirectories.stream()
+                .map(dtoConverter::directoryFromPath)
+                .toList();
     }
 
     private void rollback(Long userId, long totalSize, UploadContext context) {

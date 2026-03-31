@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
+import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,6 +24,22 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private static final String SLASH = "/";
 
     private final ResourceMetadataRepository repository;
+
+    @Override
+    @Transactional
+
+    public void saveDirectories(Long userId, Set<String> paths) {
+        List<ResourceMetadata> directories = paths.stream()
+                .map(path -> buildMetadata(userId, PathUtils.ensureTrailingSlash(path),
+                        null, ResourceType.DIRECTORY))
+                .toList();
+        repository.saveAll(directories);
+    }
+
+    @Override
+    public Set<String> findExistingPaths(Long userId, Set<String> paths) {
+        return repository.findExistingPaths(userId, paths);
+    }
 
     @Override
     public List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds) {
@@ -160,14 +178,19 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     private void save(Long userId, String path, Long size, ResourceType type) {
-        ResourceMetadata resourceMetadata = new ResourceMetadata();
-        resourceMetadata.setUserId(userId);
-        resourceMetadata.setPath(path);
-        resourceMetadata.setParentPath(PathUtils.extractParentPath(path));
-        resourceMetadata.setName(PathUtils.extractFilename(path));
-        resourceMetadata.setSize(size);
-        resourceMetadata.setType(type);
-        resourceMetadata.setMarkedForDeletion(false);
-        repository.save(resourceMetadata);
+        ResourceMetadata metadata = buildMetadata(userId, path, size, type);
+        repository.save(metadata);
+    }
+
+    private ResourceMetadata buildMetadata(Long userId, String path, Long size, ResourceType type) {
+        ResourceMetadata metadata = new ResourceMetadata();
+        metadata.setUserId(userId);
+        metadata.setPath(path);
+        metadata.setParentPath(PathUtils.extractParentPath(path));
+        metadata.setName(PathUtils.extractFilename(path));
+        metadata.setSize(size);
+        metadata.setType(type);
+        metadata.setMarkedForDeletion(false);
+        return metadata;
     }
 }
