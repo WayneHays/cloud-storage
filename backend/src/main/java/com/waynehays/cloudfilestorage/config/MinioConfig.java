@@ -12,24 +12,25 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 public class MinioConfig {
-    private final MinioCredentialsProperties credentialsProperties;
     private final MinioStorageProperties storageProperties;
+    private final MinioCredentialsProperties credentialsProperties;
+
+    @Bean
+    public OkHttpClient okHttpClient() {
+        return new OkHttpClient.Builder()
+                .connectTimeout(storageProperties.connectTimeout())
+                .readTimeout(storageProperties.readTimeout())
+                .writeTimeout(storageProperties.writeTimeout())
+                .callTimeout(storageProperties.callTimeout())
+                .build();
+    }
 
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
                 .endpoint(credentialsProperties.url())
                 .credentials(credentialsProperties.accessKey(), credentialsProperties.secretKey())
-                .httpClient(createHttpClient())
-                .build();
-    }
-
-    private OkHttpClient createHttpClient() {
-        return new OkHttpClient.Builder()
-                .connectTimeout(storageProperties.connectTimeout())
-                .readTimeout(storageProperties.readTimeout())
-                .writeTimeout(storageProperties.writeTimeout())
-                .callTimeout(storageProperties.callTimeout())
+                .httpClient(okHttpClient())
                 .build();
     }
 }
