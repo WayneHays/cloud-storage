@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
@@ -62,8 +62,8 @@ class ResourceUploaderTest {
 
     private static final Long USER_ID = 1L;
 
-    private ObjectData createObject(String fullPath, long size) {
-        return new ObjectData(
+    private UploadObjectDto createObject(String fullPath, long size) {
+        return new UploadObjectDto(
                 "file.txt",
                 "file.txt",
                 "dir/",
@@ -80,7 +80,7 @@ class ResourceUploaderTest {
         @Test
         void shouldReserveSpaceAndUploadFile() {
             // given
-            ObjectData object = createObject("dir/file.txt", 500);
+            UploadObjectDto object = createObject("dir/file.txt", 500);
             String storageKey = "user-1-files/dir/file.txt";
             ResourceDto fileDto = new ResourceDto("dir/", "file.txt", 500L, ResourceType.FILE);
 
@@ -104,8 +104,8 @@ class ResourceUploaderTest {
         @Test
         void shouldSumTotalSizeForMultipleFiles() {
             // given
-            ObjectData file1 = createObject("dir/a.txt", 300);
-            ObjectData file2 = createObject("dir/b.txt", 200);
+            UploadObjectDto file1 = createObject("dir/a.txt", 300);
+            UploadObjectDto file2 = createObject("dir/b.txt", 200);
 
             when(keyResolver.resolveKey(eq(USER_ID), anyString())).thenReturn("key");
             when(dtoConverter.fileFromPath(anyString(), anyLong()))
@@ -126,7 +126,7 @@ class ResourceUploaderTest {
         @Test
         void shouldReleaseSpaceOnStorageFailure() {
             // given
-            ObjectData object = createObject("dir/file.txt", 500);
+            UploadObjectDto object = createObject("dir/file.txt", 500);
             String storageKey = "user-1-files/dir/file.txt";
 
             when(keyResolver.resolveKey(USER_ID, "dir/file.txt")).thenReturn(storageKey);
@@ -134,7 +134,7 @@ class ResourceUploaderTest {
                     .when(resourceStorage).putObject(any(), eq(storageKey), eq(500L), eq("text/plain"));
 
             // when & then
-            List<ObjectData> objects = List.of(object);
+            List<UploadObjectDto> objects = List.of(object);
             assertThatThrownBy(() -> resourceUploader.upload(USER_ID, objects))
                     .isInstanceOf(ResourceStorageOperationException.class);
 
@@ -145,9 +145,9 @@ class ResourceUploaderTest {
         @Test
         void shouldNotReserveSpaceOnValidationFailure() {
             // given
-            ObjectData object = createObject("dir/file.txt", 500);
+            UploadObjectDto object = createObject("dir/file.txt", 500);
 
-            List<ObjectData> objects = List.of(object);
+            List<UploadObjectDto> objects = List.of(object);
             doThrow(new ResourceAlreadyExistsException("Duplicate", "dir/file.txt"))
                     .when(uploadValidator).validate(USER_ID, objects);
 
@@ -161,13 +161,13 @@ class ResourceUploaderTest {
         @Test
         void shouldNotReserveSpaceOnQuotaExceeded() {
             // given
-            ObjectData object = createObject("dir/file.txt", 500);
+            UploadObjectDto object = createObject("dir/file.txt", 500);
 
             doThrow(new ResourceStorageLimitException("Not enough space", 500L, 100L))
                     .when(quotaService).reserveSpace(USER_ID, 500L);
 
             // when & then
-            List<ObjectData> objects = List.of(object);
+            List<UploadObjectDto> objects = List.of(object);
             assertThatThrownBy(() -> resourceUploader.upload(USER_ID, objects))
                     .isInstanceOf(ResourceStorageLimitException.class);
 

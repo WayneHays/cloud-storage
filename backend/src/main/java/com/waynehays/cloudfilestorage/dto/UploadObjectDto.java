@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.dto;
 
-public record ObjectData(
+public record UploadObjectDto(
         String originalFilename,
         String filename,
         String directory,

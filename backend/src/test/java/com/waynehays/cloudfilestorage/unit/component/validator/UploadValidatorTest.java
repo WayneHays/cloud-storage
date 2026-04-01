@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.component.validator;
 
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.Nested;
@@ -28,8 +28,8 @@ class UploadValidatorTest {
 
     private static final Long USER_ID = 1L;
 
-    private ObjectData createObject(String fullPath) {
-        return new ObjectData(
+    private UploadObjectDto createObject(String fullPath) {
+        return new UploadObjectDto(
                 "file.txt",
                 "file.txt",
                 "dir/",
@@ -45,7 +45,7 @@ class UploadValidatorTest {
         @Test
         void shouldPassWhenAllPathsUnique() {
             // given
-            List<ObjectData> objects = List.of(
+            List<UploadObjectDto> objects = List.of(
                     createObject("dir/a.txt"),
                     createObject("dir/b.txt")
             );
@@ -58,7 +58,7 @@ class UploadValidatorTest {
         @Test
         void shouldThrowWhenDuplicatePathsInRequest() {
             // given
-            List<ObjectData> objects = List.of(
+            List<UploadObjectDto> objects = List.of(
                     createObject("dir/same.txt"),
                     createObject("dir/same.txt")
             );

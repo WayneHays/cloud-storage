@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.component.validator;
 
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +16,9 @@ import java.util.Set;
 public class UploadValidator {
     private final ResourceMetadataServiceApi metadataService;
 
-    public void validate(Long userId, List<ObjectData> objects) {
+    public void validate(Long userId, List<UploadObjectDto> objects) {
         List<String> paths = objects.stream()
-                .map(ObjectData::fullPath)
+                .map(UploadObjectDto::fullPath)
                 .toList();
         Set<String> seen = new HashSet<>();
         Set<String> duplicates = new HashSet<>();
