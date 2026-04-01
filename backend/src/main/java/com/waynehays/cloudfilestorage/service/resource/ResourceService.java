@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource;
 
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.resource.deleter.ResourceDeleterApi;

@@ -1,4 +1,4 @@
-import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.deleter.ResourceDeleter;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;

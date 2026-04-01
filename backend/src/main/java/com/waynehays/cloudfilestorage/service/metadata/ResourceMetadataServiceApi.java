@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 
 import java.util.List;

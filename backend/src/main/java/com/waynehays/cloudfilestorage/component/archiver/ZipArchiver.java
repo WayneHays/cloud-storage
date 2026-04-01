@@ -1,6 +1,7 @@
 package com.waynehays.cloudfilestorage.component.archiver;
 
 import com.waynehays.cloudfilestorage.config.properties.ArchiveProperties;
+import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.exception.ArchiveException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;

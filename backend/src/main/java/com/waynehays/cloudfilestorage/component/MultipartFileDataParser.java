@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.component;
 
 import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

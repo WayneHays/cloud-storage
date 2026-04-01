@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.controller;
 
 import com.waynehays.cloudfilestorage.component.MultipartFileDataParser;
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.request.resource.DeleteRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.DownloadRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.GetInfoRequest;

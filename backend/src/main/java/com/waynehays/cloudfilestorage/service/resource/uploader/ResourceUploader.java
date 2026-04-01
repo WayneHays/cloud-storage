@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;

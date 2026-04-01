@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.component.validator;
 
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.Nested;

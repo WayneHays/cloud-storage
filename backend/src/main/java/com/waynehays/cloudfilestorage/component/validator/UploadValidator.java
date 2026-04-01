@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.component.validator;
 
-import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;

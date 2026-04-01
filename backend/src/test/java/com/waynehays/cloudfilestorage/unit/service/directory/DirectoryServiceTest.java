@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.service.directory;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
-import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.service.directory.DirectoryService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;

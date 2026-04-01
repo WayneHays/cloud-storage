@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.component.archiver;
+package com.waynehays.cloudfilestorage.dto.internal;
 
 import com.waynehays.cloudfilestorage.dto.InputStreamSupplier;
 
