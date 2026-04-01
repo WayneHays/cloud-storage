@@ -4,25 +4,28 @@ import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.component.validator.MoveValidator;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
+import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
     private final MoveValidator validator;
+    private final ExecutorService moveExecutor;
+    private final ResourceDtoConverter dtoConverter;
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
-    private final ResourceDtoConverter dtoConverter;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
@@ -61,11 +64,18 @@ public class ResourceMover implements ResourceMoverApi {
     }
 
     private void moveContent(Long userId, List<ResourceMetadataDto> files, String pathFrom, String pathTo) {
-        files.forEach(f -> {
-            String oldKey = keyResolver.resolveKey(userId, f.path());
-            String newPath = f.path().replaceFirst(pathFrom, pathTo);
-            String newKey = keyResolver.resolveKey(userId, newPath);
-            resourceStorage.moveObject(oldKey, newKey);
-        });
+        List<CompletableFuture<Void>> futures = files.stream()
+                        .map(f -> CompletableFuture.runAsync(() -> {
+                            String oldKey = keyResolver.resolveKey(userId, f.path());
+                            String newPath = f.path().replaceFirst(pathFrom, pathTo);
+                            String newKey = keyResolver.resolveKey(userId, newPath);
+                            resourceStorage.moveObject(oldKey, newKey);
+                        }, moveExecutor))
+                                .toList();
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        } catch (CompletionException e) {
+            throw new ResourceStorageOperationException("Failed to move some files in storage", e);
+        }
     }
 }

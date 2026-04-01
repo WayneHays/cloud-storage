@@ -16,6 +16,9 @@ user:
     reconciliation-interval: 30m
     reconciliation-batch-size: 10
 
+executors:
+    move-thread-pool-size: 10
+
 path:
   limits:
     max-path-length: 500
