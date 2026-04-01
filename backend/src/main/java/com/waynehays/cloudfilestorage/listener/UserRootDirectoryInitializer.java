@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserRootDirectoryInitializer {
-    private static final String LOG_DIRECTORY_CREATED = "Root directory created for user with id: {}";
-
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
 
@@ -21,6 +19,6 @@ public class UserRootDirectoryInitializer {
     public void createUserRootDirectory(UserRegisteredEvent event) {
         String keyToRoot = keyResolver.resolveKeyToRoot(event.userId());
         resourceStorage.createDirectory(keyToRoot);
-        log.info(LOG_DIRECTORY_CREATED, event.userId());
+        log.info("Root directory created for user with id: {}", event.userId());
     }
 }
