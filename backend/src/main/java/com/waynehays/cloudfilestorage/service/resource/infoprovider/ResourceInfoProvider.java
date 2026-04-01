@@ -1,6 +1,7 @@
 package com.waynehays.cloudfilestorage.service.resource.infoprovider;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
@@ -16,10 +17,10 @@ public class ResourceInfoProvider implements ResourceInfoProviderApi {
 
     @Override
     public ResourceDto getInfo(Long userId, String path) {
-        ResourceMetadata resourceMetadata = metadataService.findOrThrow(userId, path);
+        ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
 
         return PathUtils.isDirectory(path)
                 ? dtoConverter.directoryFromPath(path)
-                : dtoConverter.fileFromPath(path, resourceMetadata.getSize());
+                : dtoConverter.fileFromPath(path, dto.size());
     }
 }

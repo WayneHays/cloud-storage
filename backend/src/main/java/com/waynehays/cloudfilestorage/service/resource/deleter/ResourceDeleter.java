@@ -1,16 +1,14 @@
 package com.waynehays.cloudfilestorage.service.resource.deleter;
 
-import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -23,11 +21,11 @@ public class ResourceDeleter implements ResourceDeleterApi {
 
     @Override
     public void delete(Long userId, String path) {
-        ResourceMetadata metadata = metadataService.findOrThrow(userId, path);
+        ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
         String objectKey = keyResolver.resolveKey(userId, path);
 
         if (PathUtils.isFile(path)) {
-            deleteFile(userId, path, objectKey, metadata.getSize());
+            deleteFile(userId, path, objectKey, dto.size());
         } else {
             deleteDirectory(userId, path, objectKey);
         }

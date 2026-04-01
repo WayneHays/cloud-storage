@@ -2,8 +2,8 @@ package com.waynehays.cloudfilestorage.service.resource.downloader;
 
 import com.waynehays.cloudfilestorage.component.archiver.ArchiveItem;
 import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
-import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
@@ -62,7 +62,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
         List<ArchiveItem> archiveItems = metadataService.findDirectoryContent(userId, path)
                 .stream()
-                .filter(ResourceMetadata::isFile)
+                .filter(ResourceMetadataDto::isFile)
                 .map(metadata -> createArchiveItem(userId, metadata, path))
                 .toList();
 
@@ -72,14 +72,14 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         return new DownloadResult(body, directoryName + archiver.getExtension(), archiver.getContentType());
     }
 
-    private ArchiveItem createArchiveItem(Long userId, ResourceMetadata resourceMetadata, String directoryPath) {
-        String storageKey = keyResolver.resolveKey(userId, resourceMetadata.getPath());
-        String entryName = resourceMetadata.getPath().substring(directoryPath.length());
+    private ArchiveItem createArchiveItem(Long userId, ResourceMetadataDto dto, String directoryPath) {
+        String storageKey = keyResolver.resolveKey(userId, dto.path());
+        String entryName = dto.path().substring(directoryPath.length());
 
-        return new ArchiveItem(entryName, resourceMetadata.getSize(),
+        return new ArchiveItem(entryName, dto.size(),
                 () -> resourceStorage.getObject(storageKey)
                         .orElseThrow(() -> new ResourceNotFoundException(
-                                "Resource not found in storage", resourceMetadata.getPath()))
+                                "Resource not found in storage", dto.path()))
                         .inputStream());
     }
 }

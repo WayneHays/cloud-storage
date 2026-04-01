@@ -1,12 +1,8 @@
-package com.waynehays.cloudfilestorage.unit.service.resource;
-
-import com.waynehays.cloudfilestorage.dto.ResourceType;
-import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.deleter.ResourceDeleter;
+import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,30 +12,28 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceDeleterTest {
 
     @Mock
-    private ResourceStorageApi storage;
+    private ResourceStorageApi resourceStorage;
 
     @Mock
-    private ResourceMetadataServiceApi metadataService;
+    private StorageQuotaServiceApi quotaService;
 
     @Mock
     private ResourceStorageKeyResolverApi keyResolver;
 
     @Mock
-    private StorageQuotaServiceApi quotaService;
+    private ResourceMetadataServiceApi metadataService;
 
     @InjectMocks
     private ResourceDeleter resourceDeleter;
@@ -50,42 +44,42 @@ class ResourceDeleterTest {
     class DeleteFile {
 
         @Test
-        void shouldDeleteFile() {
+        void shouldDeleteFileInCorrectOrder() {
             // given
-            String path = "directory/file.txt";
-            String objectKey = "user-1-files/directory/file.txt";
-            ResourceMetadata metadata = new ResourceMetadata();
-            metadata.setSize(500L);
+            String path = "docs/report.pdf";
+            String objectKey = "user-1/docs/report.pdf";
+            long fileSize = 2048L;
 
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenReturn(new ResourceMetadataDto(path, fileSize));
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
 
             // when
             resourceDeleter.delete(USER_ID, path);
 
             // then
-            InOrder inOrder = inOrder(metadataService, storage, quotaService);
+            InOrder inOrder = inOrder(metadataService, resourceStorage, quotaService);
             inOrder.verify(metadataService).markForDeletion(USER_ID, path);
-            inOrder.verify(storage).deleteObject(objectKey);
+            inOrder.verify(resourceStorage).deleteObject(objectKey);
             inOrder.verify(metadataService).delete(USER_ID, path);
-            inOrder.verify(quotaService).releaseSpace(USER_ID, 500L);
+            inOrder.verify(quotaService).releaseSpace(USER_ID, fileSize);
         }
 
         @Test
-        void shouldThrowWhenFileNotFound() {
+        void shouldReleaseSpaceEvenWhenSizeIsZero() {
             // given
-            String path = "directory/file.txt";
+            String path = "empty-file.txt";
+            String objectKey = "user-1/empty-file.txt";
 
             when(metadataService.findOrThrow(USER_ID, path))
-                    .thenThrow(new ResourceNotFoundException("Resource not found", path));
+                    .thenReturn(new ResourceMetadataDto(path, 0L));
+            when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
 
-            // when & then
-            assertThatThrownBy(() -> resourceDeleter.delete(USER_ID, path))
-                    .isInstanceOf(ResourceNotFoundException.class);
+            // when
+            resourceDeleter.delete(USER_ID, path);
 
-            verify(storage, never()).deleteObject(any());
-            verify(metadataService, never()).markForDeletion(any(), any());
-            verify(quotaService, never()).releaseSpace(any(), anyLong());
+            // then
+            verify(quotaService).releaseSpace(USER_ID, 0L);
         }
     }
 
@@ -93,56 +87,109 @@ class ResourceDeleterTest {
     class DeleteDirectory {
 
         @Test
-        void shouldDeleteDirectoryAndReleaseSpace() {
+        void shouldDeleteDirectoryInCorrectOrder() {
             // given
-            String path = "directory/subdirectory/";
-            String objectKey = "user-1-files/directory/subdirectory/";
-            ResourceMetadata metadata = new ResourceMetadata();
+            String path = "docs/archive/";
+            String objectKey = "user-1/docs/archive/";
+            long totalSize = 10240L;
 
-            ResourceMetadata file1 = new ResourceMetadata();
-            file1.setType(ResourceType.FILE);
-            file1.setSize(300L);
-
-            ResourceMetadata file2 = new ResourceMetadata();
-            file2.setType(ResourceType.FILE);
-            file2.setSize(200L);
-
-            ResourceMetadata subDir = new ResourceMetadata();
-            subDir.setType(ResourceType.DIRECTORY);
-
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenReturn(new ResourceMetadataDto(path, 0L));
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
-            when(metadataService.findDirectoryContent(USER_ID, path))
-                    .thenReturn(List.of(file1, file2, subDir));
+            when(metadataService.sumResourceSizesByPrefix(USER_ID, path)).thenReturn(totalSize);
 
             // when
             resourceDeleter.delete(USER_ID, path);
 
             // then
-            InOrder inOrder = inOrder(metadataService, storage, quotaService);
+            InOrder inOrder = inOrder(metadataService, resourceStorage, quotaService);
+            inOrder.verify(metadataService).sumResourceSizesByPrefix(USER_ID, path);
             inOrder.verify(metadataService).markForDeletionByPrefix(USER_ID, path);
-            inOrder.verify(storage).deleteByPrefix(objectKey);
+            inOrder.verify(resourceStorage).deleteByPrefix(objectKey);
             inOrder.verify(metadataService).deleteByPrefix(USER_ID, path);
-            inOrder.verify(quotaService).releaseSpace(USER_ID, 500L);
+            inOrder.verify(quotaService).releaseSpace(USER_ID, totalSize);
         }
 
         @Test
-        void shouldDeleteEmptyDirectoryWithoutReleasingSpace() {
+        void shouldNotReleaseSpaceWhenDirectoryTotalSizeIsZero() {
             // given
-            String path = "directory/empty/";
-            String objectKey = "user-1-files/directory/empty/";
-            ResourceMetadata metadata = new ResourceMetadata();
+            String path = "empty-dir/";
+            String objectKey = "user-1/empty-dir/";
 
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenReturn(new ResourceMetadataDto(path, 0L));
             when(keyResolver.resolveKey(USER_ID, path)).thenReturn(objectKey);
-            when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
-            when(metadataService.findDirectoryContent(USER_ID, path))
-                    .thenReturn(List.of());
+            when(metadataService.sumResourceSizesByPrefix(USER_ID, path)).thenReturn(0L);
 
             // when
             resourceDeleter.delete(USER_ID, path);
 
             // then
             verify(quotaService, never()).releaseSpace(any(), anyLong());
+        }
+    }
+
+    @Nested
+    class DeleteRouting {
+
+        @Test
+        void shouldRouteToFileDeleteWhenPathIsFile() {
+            // given
+            String filePath = "photo.jpg";
+
+            when(metadataService.findOrThrow(USER_ID, filePath))
+                    .thenReturn(new ResourceMetadataDto(filePath, 500L));
+            when(keyResolver.resolveKey(USER_ID, filePath)).thenReturn("user-1/photo.jpg");
+
+            // when
+            resourceDeleter.delete(USER_ID, filePath);
+
+            // then
+            verify(metadataService).markForDeletion(USER_ID, filePath);
+            verify(resourceStorage).deleteObject(any());
+            verify(metadataService, never()).markForDeletionByPrefix(any(), any());
+            verify(resourceStorage, never()).deleteByPrefix(any());
+        }
+
+        @Test
+        void shouldRouteToDirectoryDeleteWhenPathIsDirectory() {
+            // given
+            String dirPath = "folder/";
+
+            when(metadataService.findOrThrow(USER_ID, dirPath))
+                    .thenReturn(new ResourceMetadataDto(dirPath, 0L));
+            when(keyResolver.resolveKey(USER_ID, dirPath)).thenReturn("user-1/folder/");
+            when(metadataService.sumResourceSizesByPrefix(USER_ID, dirPath)).thenReturn(0L);
+
+            // when
+            resourceDeleter.delete(USER_ID, dirPath);
+
+            // then
+            verify(metadataService).markForDeletionByPrefix(USER_ID, dirPath);
+            verify(resourceStorage).deleteByPrefix(any());
+            verify(metadataService, never()).markForDeletion(any(), any());
+            verify(resourceStorage, never()).deleteObject(any());
+        }
+    }
+
+    @Nested
+    class DeletePropagation {
+
+        @Test
+        void shouldPropagateExceptionFromFindOrThrow() {
+            // given
+            String path = "nonexistent.txt";
+
+            when(metadataService.findOrThrow(USER_ID, path))
+                    .thenThrow(new RuntimeException("Resource not found"));
+
+            // when & then
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    RuntimeException.class,
+                    () -> resourceDeleter.delete(USER_ID, path)
+            );
+
+            verifyNoInteractions(keyResolver, resourceStorage, quotaService);
         }
     }
 }

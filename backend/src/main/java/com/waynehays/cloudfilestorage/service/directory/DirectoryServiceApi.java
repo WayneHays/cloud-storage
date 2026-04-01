@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface DirectoryServiceApi {
 
-    List<ResourceDto> getContent(Long userId, String directoryPath);
+    List<ResourceDto> getContent(Long userId, String path);
 
-    ResourceDto createDirectory(Long userId, String directoryPath);
+    ResourceDto createDirectory(Long userId, String path);
 }

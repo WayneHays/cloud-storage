@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.service.storagequota;
 
 import com.waynehays.cloudfilestorage.config.properties.UserStorageProperties;
-import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.repository.UserRepository;
+import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,32 +19,34 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StorageQuotaConsistencyService {
-    private final UserRepository userRepository;
+    private final UserService userService;
+    private final StorageQuotaServiceApi quotaService;
     private final UserStorageProperties properties;
     private final ResourceMetadataServiceApi metadataService;
 
     @Transactional
     public void reconcileStorageQuotas() {
         log.info("Quota reconciliation started");
+
         int currentPage = 0;
         int totalUsersProcessed = 0;
 
         try {
-            Page<User> users;
+            Page<UserDto> users;
 
             do {
-                users = userRepository.findAll(
+                users = userService.findAll(
                         PageRequest.of(currentPage, properties.reconciliationBatchSize()));
-                List<Long> userIds = users.map(User::getId).toList();
+                List<Long> userIds = users.map(UserDto::id).toList();
                 Map<Long, Long> actualStorageUsage = retrieveActualStorageUsageForUsers(userIds);
 
-                for (User user : users) {
-                    long actualUsedSpace = actualStorageUsage.getOrDefault(user.getId(), 0L);
+                for (UserDto user : users) {
+                    long actualUsedSpace = actualStorageUsage.getOrDefault(user.id(), 0L);
 
-                    if (user.getUsedSpace() != actualUsedSpace) {
+                    if (user.usedSpace() != actualUsedSpace) {
                         log.warn("Quota mismatch for user: {}, stored={}, actual={}",
-                                user.getId(), user.getUsedSpace(), actualUsedSpace);
-                        userRepository.updateUsedSpace(user.getId(), actualUsedSpace);
+                                user.id(), user.usedSpace(), actualUsedSpace);
+                        quotaService.correctUsedSpace(user.id(), actualUsedSpace);
                     }
                 }
                 totalUsersProcessed += users.getNumberOfElements();

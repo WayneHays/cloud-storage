@@ -1,6 +1,8 @@
 package com.waynehays.cloudfilestorage.dto.response;
 
 public record UserDto(
-        String username
+        Long id,
+        String username,
+        long usedSpace
 ) {
 }

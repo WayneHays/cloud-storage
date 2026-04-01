@@ -33,6 +33,12 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
         user.setUsedSpace(Math.max(0, user.getUsedSpace() - bytes));
     }
 
+    @Override
+    @Transactional
+    public void correctUsedSpace(Long userId, long actualUsedSpace) {
+        userRepository.updateUsedSpace(userId, actualUsedSpace);
+    }
+
     private User findOrThrow(Long userId) {
         return userRepository.findByIdWithLock(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found", userId));

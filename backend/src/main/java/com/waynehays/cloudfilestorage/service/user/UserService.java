@@ -11,6 +11,8 @@ import com.waynehays.cloudfilestorage.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,8 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserServiceApi {
-    private final UserMapper userMapper;
-    private final UserRepository userRepository;
+    private final UserMapper mapper;
+    private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final UserStorageProperties properties;
     private final ApplicationEventPublisher eventPublisher;
@@ -27,16 +29,21 @@ public class UserService implements UserServiceApi {
     @Override
     @Transactional
     public UserDto signUp(SignUpRequest signUpRequest) {
-        User user = userMapper.toEntity(signUpRequest);
+        User user = mapper.toEntity(signUpRequest);
         user.setPassword(passwordEncoder.encode(signUpRequest.password()));
         user.setStorageLimit(properties.defaultLimit().toBytes());
 
         try {
-            User saved = userRepository.save(user);
+            User saved = repository.save(user);
             eventPublisher.publishEvent(new UserRegisteredEvent(saved.getId()));
-            return userMapper.toDto(saved);
+            return mapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Username already taken: " + signUpRequest.username(), e);
         }
+    }
+
+    @Override
+    public Page<UserDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toDto);
     }
 }

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.cleanup;
 
-import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
@@ -24,12 +24,12 @@ public class OrphanResourceCleanerService {
         try {
             processOrphans();
         } catch (Exception e) {
-            log.error("Cleanup job failed", e);
+            log.error("Orphans cleanup job failed", e);
         }
     }
 
     private void processOrphans() {
-        List<ResourceMetadata> orphans = metadataService.findMarkedForDeletion();
+        List<ResourceMetadataDto> orphans = metadataService.findMarkedForDeletion();
 
         if (orphans.isEmpty()) {
             return;
@@ -38,32 +38,28 @@ public class OrphanResourceCleanerService {
         log.info("Cleanup started: {} orphans found", orphans.size());
         int cleaned = 0;
 
-        for (ResourceMetadata orphan : orphans) {
+        for (ResourceMetadataDto orphan : orphans) {
             try {
                 cleanOrphan(orphan);
                 cleaned++;
             } catch (Exception e) {
-                log.warn("Failed to clean orphan: {}", orphan.getPath(), e);
+                log.warn("Failed to cleanup orphan: {}", orphan.path(), e);
             }
         }
 
-        log.info("Cleanup completed: {}/{} orphans processed", cleaned, orphans.size());
+        log.info("Orphan cleanup completed: {}/{} orphans removed", cleaned, orphans.size());
     }
 
-    private void cleanOrphan(ResourceMetadata orphan) {
-        deleteFromStorage(orphan);
-        metadataService.deleteById(orphan.getId());
-        releaseSpaceIfFile(orphan);
-    }
-
-    private void deleteFromStorage(ResourceMetadata orphan) {
-        String storageKey = keyResolver.resolveKey(orphan.getUserId(), orphan.getPath());
-        resourceStorage.deleteObject(storageKey);
-    }
-
-    private void releaseSpaceIfFile(ResourceMetadata orphan) {
+    private void cleanOrphan(ResourceMetadataDto orphan) {
         if (orphan.isFile()) {
-            quotaService.releaseSpace(orphan.getUserId(), orphan.getSize());
+            deleteFromStorage(orphan);
+            quotaService.releaseSpace(orphan.userId(), orphan.size());
         }
+        metadataService.deleteById(orphan.id());
+    }
+
+    private void deleteFromStorage(ResourceMetadataDto orphan) {
+        String storageKey = keyResolver.resolveKey(orphan.userId(), orphan.path());
+        resourceStorage.deleteObject(storageKey);
     }
 }

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource;
 
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 
@@ -18,5 +18,5 @@ public interface ResourceServiceApi {
 
     List<ResourceDto> search(Long userId, String query);
 
-    List<ResourceDto> upload(Long userId, List<ObjectData> files);
+    List<ResourceDto> upload(Long userId, List<UploadObjectDto> files);
 }
