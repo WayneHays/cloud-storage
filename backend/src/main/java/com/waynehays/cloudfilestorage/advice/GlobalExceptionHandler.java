@@ -105,8 +105,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(RateLimitException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
-    public ErrorDto handleRateLimitException(RateLimitException e, HttpServletResponse response) {
-        response.addHeader("Retry-After", String.valueOf(e.getRetryAfter()));
+    public ErrorDto handleRateLimitException(RateLimitException e) {
         log.warn("Rate limit exceeded: {}, endpoint={}, method={}, retryAfter={}s",
                 getCurrentUserInfo(), e.getEndpoint(), e.getHttpMethod(), e.getRetryAfter());
         return createErrorDto(e.getMessage());
