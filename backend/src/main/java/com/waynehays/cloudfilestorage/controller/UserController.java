@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.controller;
 
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
-import com.waynehays.cloudfilestorage.mapper.UserMapper;
+import com.waynehays.cloudfilestorage.mapper.AuthMapper;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
 public class UserController {
-    private final UserMapper userMapper;
+    private final AuthMapper authMapper;
 
     @GetMapping("/me")
     public UserDto me(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return userMapper.toDto(userDetails);
+        return authMapper.toUserDto(userDetails);
     }
 }

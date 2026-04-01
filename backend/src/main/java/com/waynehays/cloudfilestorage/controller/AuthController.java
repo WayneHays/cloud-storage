@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.controller;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.mapper.AuthMapper;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.service.user.UserServiceApi;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
     private final UserMapper userMapper;
+    private final AuthMapper authMapper;
     private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
@@ -53,7 +55,7 @@ public class AuthController {
                                           HttpServletRequest request,
                                           HttpServletResponse response) {
         processLogin(signInRequest.username(), signInRequest.password(), request, response);
-        return userMapper.toDto(signInRequest);
+        return authMapper.toUserDto(signInRequest);
     }
 
     private void processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
