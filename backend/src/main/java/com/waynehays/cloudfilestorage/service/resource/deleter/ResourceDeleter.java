@@ -5,7 +5,6 @@ import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceAp
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
         String objectKey = keyResolver.resolveKey(userId, path);
 
-        if (PathUtils.isFile(path)) {
+        if (dto.isFile()) {
             deleteFile(userId, path, objectKey, dto.size());
         } else {
             deleteDirectory(userId, path, objectKey);
