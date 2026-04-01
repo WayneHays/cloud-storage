@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -16,7 +15,7 @@ public record CustomUserDetails(Long id, String username, String password) imple
     }
 
     @Override
-    public @Nullable String getPassword() {
+    public String getPassword() {
         return password;
     }
 
