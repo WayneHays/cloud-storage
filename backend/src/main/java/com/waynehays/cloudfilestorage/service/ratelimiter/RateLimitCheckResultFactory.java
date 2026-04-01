@@ -7,14 +7,19 @@ import org.springframework.stereotype.Component;
 public class RateLimitCheckResultFactory {
 
     public RateLimitCheckResult allowed(long remainingTokens) {
-        return new RateLimitCheckResult(true, remainingTokens, 0, null);
+        return create(true, remainingTokens, 0, null);
     }
 
     public RateLimitCheckResult rejected(long retryAfterSeconds, String message) {
-        return new RateLimitCheckResult(false, 0, retryAfterSeconds, message);
+        return create(false, 0, retryAfterSeconds, message);
     }
 
     public RateLimitCheckResult unlimited() {
-        return new RateLimitCheckResult(true, -1, 0, null);
+        return create(true, -1, 0, null);
+    }
+
+    private RateLimitCheckResult create(boolean allowed, long remainingTokens,
+                                        long retryAfterSeconds, String errorMessage) {
+        return new RateLimitCheckResult(allowed, remainingTokens, retryAfterSeconds, errorMessage);
     }
 }
