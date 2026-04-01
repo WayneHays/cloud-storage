@@ -60,7 +60,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
         log.info("Start download directory: userId={}, path={}", userId, path);
 
-        List<ArchiveItem> archiveItems = metadataService.findDirectoryContent(userId, path)
+        List<ArchiveItem> archiveItems = metadataService.findAllByPrefix(userId, path)
                 .stream()
                 .filter(ResourceMetadataDto::isFile)
                 .map(metadata -> createArchiveItem(userId, metadata, path))
