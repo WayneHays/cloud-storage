@@ -1,6 +1,7 @@
 package com.waynehays.cloudfilestorage.service.resource.mover;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.component.validator.MoveValidator;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
@@ -18,6 +19,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
+    private final MoveValidator validator;
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceDtoConverter dtoConverter;
@@ -25,31 +27,23 @@ public class ResourceMover implements ResourceMoverApi {
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
+        validator.validate(userId, pathFrom, pathTo);
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, pathFrom);
-        validatePaths(userId, pathFrom, pathTo);
+
+        if (dto.isFile()) {
+            moveFile(userId, pathFrom, pathTo);
+            return dtoConverter.fileFromPath(pathTo, dto.size());
+        }
+
+        moveDirectory(userId, pathFrom, pathTo);
+        return dtoConverter.directoryFromPath(pathTo);
+    }
+
+    private void moveFile(Long userId, String pathFrom, String pathTo) {
+        log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
         String keyFrom = keyResolver.resolveKey(userId, pathFrom);
         String keyTo = keyResolver.resolveKey(userId, pathTo);
-
-        if (PathUtils.isDirectory(pathFrom)) {
-            moveDirectory(userId, pathFrom, pathTo);
-            return dtoConverter.directoryFromPath(pathTo);
-        }
-
-        moveFile(userId, pathFrom, pathTo, keyFrom, keyTo);
-        return dtoConverter.fileFromPath(pathTo, dto.size());
-    }
-
-    private void validatePaths(Long userId, String pathFrom, String pathTo) {
-        if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
-            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
-        }
-        metadataService.throwIfAnyExists(userId, List.of(pathTo));
-    }
-
-    private void moveFile(Long userId, String pathFrom, String pathTo, String keyFrom, String keyTo) {
-        log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
-
         resourceStorage.moveObject(keyFrom, keyTo);
         metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
 
@@ -59,21 +53,19 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveDirectory(Long userId, String pathFrom, String pathTo) {
         log.info("Start move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
-        List<ResourceMetadataDto> content = metadataService.findDirectoryContent(userId, pathFrom);
-        moveContent(userId, content, pathFrom, pathTo);
+        List<ResourceMetadataDto> files = metadataService.findFilesByPrefix(userId, pathFrom);
+        moveContent(userId, files, pathFrom, pathTo);
         metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
 
         log.info("Successfully moved directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
-    private void moveContent(Long userId, List<ResourceMetadataDto> content, String pathFrom, String pathTo) {
-        content.stream()
-                .filter(ResourceMetadataDto::isFile)
-                .forEach(dto -> {
-                    String oldKey = keyResolver.resolveKey(userId, dto.path());
-                    String newPath = dto.path().replace(pathFrom, pathTo);
-                    String newKey = keyResolver.resolveKey(userId, newPath);
-                    resourceStorage.moveObject(oldKey, newKey);
-                });
+    private void moveContent(Long userId, List<ResourceMetadataDto> files, String pathFrom, String pathTo) {
+        files.forEach(f -> {
+            String oldKey = keyResolver.resolveKey(userId, f.path());
+            String newPath = f.path().replaceFirst(pathFrom, pathTo);
+            String newKey = keyResolver.resolveKey(userId, newPath);
+            resourceStorage.moveObject(oldKey, newKey);
+        });
     }
 }
