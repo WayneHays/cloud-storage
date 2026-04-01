@@ -17,9 +17,6 @@ public class ResourceInfoProvider implements ResourceInfoProviderApi {
     @Override
     public ResourceDto getInfo(Long userId, String path) {
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
-
-        return PathUtils.isDirectory(path)
-                ? dtoConverter.directoryFromPath(path)
-                : dtoConverter.fileFromPath(path, dto.size());
+        return dtoConverter.fromMetadata(dto);
     }
 }
