@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
-@ConfigurationProperties(prefix = "streaming")
+@ConfigurationProperties(prefix = "archive")
 public record ArchiveProperties(
 
         @NotNull(message = "Buffer size must be set")
