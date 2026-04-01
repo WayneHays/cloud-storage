@@ -27,7 +27,18 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     List<ResourceMetadata> findByMarkedForDeletionTrue();
 
     @Query("""
-            SELECT r.path FROM ResourceMetadata r
+            SELECT r FROM ResourceMetadata r
+            WHERE r.userId =: userId
+            AND r.path LIKE :prefix
+            AND r.type = 'FILE'
+            AND r.markedForDeletion = false
+            """)
+    List<ResourceMetadata> findFilesByPrefix(@Param("userId") Long userId,
+                                             @Param("prefix") String prefix);
+
+    @Query("""
+            SELECT r.path
+            FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND r.path IN :paths
             AND r.markedForDeletion = false

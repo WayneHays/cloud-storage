@@ -45,7 +45,13 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<ResourceMetadataDto> findDirectoryContent(Long userId, String pathPrefix) {
+    public List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix) {
+        List<ResourceMetadata> files = repository.findFilesByPrefix(userId, prefix);
+        return mapper.toDto(files);
+    }
+
+    @Override
+    public List<ResourceMetadataDto> findAllByPrefix(Long userId, String pathPrefix) {
         List<ResourceMetadata> result = repository.findByUserIdAndPathStartingWithAndMarkedForDeletionFalse(userId, pathPrefix);
         return mapper.toDto(result);
     }

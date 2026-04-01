@@ -12,7 +12,9 @@ public interface ResourceMetadataServiceApi {
 
     List<ResourceMetadataDto> findDirectChildren(Long userId, String directoryPath);
 
-    List<ResourceMetadataDto> findDirectoryContent(Long userId, String pathPrefix);
+    List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix);
+
+    List<ResourceMetadataDto> findAllByPrefix(Long userId, String pathPrefix);
 
     List<ResourceMetadataDto> findByNameContaining(Long userId, String query);
 
