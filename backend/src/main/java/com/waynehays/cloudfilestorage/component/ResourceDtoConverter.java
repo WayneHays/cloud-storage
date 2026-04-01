@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.component;
 
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -12,16 +13,16 @@ import org.springframework.stereotype.Component;
 public class ResourceDtoConverter {
     private static final String SLASH = "/";
 
-    public ResourceDto fromMetadata(ResourceMetadata resourceMetadata) {
-        String name = resourceMetadata.isFile()
-                ? resourceMetadata.getName()
-                : resourceMetadata.getName() + SLASH;
+    public ResourceDto fromMetadata(ResourceMetadataDto dto) {
+        String name = dto.isFile()
+                ? dto.name()
+                : dto.name() + SLASH;
 
         return createDto(
-                resourceMetadata.getPath(),
+                dto.path(),
                 name,
-                resourceMetadata.getSize(),
-                resourceMetadata.getType()
+                dto.size(),
+                dto.type()
         );
     }
 

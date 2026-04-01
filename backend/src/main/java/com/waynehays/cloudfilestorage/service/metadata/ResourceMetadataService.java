@@ -1,19 +1,21 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,26 +25,41 @@ import java.util.Set;
 public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private static final String SLASH = "/";
 
+    private final ResourceMetadataMapper mapper;
     private final ResourceMetadataRepository repository;
 
     @Override
-    public long sumResourceSizesByPrefix(Long userId, String prefix) {
-        return repository.sumSizeByPrefix(userId, prefix, ResourceType.FILE);
+    public ResourceMetadataDto findOrThrow(Long userId, String path) {
+        ResourceMetadata metadata = repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
+        return mapper.toDto(metadata);
     }
 
     @Override
-    public void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo) {
-        repository.updatePathsByPrefix(userId, prefixFrom, prefixTo);
+    public List<ResourceMetadataDto> findDirectChildren(Long userId, String directoryPath) {
+        if (StringUtils.isNotEmpty(directoryPath)) {
+            findOrThrow(userId, directoryPath);
+        }
+        List<ResourceMetadata> result = repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(userId, directoryPath);
+        return mapper.toDto(result);
     }
 
     @Override
-    @Transactional
-    public void saveDirectories(Long userId, Set<String> paths) {
-        List<ResourceMetadata> directories = paths.stream()
-                .map(path -> buildMetadata(userId, PathUtils.ensureTrailingSlash(path),
-                        null, ResourceType.DIRECTORY))
-                .toList();
-        repository.saveAll(directories);
+    public List<ResourceMetadataDto> findDirectoryContent(Long userId, String pathPrefix) {
+        List<ResourceMetadata> result = repository.findByUserIdAndPathStartingWithAndMarkedForDeletionFalse(userId, pathPrefix);
+        return mapper.toDto(result);
+    }
+
+    @Override
+    public List<ResourceMetadataDto> findByNameContaining(Long userId, String query) {
+        List<ResourceMetadata> result = repository.findByUserIdAndNameContainingIgnoreCaseAndMarkedForDeletionFalse(userId, query);
+        return mapper.toDto(result);
+    }
+
+    @Override
+    public List<ResourceMetadataDto> findMarkedForDeletion() {
+        List<ResourceMetadata> result = repository.findByMarkedForDeletionTrue();
+        return mapper.toDto(result);
     }
 
     @Override
@@ -56,64 +73,31 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public ResourceMetadata findOrThrow(Long userId, String path) {
-        return repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
+    public long sumResourceSizesByPrefix(Long userId, String prefix) {
+        return repository.sumSizeByPrefix(userId, prefix, ResourceType.FILE);
     }
 
     @Override
-    public void throwIfExists(Long userId, String path) {
-        if (exists(userId, path)) {
-            throw new ResourceAlreadyExistsException("Resource already exist", path);
+    public void validateDirectoryCreation(Long userId, String path) {
+        String parentPath = PathUtils.extractParentPath(path);
+        List<String> paths = List.of(path, parentPath);
+        Set<String> existing = repository.findExistingPaths(userId, new HashSet<>(paths));
+
+        if (existing.contains(path)) {
+            throw new ResourceAlreadyExistsException("Directory already exists", path);
+        }
+
+        if (!parentPath.isEmpty() && !existing.contains(parentPath)) {
+            throw new ResourceNotFoundException("Directory not found", parentPath);
         }
     }
 
     @Override
     public void throwIfAnyExists(Long userId, List<String> paths) {
-        List<String> existingPaths = paths.stream()
-                .filter(path -> exists(userId, path))
-                .toList();
-
-        if (ObjectUtils.isNotEmpty(existingPaths)) {
-            throw new ResourceAlreadyExistsException("Resources already exist", existingPaths);
+        Set<String> existing = repository.findExistingPaths(userId, new HashSet<>(paths));
+        if (!existing.isEmpty()) {
+            throw new ResourceAlreadyExistsException("Resources already exist", new ArrayList<>(existing));
         }
-    }
-
-    @Override
-    public void ensureParentExists(Long userId, String directoryPath) {
-        String parentPath = PathUtils.extractParentPath(directoryPath);
-
-        if (StringUtils.isNotEmpty(parentPath)) {
-            findOrThrow(userId, parentPath);
-        }
-    }
-
-    @Override
-    public boolean exists(Long userId, String path) {
-        return repository.existsByUserIdAndPathAndMarkedForDeletionFalse(userId, path);
-    }
-
-    @Override
-    public List<ResourceMetadata> findDirectChildren(Long userId, String directoryPath) {
-        if (StringUtils.isNotEmpty(directoryPath)) {
-            findOrThrow(userId, directoryPath);
-        }
-        return repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(userId, directoryPath);
-    }
-
-    @Override
-    public List<ResourceMetadata> findDirectoryContent(Long userId, String pathPrefix) {
-        return repository.findByUserIdAndPathStartingWithAndMarkedForDeletionFalse(userId, pathPrefix);
-    }
-
-    @Override
-    public List<ResourceMetadata> findByNameContaining(Long userId, String query) {
-        return repository.findByUserIdAndNameContainingIgnoreCaseAndMarkedForDeletionFalse(userId, query);
-    }
-
-    @Override
-    public List<ResourceMetadata> findMarkedForDeletion() {
-        return repository.findByMarkedForDeletionTrue();
     }
 
     @Override
@@ -123,14 +107,24 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
             throw new IllegalArgumentException("File path must not end with %s : %s".formatted(SLASH, path));
         }
 
-        save(userId, path, size, ResourceType.FILE);
+        ResourceMetadata metadata = buildMetadata(userId, path, size, ResourceType.FILE);
+        repository.save(metadata);
     }
 
     @Override
     @Transactional
-    public void saveDirectory(Long userId, String path) {
-        String directoryPath = PathUtils.ensureTrailingSlash(path);
-        save(userId, directoryPath, null, ResourceType.DIRECTORY);
+    public void saveDirectories(Long userId, Set<String> paths) {
+        List<ResourceMetadata> directories = paths.stream()
+                .map(path -> buildMetadata(userId, PathUtils.ensureTrailingSlash(path),
+                        null, ResourceType.DIRECTORY))
+                .toList();
+        repository.saveAll(directories);
+    }
+
+    @Override
+    @Transactional
+    public void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo) {
+        repository.updatePathsByPrefix(userId, prefixFrom, prefixTo);
     }
 
     @Override
@@ -143,21 +137,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void markForDeletionByPrefix(Long userId, String pathPrefix) {
         repository.markForDeletionByPrefix(userId, pathPrefix);
-    }
-
-    @Override
-    @Transactional
-    public void updatePath(Long userId, String pathFrom, String pathTo) {
-        ResourceMetadata metadata = findOrThrow(userId, pathFrom);
-        applyNewPath(metadata, pathFrom, pathTo);
-        repository.save(metadata);
-    }
-
-    @Override
-    @Transactional
-    public void batchUpdatePaths(List<ResourceMetadata> resourcesToUpdate, String prefixFrom, String prefixTo) {
-        resourcesToUpdate.forEach(resource -> applyNewPath(resource, prefixFrom, prefixTo));
-        repository.saveAll(resourcesToUpdate);
     }
 
     @Override
@@ -176,19 +155,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void deleteById(Long id) {
         repository.deleteById(id);
-    }
-
-    private void applyNewPath(ResourceMetadata metadata, String prefixFrom, String prefixTo) {
-        String newPath = metadata.getPath().replace(prefixFrom, prefixTo);
-        metadata.setPath(newPath);
-        metadata.setParentPath(PathUtils.extractParentPath(newPath));
-        metadata.setName(PathUtils.extractFilename(newPath));
-        metadata.setMarkedForDeletion(false);
-    }
-
-    private void save(Long userId, String path, Long size, ResourceType type) {
-        ResourceMetadata metadata = buildMetadata(userId, path, size, type);
-        repository.save(metadata);
     }
 
     private ResourceMetadata buildMetadata(Long userId, String path, Long size, ResourceType type) {
