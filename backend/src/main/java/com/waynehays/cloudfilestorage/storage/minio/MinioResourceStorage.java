@@ -147,7 +147,7 @@ public class MinioResourceStorage implements ResourceStorageApi {
                 DeleteObject deleteObject = new DeleteObject(result.get().objectName());
                 batch.add(deleteObject);
 
-                if (batch.size() >= properties.batchSize()) {
+                if (batch.size() >= properties.deletionBatchSize()) {
                     flushDeleteBatch(batch);
                 }
             } catch (IOException e) {

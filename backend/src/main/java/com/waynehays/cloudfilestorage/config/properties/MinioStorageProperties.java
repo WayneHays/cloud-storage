@@ -21,7 +21,7 @@ public record MinioStorageProperties(
         @NotNull(message = "Batch size must be set")
         @Min(value = 3, message = "Batch size must be >= 3")
         @Max(value = 1000, message = "Batch size must be <= 1000")
-        Integer batchSize,
+        Integer deletionBatchSize,
 
         @NotNull(message = "Connect timeout must be set")
         Duration connectTimeout,

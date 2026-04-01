@@ -160,7 +160,7 @@ class StorageTest extends AbstractIntegrationBaseTest {
         @Test
         void shouldDeleteMoreObjectsThanBatchSize() {
             // given
-            int objectCount = properties.batchSize() + 2;
+            int objectCount = properties.deletionBatchSize() + 2;
 
             for (int i = 0; i < objectCount; i++) {
                 storage.putObject(new ByteArrayInputStream("content".getBytes()),

@@ -21,11 +21,11 @@ minio:
     secretKey: ${MINIO_SECRET_KEY}
   storage:
     bucketName: files
-    batch-size: 50
     connect-timeout: 5s
     read-timeout: 30s
     write-timeout: 30s
     call-timeout: 30s
+    deletion-batch-size: 50
 
 logging:
   level:
