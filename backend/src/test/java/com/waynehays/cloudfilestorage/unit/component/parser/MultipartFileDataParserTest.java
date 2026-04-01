@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.component.parser;
 
 import com.waynehays.cloudfilestorage.component.MultipartFileDataParser;
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class MultipartFileDataParserTest {
                     "file", "document.txt", "text/plain", "content".getBytes());
 
             // when
-            ObjectData result = parser.parse(file, "directory/");
+            UploadObjectDto result = parser.parse(file, "directory/");
 
             // then
             assertThat(result.originalFilename()).isEqualTo("document.txt");
@@ -53,7 +53,7 @@ class MultipartFileDataParserTest {
                     "file", "subdirectory/document.txt", "text/plain", "content".getBytes());
 
             // when
-            ObjectData result = parser.parse(file, "directory/");
+            UploadObjectDto result = parser.parse(file, "directory/");
 
             // then
             assertThat(result.filename()).isEqualTo("document.txt");
@@ -68,7 +68,7 @@ class MultipartFileDataParserTest {
                     "file", "sub\\directory\\file.txt", "text/plain", "content".getBytes());
 
             // when
-            ObjectData result = parser.parse(file, "root/");
+            UploadObjectDto result = parser.parse(file, "root/");
 
             // then
             assertThat(result.filename()).isEqualTo("file.txt");
@@ -82,7 +82,7 @@ class MultipartFileDataParserTest {
                     "file", "file.bin", null, "content".getBytes());
 
             // when
-            ObjectData result = parser.parse(file, "directory/");
+            UploadObjectDto result = parser.parse(file, "directory/");
 
             // then
             assertThat(result.contentType()).isEqualTo("application/octet-stream");
@@ -96,7 +96,7 @@ class MultipartFileDataParserTest {
                     "file", "file.txt", "text/plain", content);
 
             // when
-            ObjectData result = parser.parse(file, "directory/");
+            UploadObjectDto result = parser.parse(file, "directory/");
 
             // then
             try (InputStream is = result.inputStreamSupplier().get()) {
@@ -111,7 +111,7 @@ class MultipartFileDataParserTest {
                     "file", "file.txt", "text/plain", "content".getBytes());
 
             // when
-            ObjectData result = parser.parse(file, "");
+            UploadObjectDto result = parser.parse(file, "");
 
             // then
             assertThat(result.filename()).isEqualTo("file.txt");

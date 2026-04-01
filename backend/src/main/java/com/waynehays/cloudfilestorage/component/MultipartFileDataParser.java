@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.component;
 
 import com.waynehays.cloudfilestorage.component.validator.MultipartFileValidator;
-import com.waynehays.cloudfilestorage.dto.ObjectData;
+import com.waynehays.cloudfilestorage.dto.UploadObjectDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ public class MultipartFileDataParser {
 
     private final MultipartFileValidator validator;
 
-    public ObjectData parse(MultipartFile file, String directory) {
+    public UploadObjectDto parse(MultipartFile file, String directory) {
         String originalFilename = file.getOriginalFilename();
         String normalizedFilename = PathUtils.normalizeSeparators(originalFilename);
         String filename = PathUtils.extractFilename(normalizedFilename);
@@ -27,7 +27,7 @@ public class MultipartFileDataParser {
 
         validator.validate(originalFilename, fullPath);
 
-        return new ObjectData(
+        return new UploadObjectDto(
                 originalFilename,
                 filename,
                 finalDirectory,
