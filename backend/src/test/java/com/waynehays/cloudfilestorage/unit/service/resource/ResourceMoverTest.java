@@ -155,7 +155,7 @@ class ResourceMoverTest {
             ResourceDto expectedDto = new ResourceDto("", "other/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, pathFrom)).thenReturn(List.of(childFile));
+            when(metadataService.findAllByPrefix(USER_ID, pathFrom)).thenReturn(List.of(childFile));
             when(keyResolver.resolveKey(USER_ID, pathFrom)).thenReturn(keyFrom);
             when(keyResolver.resolveKey(USER_ID, pathTo)).thenReturn(keyTo);
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
@@ -188,7 +188,7 @@ class ResourceMoverTest {
             ResourceDto expectedDto = new ResourceDto("", "other/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, pathFrom)).thenReturn(List.of(subDir));
+            when(metadataService.findAllByPrefix(USER_ID, pathFrom)).thenReturn(List.of(subDir));
             when(keyResolver.resolveKey(USER_ID, pathFrom)).thenReturn(keyFrom);
             when(keyResolver.resolveKey(USER_ID, pathTo)).thenReturn(keyTo);
             when(keyResolver.resolveKey(USER_ID, "directory/sub/"))
@@ -220,7 +220,7 @@ class ResourceMoverTest {
             ResourceDto expectedDto = new ResourceDto("", "other/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, pathFrom)).thenReturn(content);
+            when(metadataService.findAllByPrefix(USER_ID, pathFrom)).thenReturn(content);
             when(keyResolver.resolveKey(USER_ID, pathFrom)).thenReturn(keyFrom);
             when(keyResolver.resolveKey(USER_ID, pathTo)).thenReturn(keyTo);
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
@@ -253,7 +253,7 @@ class ResourceMoverTest {
             ResourceDto expectedDto = new ResourceDto("", "other/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, pathFrom)).thenReturn(List.of());
+            when(metadataService.findAllByPrefix(USER_ID, pathFrom)).thenReturn(List.of());
             when(keyResolver.resolveKey(USER_ID, pathFrom)).thenReturn(keyFrom);
             when(keyResolver.resolveKey(USER_ID, pathTo)).thenReturn(keyTo);
             when(converter.directoryFromPath(pathTo)).thenReturn(expectedDto);
@@ -297,7 +297,7 @@ class ResourceMoverTest {
             ResourceDto expectedDto = new ResourceDto("", "other/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, pathFrom)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, pathFrom)).thenReturn(List.of());
+            when(metadataService.findAllByPrefix(USER_ID, pathFrom)).thenReturn(List.of());
             when(keyResolver.resolveKey(USER_ID, pathFrom)).thenReturn(keyFrom);
             when(keyResolver.resolveKey(USER_ID, pathTo)).thenReturn(keyTo);
             when(converter.directoryFromPath(pathTo)).thenReturn(expectedDto);
@@ -307,7 +307,7 @@ class ResourceMoverTest {
 
             // then
             InOrder inOrder = inOrder(metadataService);
-            inOrder.verify(metadataService).findDirectoryContent(USER_ID, pathFrom);
+            inOrder.verify(metadataService).findAllByPrefix(USER_ID, pathFrom);
             inOrder.verify(metadataService).markForDeletionByPrefix(USER_ID, pathFrom);
             inOrder.verify(metadataService).batchUpdatePaths(any(), eq(pathFrom), eq(pathTo));
         }

@@ -118,7 +118,7 @@ class ResourceDownloaderTest {
             ResourceMetadata metadata = new ResourceMetadata();
 
             when(metadataService.findOrThrow(USER_ID, path)).thenReturn(metadata);
-            when(metadataService.findDirectoryContent(USER_ID, path)).thenReturn(List.of());
+            when(metadataService.findAllByPrefix(USER_ID, path)).thenReturn(List.of());
             when(archiver.getExtension()).thenReturn(".zip");
             when(archiver.getContentType()).thenReturn("application/zip");
 
@@ -138,7 +138,7 @@ class ResourceDownloaderTest {
             ResourceMetadata fileMetadata = createFileMetadata();
 
             when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, path)).thenReturn(List.of(fileMetadata));
+            when(metadataService.findAllByPrefix(USER_ID, path)).thenReturn(List.of(fileMetadata));
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
                     .thenReturn("user-1-files/directory/file.txt");
             when(archiver.getExtension()).thenReturn(".zip");
@@ -161,7 +161,7 @@ class ResourceDownloaderTest {
             ResourceMetadata subDirMetadata = createDirectoryMetadata();
 
             when(metadataService.findOrThrow(USER_ID, path)).thenReturn(dirMetadata);
-            when(metadataService.findDirectoryContent(USER_ID, path))
+            when(metadataService.findAllByPrefix(USER_ID, path))
                     .thenReturn(List.of(fileMetadata, subDirMetadata));
             when(keyResolver.resolveKey(USER_ID, "directory/file.txt"))
                     .thenReturn("user-1-files/directory/file.txt");

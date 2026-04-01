@@ -153,7 +153,7 @@ class ResourceMetadataServiceTest {
             when(mapper.toDto(List.of(file))).thenReturn(List.of(fileDto));
 
             // when
-            List<ResourceMetadataDto> result = service.findDirectoryContent(USER_ID, prefix);
+            List<ResourceMetadataDto> result = service.findAllByPrefix(USER_ID, prefix);
 
             // then
             assertThat(result).containsExactly(fileDto);
