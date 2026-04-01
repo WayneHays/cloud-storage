@@ -106,8 +106,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         if (path.endsWith(SLASH)) {
             throw new IllegalArgumentException("File path must not end with %s : %s".formatted(SLASH, path));
         }
-
-        ResourceMetadata metadata = buildMetadata(userId, path, size, ResourceType.FILE);
+        ResourceMetadata metadata = mapper.toFileEntity(userId, path, size);
         repository.save(metadata);
     }
 
@@ -115,8 +114,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void saveDirectories(Long userId, Set<String> paths) {
         List<ResourceMetadata> directories = paths.stream()
-                .map(path -> buildMetadata(userId, PathUtils.ensureTrailingSlash(path),
-                        null, ResourceType.DIRECTORY))
+                .map(path -> mapper.toDirectoryEntity(userId, path))
                 .toList();
         repository.saveAll(directories);
     }
@@ -155,17 +153,5 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void deleteById(Long id) {
         repository.deleteById(id);
-    }
-
-    private ResourceMetadata buildMetadata(Long userId, String path, Long size, ResourceType type) {
-        ResourceMetadata metadata = new ResourceMetadata();
-        metadata.setUserId(userId);
-        metadata.setPath(path);
-        metadata.setParentPath(PathUtils.extractParentPath(path));
-        metadata.setName(PathUtils.extractFilename(path));
-        metadata.setSize(size);
-        metadata.setType(type);
-        metadata.setMarkedForDeletion(false);
-        return metadata;
     }
 }
