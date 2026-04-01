@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.exceptionhandler;
+package com.waynehays.cloudfilestorage.advice;
 
 import com.waynehays.cloudfilestorage.dto.response.ErrorDto;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
