@@ -35,8 +35,7 @@ public class StorageQuotaConsistencyService {
             Page<UserDto> users;
 
             do {
-                users = userService.findAll(
-                        PageRequest.of(currentPage, properties.reconciliationBatchSize()));
+                users = findUsersPaginated(currentPage);
                 List<Long> userIds = users.map(UserDto::id).toList();
                 Map<Long, Long> actualStorageUsage = retrieveActualStorageUsageForUsers(userIds);
 
@@ -56,6 +55,11 @@ public class StorageQuotaConsistencyService {
         } catch (Exception e) {
             log.error("Quota reconciliation failed on page {}", currentPage, e);
         }
+    }
+
+    private Page<UserDto> findUsersPaginated(int currentPage) {
+        return userService.findAll(
+                PageRequest.of(currentPage, properties.reconciliationBatchSize()));
     }
 
     private Map<Long, Long> retrieveActualStorageUsageForUsers(List<Long> userIds) {
