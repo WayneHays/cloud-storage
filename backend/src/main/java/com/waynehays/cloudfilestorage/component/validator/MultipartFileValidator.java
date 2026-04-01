@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class MultipartFileValidator {
+    private static final String MSG_TEMPLATE = "%s exceeds max length of %d characters";
+
     private final PathLimitsProperties properties;
 
     public void validate(String originalFilename, String fullPath) {
@@ -19,17 +21,17 @@ public class MultipartFileValidator {
         }
 
         if (originalFilename.length() > properties.maxPathLength()) {
-            throwException("Original filename exceeds max length of " + properties.maxPathLength() + " characters");
+            throwException(MSG_TEMPLATE.formatted("Original filename", properties.maxPathLength()));
         }
 
         String filename = PathUtils.extractFilename(originalFilename);
 
         if (filename.length() > properties.maxFilenameLength()) {
-            throwException("Filename exceeds max length of " + properties.maxFilenameLength() + " characters");
+            throwException(MSG_TEMPLATE.formatted("Filename", properties.maxFilenameLength()));
         }
 
         if (fullPath.length() > properties.maxPathLength()) {
-            throwException("Full path exceeds maximum length of " + properties.maxPathLength() + " characters");
+            throwException(MSG_TEMPLATE.formatted("Full path", properties.maxPathLength()));
         }
     }
 
