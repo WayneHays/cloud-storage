@@ -16,7 +16,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ZipArchiver implements ArchiverApi {
-    private static final String MSG_FAILED_CREATE_ARCHIVE = "Failed to create ZIP archive ";
     private static final String CONTENT_TYPE = "application/zip";
     private static final String EXTENSION = ".zip";
 
@@ -30,7 +29,7 @@ public class ZipArchiver implements ArchiverApi {
             }
             zos.finish();
         } catch (IOException e) {
-            throw new ArchiveException(MSG_FAILED_CREATE_ARCHIVE, e);
+            throw new ArchiveException("Failed to create ZIP archive", e);
         }
     }
 
