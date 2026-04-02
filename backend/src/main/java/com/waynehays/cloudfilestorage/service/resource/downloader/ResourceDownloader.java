@@ -31,10 +31,10 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
     @Override
     public DownloadResult download(Long userId, String path) {
-        metadataService.findOrThrow(userId, path);
+        ResourceMetadataDto metadata = metadataService.findOrThrow(userId, path);
         String resourceName = PathUtils.extractFilename(path);
 
-        if (PathUtils.isFile(path)) {
+        if (metadata.isFile()) {
             return downloadFile(userId, path, resourceName);
         } else {
             return downloadDirectory(userId, path, resourceName);
@@ -59,10 +59,8 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
         log.info("Start download directory: userId={}, path={}", userId, path);
-
-        List<ArchiveItem> archiveItems = metadataService.findAllByPrefix(userId, path)
+        List<ArchiveItem> archiveItems = metadataService.findFilesByPrefix(userId, path)
                 .stream()
-                .filter(ResourceMetadataDto::isFile)
                 .map(metadata -> createArchiveItem(userId, metadata, path))
                 .toList();
 
@@ -77,9 +75,12 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         String entryName = dto.path().substring(directoryPath.length());
 
         return new ArchiveItem(entryName, dto.size(),
-                () -> resourceStorage.getObject(storageKey)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Resource not found in storage", dto.path()))
-                        .inputStream());
+                () -> getInputStream(storageKey, dto.path()));
+    }
+
+    private InputStream getInputStream(String objectKey, String path) {
+        return resourceStorage.getObject(objectKey)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found in storage", path))
+                .inputStream();
     }
 }

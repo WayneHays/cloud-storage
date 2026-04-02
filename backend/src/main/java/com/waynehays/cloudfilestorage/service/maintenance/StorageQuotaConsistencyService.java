@@ -1,8 +1,10 @@
-package com.waynehays.cloudfilestorage.service.storagequota;
+package com.waynehays.cloudfilestorage.service.maintenance;
 
 import com.waynehays.cloudfilestorage.config.properties.UserStorageProperties;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 import com.waynehays.cloudfilestorage.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

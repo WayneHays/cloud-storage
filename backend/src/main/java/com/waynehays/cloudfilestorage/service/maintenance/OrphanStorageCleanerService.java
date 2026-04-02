@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.cleanup;
+package com.waynehays.cloudfilestorage.service.maintenance;
 
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
@@ -14,7 +14,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OrphanResourceCleanerService {
+public class OrphanStorageCleanerService {
     private final ResourceStorageApi resourceStorage;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceStorageKeyResolverApi keyResolver;
@@ -24,7 +24,7 @@ public class OrphanResourceCleanerService {
         try {
             processOrphans();
         } catch (Exception e) {
-            log.error("Orphans cleanup job failed", e);
+            log.error("Storage orphans cleanup job failed", e);
         }
     }
 
@@ -35,7 +35,7 @@ public class OrphanResourceCleanerService {
             return;
         }
 
-        log.info("Cleanup started: {} orphans found", orphans.size());
+        log.info("Storage orphans cleanup started: {} orphans found", orphans.size());
         int cleaned = 0;
 
         for (ResourceMetadataDto orphan : orphans) {
@@ -43,11 +43,11 @@ public class OrphanResourceCleanerService {
                 cleanOrphan(orphan);
                 cleaned++;
             } catch (Exception e) {
-                log.warn("Failed to cleanup orphan: {}", orphan.path(), e);
+                log.warn("Failed to cleanup storage orphan: {}", orphan.path(), e);
             }
         }
 
-        log.info("Orphan cleanup completed: {}/{} orphans removed", cleaned, orphans.size());
+        log.info("Storage orphan cleanup completed: {}/{} orphans removed", cleaned, orphans.size());
     }
 
     private void cleanOrphan(ResourceMetadataDto orphan) {

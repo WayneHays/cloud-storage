@@ -20,11 +20,11 @@ public class ResourceDeleter implements ResourceDeleterApi {
 
     @Override
     public void delete(Long userId, String path) {
-        ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
+        ResourceMetadataDto metadata = metadataService.findOrThrow(userId, path);
         String objectKey = keyResolver.resolveKey(userId, path);
 
-        if (dto.isFile()) {
-            deleteFile(userId, path, objectKey, dto.size());
+        if (metadata.isFile()) {
+            deleteFile(userId, path, objectKey, metadata.size());
         } else {
             deleteDirectory(userId, path, objectKey);
         }

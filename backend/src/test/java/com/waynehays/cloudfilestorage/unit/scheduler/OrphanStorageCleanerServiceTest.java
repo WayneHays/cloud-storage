@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.unit.scheduler;
 
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.service.cleanup.OrphanResourceCleanerService;
+import com.waynehays.cloudfilestorage.service.maintenance.OrphanStorageCleanerService;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OrphanResourceCleanerServiceTest {
+class OrphanStorageCleanerServiceTest {
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -37,7 +37,7 @@ class OrphanResourceCleanerServiceTest {
     private ResourceStorageKeyResolverApi keyResolver;
 
     @InjectMocks
-    private OrphanResourceCleanerService cleanerService;
+    private OrphanStorageCleanerService cleanerService;
 
     private static final Long USER_ID = 1L;
 
