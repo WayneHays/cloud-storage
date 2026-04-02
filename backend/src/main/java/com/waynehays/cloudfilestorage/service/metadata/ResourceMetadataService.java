@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -159,5 +160,10 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void deleteById(Long id) {
         repository.deleteById(id);
+    }
+
+    @Override
+    public int deleteStaleDeletionRecords(Instant threshold) {
+       return repository.deleteStaleDeletionRecords(threshold);
     }
 }

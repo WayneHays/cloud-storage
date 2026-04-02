@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.service.metadata;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -45,4 +46,6 @@ public interface ResourceMetadataServiceApi {
     void deleteByPrefix(Long userId, String pathPrefix);
 
     void deleteById(Long id);
+
+    int deleteStaleDeletionRecords(Instant threshold);
 }
