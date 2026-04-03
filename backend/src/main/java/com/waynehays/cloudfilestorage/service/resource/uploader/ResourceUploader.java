@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.resource.uploader;
 
-import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
+import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
@@ -20,15 +20,19 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
-    private final NewFileMapper mapper;
+    private final NewFileMapper newFileMapper;
+    private final ResourceDtoMapper resourceDtoMapper;
+    private final ExecutorService uploadExecutor;
     private final UploadValidator uploadValidator;
-    private final ResourceDtoConverter converter;
     private final ResourceStorageApi resourceStorage;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceStorageKeyResolverApi keyResolver;
@@ -37,11 +41,9 @@ public class ResourceUploader implements ResourceUploaderApi {
     @Override
     public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
         log.info("Upload started: userId={}, objects count={}", userId, objects.size());
-        uploadValidator.validate(userId, objects);
 
-        long totalSize = objects.stream()
-                .mapToLong(UploadObjectDto::size)
-                .sum();
+        uploadValidator.validate(userId, objects);
+        long totalSize = calculateObjectsSize(objects);
         quotaService.reserveSpace(userId, totalSize);
 
         UploadContext context = new UploadContext();
@@ -63,22 +65,33 @@ public class ResourceUploader implements ResourceUploaderApi {
         }
     }
 
+    private long calculateObjectsSize(List<UploadObjectDto> objects) {
+        return objects.stream()
+                .mapToLong(UploadObjectDto::size)
+                .sum();
+    }
+
     private List<ResourceDto> uploadFiles(Long userId, List<UploadObjectDto> objects, UploadContext context) {
-        List<ResourceDto> result = new ArrayList<>();
+        List<CompletableFuture<ResourceDto>> futures = objects.stream()
+                .map(o -> CompletableFuture.supplyAsync(() -> {
+                    String storageKey = keyResolver.resolveKey(userId, o.fullPath());
+                    putObjectOrThrow(o, storageKey);
+                    context.addStorageKey(storageKey);
+                    return resourceDtoMapper.fileFromPath(o.fullPath(), o.size());
+                }, uploadExecutor))
+                .toList();
 
-        for (UploadObjectDto object : objects) {
-            String storageKey = keyResolver.resolveKey(userId, object.fullPath());
-            putObjectOrThrow(object, storageKey);
-            context.addStorageKey(storageKey);
-
-            metadataService.saveFile(userId, object.fullPath(), object.size());
-            context.addMetadataPath(object.fullPath());
-
-            ResourceDto dto = dtoConverter.fileFromPath(object.fullPath(), object.size());
-            result.add(dto);
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        } catch (CompletionException e) {
+            throw new ResourceStorageOperationException("Failed to upload some files to storage", e);
         }
 
-        metadataService.saveFiles(userId, mapper.toNewFiles(objects));
+        List<ResourceDto> result = futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
+
+        metadataService.saveFiles(userId, newFileMapper.toNewFiles(objects));
         objects.forEach(o -> context.addMetadataPath(o.fullPath()));
         return result;
     }
@@ -103,31 +116,34 @@ public class ResourceUploader implements ResourceUploaderApi {
                 .filter(d -> !existingPaths.contains(d))
                 .collect(Collectors.toSet());
 
-        if (newDirectories.isEmpty()) {
-            return List.of();
-        }
-
-        metadataService.saveDirectories(userId, newDirectories);
         newDirectories.forEach(context::addMetadataPath);
 
         return newDirectories.stream()
-                .map(converter::directoryFromPath)
+                .map(resourceDtoMapper::directoryFromPath)
                 .toList();
     }
 
     private void rollback(Long userId, long totalSize, UploadContext context) {
-        quotaService.releaseSpace(userId, totalSize);
-        context.getStorageKeys()
-                .forEach(key -> tryExecute(() -> resourceStorage.deleteObject(key), key));
-        context.getMetadataPaths()
-                .forEach(path -> tryExecute(() -> metadataService.delete(userId, path), path));
-    }
-
-    private void tryExecute(Runnable action, String identifier) {
         try {
-            action.run();
+            quotaService.releaseSpace(userId, totalSize);
         } catch (Exception e) {
-            log.warn("Failed to rollback key: {}", identifier, e);
+            log.error("Failed to release quota during rollback: userId={}", userId, e);
+        }
+
+        try {
+            if (!context.getStorageKeys().isEmpty()) {
+                resourceStorage.deleteList(context.getStorageKeys());
+            }
+        } catch (Exception e) {
+            log.error("Failed to rollback storage keys: userId={}", userId, e);
+        }
+
+        try {
+            if (!context.getMetadataPaths().isEmpty()) {
+                metadataService.deleteByPaths(userId, context.getMetadataPaths());
+            }
+        } catch (Exception e) {
+            log.error("Failed to rollback metadata: userId={}", userId, e);
         }
     }
 }

@@ -17,7 +17,8 @@ user:
     reconciliation-batch-size: 10
 
 executors:
-    move-thread-pool-size: 10
+  move-thread-pool-size: 10
+  upload-thread-pool-size: 10
 
 path:
   limits:

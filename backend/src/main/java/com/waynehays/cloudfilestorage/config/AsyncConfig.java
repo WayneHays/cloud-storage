@@ -17,4 +17,9 @@ public class AsyncConfig {
     public ExecutorService moveExecutor() {
         return Executors.newFixedThreadPool(properties.moveThreadPoolSize());
     }
+
+    @Bean
+    public ExecutorService uploadExecutor() {
+        return Executors.newFixedThreadPool(properties.uploadThreadPoolSize());
+    }
 }
