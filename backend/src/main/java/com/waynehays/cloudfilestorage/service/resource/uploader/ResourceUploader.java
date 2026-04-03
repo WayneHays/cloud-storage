@@ -70,12 +70,8 @@ public class ResourceUploader implements ResourceUploaderApi {
             String storageKey = keyResolver.resolveKey(userId, object.fullPath());
             putObjectOrThrow(object, storageKey);
             context.addStorageKey(storageKey);
-
-            metadataService.saveFile(userId, object.fullPath(), object.size());
-            context.addMetadataPath(object.fullPath());
-
-            ResourceDto dto = dtoConverter.fileFromPath(object.fullPath(), object.size());
-            result.add(dto);
+            ResourceDto savedToStorage = converter.fileFromPath(object.fullPath(), object.size());
+            result.add(savedToStorage);
         }
 
         metadataService.saveFiles(userId, mapper.toNewFiles(objects));
@@ -103,11 +99,6 @@ public class ResourceUploader implements ResourceUploaderApi {
                 .filter(d -> !existingPaths.contains(d))
                 .collect(Collectors.toSet());
 
-        if (newDirectories.isEmpty()) {
-            return List.of();
-        }
-
-        metadataService.saveDirectories(userId, newDirectories);
         newDirectories.forEach(context::addMetadataPath);
 
         return newDirectories.stream()
