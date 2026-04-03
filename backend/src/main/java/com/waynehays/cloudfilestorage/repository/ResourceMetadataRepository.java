@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
+public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long>, ResourceMetadataRepositoryCustom {
 
     @Query("""
             SELECT r FROM ResourceMetadata r
