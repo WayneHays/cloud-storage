@@ -17,20 +17,48 @@ import java.util.Set;
 @Repository
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long> {
 
-    Optional<ResourceMetadata> findByUserIdAndPathAndMarkedForDeletionFalse(Long userId, String path);
+    @Query("""
+            SELECT r FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path = :path
+            AND r.markedForDeletion = false
+            """)
+    Optional<ResourceMetadata> findByPath(@Param("userId") Long userId,
+                                            @Param("path") String path);
 
-    List<ResourceMetadata> findByUserIdAndPathStartingWithAndMarkedForDeletionFalse(Long userId, String pathPrefix);
+    @Query("""
+            SELECT r FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path LIKE CONCAT(:prefix, '%')
+            AND r.markedForDeletion = false
+            """)
+    List<ResourceMetadata> findAllByPrefix(@Param("userId") Long userId,
+                                           @Param("prefix") String prefix);
 
-    List<ResourceMetadata> findByUserIdAndParentPathAndMarkedForDeletionFalse(Long userId, String parentPath);
+    @Query("""
+            SELECT r FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.parentPath = :parentPath
+            AND r.markedForDeletion = false
+            """)
+    List<ResourceMetadata> findDirectChildren(@Param("userId") Long userId,
+                                              @Param("parentPath") String parentPath);
 
-    List<ResourceMetadata> findByUserIdAndNameContainingIgnoreCaseAndMarkedForDeletionFalse(Long userId, String query);
+    @Query("""
+            SELECT r FROM ResourceMetadata r
+            WHERE r.userId = :userId
+             AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))
+            AND r.markedForDeletion = false
+            """)
+    List<ResourceMetadata> findByNameContaining(@Param("userId") Long userId,
+                                      @Param("name") String name);
 
     List<ResourceMetadata> findByMarkedForDeletionTrue();
 
     @Query("""
             SELECT r FROM ResourceMetadata r
-            WHERE r.userId =: userId
-            AND r.path LIKE :prefix
+            WHERE r.userId =:userId
+            AND r.path LIKE CONCAT(:prefix, '%')
             AND r.type = 'FILE'
             AND r.markedForDeletion = false
             """)
@@ -81,7 +109,7 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             UPDATE ResourceMetadata r
             SET r.markedForDeletion = true
             WHERE r.userId = :userId
-            AND r.path LIKE :prefix%
+            AND r.path LIKE CONCAT(:prefix, '%')
             """)
     void markForDeletionByPrefix(@Param("userId") Long userId,
                                  @Param("prefix") String prefix);
@@ -98,9 +126,23 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
                              @Param("prefixFrom") String prefixFrom,
                              @Param("prefixTo") String prefixTo);
 
-    void deleteByUserIdAndPath(Long userId, String path);
+    @Modifying(clearAutomatically = true)
+    @Query("""
+        DELETE FROM ResourceMetadata r
+        WHERE r.userId = :userId
+        AND r.path = :path
+        """)
+    void deleteByPath(@Param("userId") Long userId,
+                      @Param("path") String path);
 
-    void deleteByUserIdAndPathStartingWith(Long userId, String pathPrefix);
+    @Modifying(clearAutomatically = true)
+    @Query("""
+             DELETE FROM ResourceMetadata r
+             WHERE r.userId = :userId
+            AND r.path LIKE CONCAT(:prefix, '%')
+            """)
+    void deleteByPrefix(@Param("userId") Long userId,
+                        @Param("prefix") String prefix);
 
     @Modifying(clearAutomatically = true)
     @Query("""

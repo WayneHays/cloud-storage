@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
 
@@ -32,6 +33,8 @@ public interface ResourceMetadataServiceApi {
     void throwIfAnyExists(Long userId, List<String> paths);
 
     void saveFile(Long userId, String path, long size);
+
+    void saveFiles(Long userId, List<NewFileDto> files);
 
     void saveDirectories(Long userId, Set<String> paths);
 

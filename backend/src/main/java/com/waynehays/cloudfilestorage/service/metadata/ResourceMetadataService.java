@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -31,7 +32,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     public ResourceMetadataDto findOrThrow(Long userId, String path) {
-        ResourceMetadata metadata = repository.findByUserIdAndPathAndMarkedForDeletionFalse(userId, path)
+        ResourceMetadata metadata = repository.findByPath(userId, path)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
         return mapper.toDto(metadata);
     }
@@ -41,7 +42,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         if (StringUtils.isNotEmpty(directoryPath)) {
             findOrThrow(userId, directoryPath);
         }
-        List<ResourceMetadata> result = repository.findByUserIdAndParentPathAndMarkedForDeletionFalse(userId, directoryPath);
+        List<ResourceMetadata> result = repository.findDirectChildren(userId, directoryPath);
         return mapper.toDto(result);
     }
 
@@ -53,13 +54,13 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     public List<ResourceMetadataDto> findAllByPrefix(Long userId, String pathPrefix) {
-        List<ResourceMetadata> result = repository.findByUserIdAndPathStartingWithAndMarkedForDeletionFalse(userId, pathPrefix);
+        List<ResourceMetadata> result = repository.findAllByPrefix(userId, pathPrefix);
         return mapper.toDto(result);
     }
 
     @Override
     public List<ResourceMetadataDto> findByNameContaining(Long userId, String query) {
-        List<ResourceMetadata> result = repository.findByUserIdAndNameContainingIgnoreCaseAndMarkedForDeletionFalse(userId, query);
+        List<ResourceMetadata> result = repository.findByNameContaining(userId, query);
         return mapper.toDto(result);
     }
 
@@ -113,15 +114,24 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         if (path.endsWith(SLASH)) {
             throw new IllegalArgumentException("File path must not end with %s : %s".formatted(SLASH, path));
         }
-        ResourceMetadata metadata = mapper.toFileEntity(userId, path, size);
+        ResourceMetadata metadata = mapper.toFile(userId, path, size);
         repository.save(metadata);
+    }
+
+    @Override
+    @Transactional
+    public void saveFiles(Long userId, List<NewFileDto> files) {
+        List<ResourceMetadata> entities = files.stream()
+                .map(f -> mapper.toFile(userId, f.path(), f.size()))
+                .toList();
+        repository.saveAll(entities);
     }
 
     @Override
     @Transactional
     public void saveDirectories(Long userId, Set<String> paths) {
         List<ResourceMetadata> directories = paths.stream()
-                .map(path -> mapper.toDirectoryEntity(userId, path))
+                .map(path -> mapper.toDirectory(userId, path))
                 .toList();
         repository.saveAll(directories);
     }
@@ -147,13 +157,13 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void delete(Long userId, String path) {
-        repository.deleteByUserIdAndPath(userId, path);
+        repository.deleteByPath(userId, path);
     }
 
     @Override
     @Transactional
     public void deleteByPrefix(Long userId, String pathPrefix) {
-        repository.deleteByUserIdAndPathStartingWith(userId, pathPrefix);
+        repository.deleteByPrefix(userId, pathPrefix);
     }
 
     @Override
@@ -163,7 +173,8 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
+    @Transactional
     public int deleteStaleDeletionRecords(Instant threshold) {
-       return repository.deleteStaleDeletionRecords(threshold);
+        return repository.deleteStaleDeletionRecords(threshold);
     }
 }
