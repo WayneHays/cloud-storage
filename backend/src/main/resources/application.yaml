@@ -3,6 +3,11 @@ spring:
     name: cloud-file-storage
   profiles:
     default: dev
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
 
 archive:
   buffer-size: 8192

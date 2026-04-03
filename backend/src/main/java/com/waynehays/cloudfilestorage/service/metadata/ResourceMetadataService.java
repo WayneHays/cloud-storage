@@ -130,10 +130,16 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void saveDirectories(Long userId, Set<String> paths) {
-        List<ResourceMetadata> directories = paths.stream()
-                .map(path -> mapper.toDirectory(userId, path))
+        List<Object[]> params = paths.stream()
+                .map(path -> new Object[]{
+                        userId,
+                        path,
+                        PathUtils.extractParentPath(path),
+                        PathUtils.extractFilename(path)
+                })
                 .toList();
-        repository.saveAll(directories);
+
+        repository.insertDirectoriesIfNotExist(params);
     }
 
     @Override

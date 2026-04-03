@@ -87,13 +87,18 @@ public class ResourceUploader implements ResourceUploaderApi {
         }
     }
 
-    private List<ResourceDto> createDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
+    private List<ResourceDto> saveNewDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
         Set<String> allDirectories = uploadedResources.stream()
                 .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
                 .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
 
+        if (allDirectories.isEmpty()) {
+            return List.of();
+        }
+
         Set<String> existingPaths = metadataService.findExistingPaths(userId, allDirectories);
+        metadataService.saveDirectories(userId, allDirectories);
 
         Set<String> newDirectories = allDirectories.stream()
                 .filter(d -> !existingPaths.contains(d))
