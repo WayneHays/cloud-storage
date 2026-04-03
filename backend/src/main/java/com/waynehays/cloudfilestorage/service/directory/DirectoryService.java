@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.directory;
 
-import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,14 +14,14 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class DirectoryService implements DirectoryServiceApi {
-    private final ResourceDtoConverter converter;
+    private final ResourceDtoMapper mapper;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> getContent(Long userId, String path) {
         return metadataService.findDirectChildren(userId, path)
                 .stream()
-                .map(converter::fromMetadata)
+                .map(mapper::fromResourceMetadataDto)
                 .toList();
     }
 
@@ -33,6 +33,6 @@ public class DirectoryService implements DirectoryServiceApi {
         metadataService.saveDirectories(userId, Set.of(path));
 
         log.info("Successfully created directory: userId={}, path={}", userId, path);
-        return converter.directoryFromPath(path);
+        return mapper.directoryFromPath(path);
     }
 }

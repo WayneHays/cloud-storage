@@ -1,18 +1,16 @@
-package com.waynehays.cloudfilestorage.component;
+package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
+import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
-@Component
-@RequiredArgsConstructor
-public class ResourceDtoConverter {
-    private static final String SLASH = "/";
+@Mapper(componentModel = "spring")
+public interface ResourceDtoMapper {
+    String SLASH = "/";
 
-    public ResourceDto fromMetadata(ResourceMetadataDto dto) {
+    default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
         String name = dto.isFile()
                 ? dto.name()
                 : dto.name() + SLASH;
@@ -25,7 +23,7 @@ public class ResourceDtoConverter {
         );
     }
 
-    public ResourceDto fileFromPath(String path, Long size) {
+    default ResourceDto fileFromPath(String path, Long size) {
         return createDto(
                 path,
                 PathUtils.extractFilename(path),
@@ -34,7 +32,7 @@ public class ResourceDtoConverter {
         );
     }
 
-    public ResourceDto directoryFromPath(String path) {
+    default ResourceDto directoryFromPath(String path) {
         return createDto(
                 path,
                 PathUtils.extractFilename(path) + SLASH,
