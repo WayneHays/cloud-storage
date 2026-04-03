@@ -147,6 +147,15 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     @Modifying(clearAutomatically = true)
     @Query("""
             DELETE FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path IN :paths
+            """)
+    void deleteByPaths(@Param("userId") Long userId,
+                       @Param("paths") List<String> paths);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            DELETE FROM ResourceMetadata r
             WHERE r.updatedAt < :threshold
             AND r.markedForDeletion = true
             """)
