@@ -24,10 +24,10 @@ import java.util.List;
 public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
+    private final ArchiverApi archiver;
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
-    private final ArchiverApi archiver;
 
     @Override
     public DownloadResult download(Long userId, String path) {
@@ -42,7 +42,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     }
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
-        log.info("Start download file: userId={}, path={}", userId, path);
+        log.info("Start downloading file: userId={}, path={}", userId, path);
 
         String objectKey = keyResolver.resolveKey(userId, path);
         StorageItem item = resourceStorage.getObject(objectKey).orElseThrow();
@@ -58,7 +58,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
-        log.info("Start download directory: userId={}, path={}", userId, path);
+        log.info("Start downloading directory: userId={}, path={}", userId, path);
         List<ArchiveItem> archiveItems = metadataService.findFilesByPrefix(userId, path)
                 .stream()
                 .map(metadata -> createArchiveItem(userId, metadata, path))
@@ -74,7 +74,9 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         String storageKey = keyResolver.resolveKey(userId, dto.path());
         String entryName = dto.path().substring(directoryPath.length());
 
-        return new ArchiveItem(entryName, dto.size(),
+        return new ArchiveItem(
+                entryName,
+                dto.size(),
                 () -> getInputStream(storageKey, dto.path()));
     }
 
