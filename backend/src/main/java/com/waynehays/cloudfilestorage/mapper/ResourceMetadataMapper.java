@@ -26,15 +26,4 @@ public interface ResourceMetadataMapper {
         metadata.setMarkedForDeletion(false);
         return metadata;
     }
-
-    default ResourceMetadata toDirectory(Long userId, String path) {
-        ResourceMetadata metadata = new ResourceMetadata();
-        metadata.setUserId(userId);
-        metadata.setPath(PathUtils.ensureTrailingSlash(path));
-        metadata.setParentPath(PathUtils.extractParentPath(path));
-        metadata.setName(PathUtils.extractFilename(path));
-        metadata.setType(ResourceType.DIRECTORY);
-        metadata.setMarkedForDeletion(false);
-        return metadata;
-    }
 }
