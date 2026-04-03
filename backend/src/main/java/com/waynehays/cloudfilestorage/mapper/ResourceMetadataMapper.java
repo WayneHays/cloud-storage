@@ -15,7 +15,7 @@ public interface ResourceMetadataMapper {
 
     List<ResourceMetadataDto> toDto(List<ResourceMetadata> entities);
 
-    default ResourceMetadata toFileEntity(Long userId, String path, Long size) {
+    default ResourceMetadata toFile(Long userId, String path, Long size) {
         ResourceMetadata metadata = new ResourceMetadata();
         metadata.setUserId(userId);
         metadata.setPath(path);
@@ -27,7 +27,7 @@ public interface ResourceMetadataMapper {
         return metadata;
     }
 
-    default ResourceMetadata toDirectoryEntity(Long userId, String path) {
+    default ResourceMetadata toDirectory(Long userId, String path) {
         ResourceMetadata metadata = new ResourceMetadata();
         metadata.setUserId(userId);
         metadata.setPath(PathUtils.ensureTrailingSlash(path));
