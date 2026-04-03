@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 public class ResourceMover implements ResourceMoverApi {
     private final MoveValidator validator;
     private final ExecutorService moveExecutor;
-    private final ResourceDtoConverter dtoConverter;
+    private final ResourceDtoConverter converter;
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
@@ -35,11 +35,11 @@ public class ResourceMover implements ResourceMoverApi {
 
         if (dto.isFile()) {
             moveFile(userId, pathFrom, pathTo);
-            return dtoConverter.fileFromPath(pathTo, dto.size());
+            return converter.fileFromPath(pathTo, dto.size());
         }
 
         moveDirectory(userId, pathFrom, pathTo);
-        return dtoConverter.directoryFromPath(pathTo);
+        return converter.directoryFromPath(pathTo);
     }
 
     private void moveFile(Long userId, String pathFrom, String pathTo) {

@@ -11,14 +11,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ResourceSearcher implements ResourceSearcherApi {
-    private final ResourceDtoConverter dtoConverter;
+    private final ResourceDtoConverter converter;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> search(Long userId, String query) {
         return metadataService.findByNameContaining(userId, query)
                 .stream()
-                .map(dtoConverter::fromMetadata)
+                .map(converter::fromMetadata)
                 .toList();
     }
 }

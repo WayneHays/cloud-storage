@@ -14,14 +14,14 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class DirectoryService implements DirectoryServiceApi {
-    private final ResourceDtoConverter dtoConverter;
+    private final ResourceDtoConverter converter;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> getContent(Long userId, String path) {
         return metadataService.findDirectChildren(userId, path)
                 .stream()
-                .map(dtoConverter::fromMetadata)
+                .map(converter::fromMetadata)
                 .toList();
     }
 
@@ -33,6 +33,6 @@ public class DirectoryService implements DirectoryServiceApi {
         metadataService.saveDirectories(userId, Set.of(path));
 
         log.info("Successfully created directory: userId={}, path={}", userId, path);
-        return dtoConverter.directoryFromPath(path);
+        return converter.directoryFromPath(path);
     }
 }

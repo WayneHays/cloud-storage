@@ -1,6 +1,7 @@
 package com.waynehays.cloudfilestorage.service.resource.uploader;
 
 import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
+import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
@@ -25,8 +26,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
+    private final NewFileMapper mapper;
     private final UploadValidator uploadValidator;
-    private final ResourceDtoConverter dtoConverter;
+    private final ResourceDtoConverter converter;
     private final ResourceStorageApi resourceStorage;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceStorageKeyResolverApi keyResolver;
@@ -46,7 +48,7 @@ public class ResourceUploader implements ResourceUploaderApi {
 
         try {
             List<ResourceDto> uploadedFiles = uploadFiles(userId, objects, context);
-            List<ResourceDto> createdDirectories = createDirectories(userId, uploadedFiles, context);
+            List<ResourceDto> createdDirectories = saveNewDirectories(userId, uploadedFiles, context);
             List<ResourceDto> result = new ArrayList<>(createdDirectories);
             result.addAll(uploadedFiles);
 
@@ -76,6 +78,8 @@ public class ResourceUploader implements ResourceUploaderApi {
             result.add(dto);
         }
 
+        metadataService.saveFiles(userId, mapper.toNewFiles(objects));
+        objects.forEach(o -> context.addMetadataPath(o.fullPath()));
         return result;
     }
 
@@ -107,7 +111,7 @@ public class ResourceUploader implements ResourceUploaderApi {
         newDirectories.forEach(context::addMetadataPath);
 
         return newDirectories.stream()
-                .map(dtoConverter::directoryFromPath)
+                .map(converter::directoryFromPath)
                 .toList();
     }
 
