@@ -162,6 +162,21 @@ public class MinioResourceStorage implements ResourceStorageApi {
         }
     }
 
+    @Override
+    @Retry(name = "minioStorage")
+    @CircuitBreaker(name = "minioStorage")
+    public void deleteList(List<String> keys) {
+        List<DeleteObject> objects = keys.stream()
+                .map(DeleteObject::new)
+                .toList();
+        int batchSize = properties.deletionBatchSize();
+
+        for (int i = 0; i < objects.size(); i += batchSize) {
+            List<DeleteObject> batch = objects.subList(i, Math.min(i + batchSize, objects.size()));
+            flushDeleteBatch(new ArrayList<>(batch));
+        }
+    }
+
     private void copyObject(String sourceKey, String targetKey) {
         executeWithExceptionHandling(
                 () -> minioClient.copyObject(CopyObjectArgs.builder()

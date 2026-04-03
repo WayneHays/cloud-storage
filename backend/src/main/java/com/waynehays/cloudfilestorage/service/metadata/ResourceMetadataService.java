@@ -173,6 +173,11 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
+    public void deleteByPaths(Long userId, List<String> paths) {
+        repository.deleteByPaths(userId, paths);
+    }
+
+    @Override
     @Transactional
     public void deleteById(Long id) {
         repository.deleteById(id);

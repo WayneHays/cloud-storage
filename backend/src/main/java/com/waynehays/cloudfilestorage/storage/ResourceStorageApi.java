@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.storage;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 
 public interface ResourceStorageApi {
@@ -18,4 +19,6 @@ public interface ResourceStorageApi {
     void deleteObject(String objectKey);
 
     void deleteByPrefix(String prefix);
+
+    void deleteList(List<String> keys);
 }

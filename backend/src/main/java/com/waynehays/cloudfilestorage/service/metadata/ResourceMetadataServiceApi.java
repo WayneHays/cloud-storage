@@ -48,6 +48,8 @@ public interface ResourceMetadataServiceApi {
 
     void deleteByPrefix(Long userId, String pathPrefix);
 
+    void deleteByPaths(Long userId, List<String> paths);
+
     void deleteById(Long id);
 
     int deleteStaleDeletionRecords(Instant threshold);
