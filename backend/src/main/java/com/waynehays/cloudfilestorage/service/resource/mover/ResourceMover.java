@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.service.resource.mover;
 
-import com.waynehays.cloudfilestorage.component.ResourceDtoConverter;
 import com.waynehays.cloudfilestorage.component.validator.MoveValidator;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 public class ResourceMover implements ResourceMoverApi {
     private final MoveValidator validator;
     private final ExecutorService moveExecutor;
-    private final ResourceDtoConverter converter;
+    private final ResourceDtoMapper mapper;
     private final ResourceStorageApi resourceStorage;
     private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
@@ -35,11 +35,11 @@ public class ResourceMover implements ResourceMoverApi {
 
         if (dto.isFile()) {
             moveFile(userId, pathFrom, pathTo);
-            return converter.fileFromPath(pathTo, dto.size());
+            return mapper.fileFromPath(pathTo, dto.size());
         }
 
         moveDirectory(userId, pathFrom, pathTo);
-        return converter.directoryFromPath(pathTo);
+        return mapper.directoryFromPath(pathTo);
     }
 
     private void moveFile(Long userId, String pathFrom, String pathTo) {
