@@ -13,6 +13,11 @@ public record ExecutorProperties(
         @NotNull(message = "Move thread pool size must be set")
         @Min(value = 1, message = "Move thread pool size must be > 0")
         @Max(value = 20, message = "Move thread pool size must be <= 20")
-        Integer moveThreadPoolSize
+        Integer moveThreadPoolSize,
+
+        @NotNull(message = "Upload thread pool size must be set")
+        @Min(value = 1, message = "Upload thread pool size must be > 0")
+        @Max(value = 20, message = "Upload thread pool size must be <= 20")
+        Integer uploadThreadPoolSize
 ) {
 }
