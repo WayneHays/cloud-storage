@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.repository;
 import com.waynehays.cloudfilestorage.dto.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.service.storagequota.UsedSpace;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,7 +25,7 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             AND r.markedForDeletion = false
             """)
     Optional<ResourceMetadata> findByPath(@Param("userId") Long userId,
-                                            @Param("path") String path);
+                                          @Param("path") String path);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -47,13 +48,14 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     @Query("""
             SELECT r FROM ResourceMetadata r
             WHERE r.userId = :userId
-             AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))
+            AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))
             AND r.markedForDeletion = false
             """)
     List<ResourceMetadata> findByNameContaining(@Param("userId") Long userId,
-                                      @Param("name") String name);
+                                                @Param("name") String name,
+                                                Pageable pageable);
 
-    List<ResourceMetadata> findByMarkedForDeletionTrue();
+    List<ResourceMetadata> findByMarkedForDeletionTrue(Pageable pageable);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -128,10 +130,10 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
 
     @Modifying(clearAutomatically = true)
     @Query("""
-        DELETE FROM ResourceMetadata r
-        WHERE r.userId = :userId
-        AND r.path = :path
-        """)
+            DELETE FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.path = :path
+            """)
     void deleteByPath(@Param("userId") Long userId,
                       @Param("path") String path);
 
@@ -139,7 +141,7 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     @Query("""
              DELETE FROM ResourceMetadata r
              WHERE r.userId = :userId
-            AND r.path LIKE CONCAT(:prefix, '%')
+             AND r.path LIKE CONCAT(:prefix, '%')
             """)
     void deleteByPrefix(@Param("userId") Long userId,
                         @Param("prefix") String prefix);

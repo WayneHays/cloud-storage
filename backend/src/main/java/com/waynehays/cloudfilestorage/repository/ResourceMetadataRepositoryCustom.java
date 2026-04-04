@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface ResourceMetadataRepositoryCustom {
 
-    void insertDirectoriesIfNotExist(List<Object[]> params);
+    void saveDirectoriesIfNotExist(List<Object[]> params);
 }

@@ -10,7 +10,7 @@ public class ResourceMetadataRepositoryCustomImpl implements ResourceMetadataRep
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void insertDirectoriesIfNotExist(List<Object[]> params) {
+    public void saveDirectoriesIfNotExist(List<Object[]> params) {
         String sql = """
             INSERT INTO resource_metadata (user_id, path, parent_path, name, type, size, marked_for_deletion)
             VALUES (?, ?, ?, ?, 'DIRECTORY', 0, false)

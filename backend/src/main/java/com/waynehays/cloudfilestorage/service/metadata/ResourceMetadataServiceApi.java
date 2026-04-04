@@ -16,11 +16,11 @@ public interface ResourceMetadataServiceApi {
 
     List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix);
 
-    List<ResourceMetadataDto> findAllByPrefix(Long userId, String pathPrefix);
+    List<ResourceMetadataDto> findAllByPrefix(Long userId, String prefix);
 
-    List<ResourceMetadataDto> findByNameContaining(Long userId, String query);
+    List<ResourceMetadataDto> findByNameContaining(Long userId, String query, int limit);
 
-    List<ResourceMetadataDto> findMarkedForDeletion();
+    List<ResourceMetadataDto> findMarkedForDeletion(int limit);
 
     Set<String> findExistingPaths(Long userId, Set<String> paths);
 
