@@ -12,7 +12,6 @@ import java.time.Instant;
 @Service
 @RequiredArgsConstructor
 public class StaleDeletionCleanerService {
-    private final CleanupProperties properties;
     private final ResourceMetadataServiceApi metadataService;
 
     public void clean(Duration threshold) {
