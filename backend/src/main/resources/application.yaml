@@ -12,8 +12,16 @@ spring:
 archive:
   buffer-size: 8192
 
-orphan-cleanup:
-  interval: 10m
+cleanup:
+  orphan-storage:
+    interval: 1h
+    limit: 50
+  stale-deletion:
+    interval: 30m
+    threshold: 10m
+
+search:
+  limit: 100
 
 user:
   storage:

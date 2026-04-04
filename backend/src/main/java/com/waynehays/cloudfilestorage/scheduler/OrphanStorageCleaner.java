@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.scheduler;
 
-import com.waynehays.cloudfilestorage.config.properties.CleanupProperties;
+import com.waynehays.cloudfilestorage.config.properties.OrphanStorageCleanupProperties;
 import com.waynehays.cloudfilestorage.service.maintenance.OrphanStorageCleanerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +12,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OrphanStorageCleaner implements SchedulingConfigurer {
-    private final CleanupProperties properties;
+    private final OrphanStorageCleanupProperties properties;
     private final OrphanStorageCleanerService cleaner;
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.addFixedRateTask(cleaner::clean, properties.interval());
+        taskRegistrar.addFixedRateTask(
+                () -> cleaner.clean(properties.limit()),
+                properties.interval());
     }
 }

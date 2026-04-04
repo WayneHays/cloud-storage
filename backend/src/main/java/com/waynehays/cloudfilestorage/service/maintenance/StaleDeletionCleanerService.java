@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.service.maintenance;
 
-import com.waynehays.cloudfilestorage.config.properties.CleanupProperties;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Slf4j
@@ -15,12 +15,12 @@ public class StaleDeletionCleanerService {
     private final CleanupProperties properties;
     private final ResourceMetadataServiceApi metadataService;
 
-    public void clean() {
+    public void clean(Duration threshold) {
         try {
             log.info("Repository orphans cleanup started");
 
-            Instant threshold = Instant.now().minus(properties.interval());
-            int cleaned = metadataService.deleteStaleDeletionRecords(threshold);
+            Instant cutOff = Instant.now().minus(threshold);
+            int cleaned = metadataService.deleteStaleDeletionRecords(cutOff);
 
             log.info("Repository orphan cleanup completed: {} orphans found", cleaned);
         } catch (Exception e) {
