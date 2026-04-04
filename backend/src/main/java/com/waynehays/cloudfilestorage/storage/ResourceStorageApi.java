@@ -12,8 +12,6 @@ public interface ResourceStorageApi {
 
     void putObject(InputStream inputStream, String objectKey, long size, String contentType);
 
-    void createDirectory(String objectKey);
-
     void moveObject(String sourceKey, String targetKey);
 
     void deleteObject(String objectKey);

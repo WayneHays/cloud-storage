@@ -35,12 +35,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MinioResourceStorage implements ResourceStorageApi {
-    private static final String DIRECTORY_CONTENT_TYPE = "application/x-directory";
     private static final String MSG_FAILED_GET = "Failed to get object with key: ";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: ";
     private static final String MSG_FAILED_PUT = "Failed to put object with key: ";
     private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
-    private static final String MSG_FAILED_CREATE_DIRECTORY = "Failed to create directory with key: ";
 
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
@@ -85,22 +83,6 @@ public class MinioResourceStorage implements ResourceStorageApi {
                                 .contentType(contentType)
                                 .build()),
                 MSG_FAILED_PUT + objectKey
-        );
-    }
-
-    @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
-    public void createDirectory(String objectKey) {
-        executeWithExceptionHandling(
-                () -> minioClient.putObject(
-                        PutObjectArgs.builder()
-                                .bucket(properties.bucketName())
-                                .object(objectKey)
-                                .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                                .contentType(DIRECTORY_CONTENT_TYPE)
-                                .build()),
-                MSG_FAILED_CREATE_DIRECTORY + objectKey
         );
     }
 
