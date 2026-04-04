@@ -34,6 +34,8 @@ public interface ResourceMetadataServiceApi {
 
     void saveFiles(Long userId, List<NewFileDto> files);
 
+    void saveFiles(Long userId, List<NewFileDto> files);
+
     void saveDirectories(Long userId, Set<String> paths);
 
     void saveDirectory(Long userId, String path);
