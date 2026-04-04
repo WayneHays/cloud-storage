@@ -3,8 +3,7 @@ package com.waynehays.cloudfilestorage.service.resource.deleter;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,40 +12,37 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceDeleter implements ResourceDeleterApi {
-    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageService storageProvider;
     private final StorageQuotaServiceApi quotaService;
-    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public void delete(Long userId, String path) {
         ResourceMetadataDto metadata = metadataService.findOrThrow(userId, path);
-        String objectKey = keyResolver.resolveKey(userId, path);
 
         if (metadata.isFile()) {
-            deleteFile(userId, path, objectKey, metadata.size());
+            deleteFile(userId, path, metadata.size());
         } else {
-            deleteDirectory(userId, path, objectKey);
+            deleteDirectory(userId, path);
         }
     }
 
-    private void deleteFile(Long userId, String path, String objectKey, long size) {
-        log.info("Start delete file: userId={}, path={}", userId, path);
+    private void deleteFile(Long userId, String path, Long size) {
+        log.info("Start deleting file: userId={}, path={}", userId, path);
 
-        metadataService.markForDeletion(userId, path);
-        resourceStorage.deleteObject(objectKey);
+        storageProvider.deleteObject(userId, path);
         metadataService.delete(userId, path);
         quotaService.releaseSpace(userId, size);
 
         log.info("Successfully deleted file: userId={}, path={}", userId, path);
     }
 
-    private void deleteDirectory(Long userId, String path, String objectKey) {
+    private void deleteDirectory(Long userId, String path) {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
         long totalSize = metadataService.sumResourceSizesByPrefix(userId, path);
         metadataService.markForDeletionByPrefix(userId, path);
-        resourceStorage.deleteByPrefix(objectKey);
+        storageProvider.deleteDirectory(userId, path);
         metadataService.deleteByPrefix(userId, path);
 
         if (totalSize > 0) {

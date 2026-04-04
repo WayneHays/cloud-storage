@@ -6,8 +6,7 @@ import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,11 +20,10 @@ import java.util.concurrent.ExecutorService;
 @Service
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
+    private final ResourceStorageService storageService;
     private final MoveValidator validator;
     private final ExecutorService moveExecutor;
     private final ResourceDtoMapper mapper;
-    private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
@@ -45,9 +43,7 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveFile(Long userId, String pathFrom, String pathTo) {
         log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
-        String keyFrom = keyResolver.resolveKey(userId, pathFrom);
-        String keyTo = keyResolver.resolveKey(userId, pathTo);
-        resourceStorage.moveObject(keyFrom, keyTo);
+        storageService.moveObject(userId, pathFrom, pathTo);
         metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
 
         log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
@@ -66,10 +62,8 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveContent(Long userId, List<ResourceMetadataDto> files, String pathFrom, String pathTo) {
         List<CompletableFuture<Void>> futures = files.stream()
                         .map(f -> CompletableFuture.runAsync(() -> {
-                            String oldKey = keyResolver.resolveKey(userId, f.path());
-                            String newPath = f.path().replaceFirst(pathFrom, pathTo);
-                            String newKey = keyResolver.resolveKey(userId, newPath);
-                            resourceStorage.moveObject(oldKey, newKey);
+                            String newPath = pathTo + f.path().substring(pathFrom.length());
+                            storageService.moveObject(userId, f.path(), newPath);
                         }, moveExecutor))
                                 .toList();
         try {

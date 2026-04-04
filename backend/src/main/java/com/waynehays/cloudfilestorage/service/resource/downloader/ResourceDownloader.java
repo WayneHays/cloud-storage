@@ -1,14 +1,12 @@
 package com.waynehays.cloudfilestorage.service.resource.downloader;
 
-import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
-import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +23,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final ArchiverApi archiver;
-    private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolverApi keyResolver;
+    private final ResourceStorageService storageService;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
@@ -43,9 +40,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
         log.info("Start downloading file: userId={}, path={}", userId, path);
-
-        String objectKey = keyResolver.resolveKey(userId, path);
-        StorageItem item = resourceStorage.getObject(objectKey).orElseThrow();
+        StorageItem item = storageService.getObject(userId, path).orElseThrow();
 
         StreamingResponseBody body = outputStream -> {
             try (InputStream inputStream = item.inputStream()) {
@@ -59,6 +54,7 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
         log.info("Start downloading directory: userId={}, path={}", userId, path);
+
         List<ArchiveItem> archiveItems = metadataService.findFilesByPrefix(userId, path)
                 .stream()
                 .map(metadata -> createArchiveItem(userId, metadata, path))
@@ -71,18 +67,10 @@ public class ResourceDownloader implements ResourceDownloaderApi {
     }
 
     private ArchiveItem createArchiveItem(Long userId, ResourceMetadataDto dto, String directoryPath) {
-        String storageKey = keyResolver.resolveKey(userId, dto.path());
         String entryName = dto.path().substring(directoryPath.length());
-
         return new ArchiveItem(
                 entryName,
                 dto.size(),
-                () -> getInputStream(storageKey, dto.path()));
-    }
-
-    private InputStream getInputStream(String objectKey, String path) {
-        return resourceStorage.getObject(objectKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found in storage", path))
-                .inputStream();
+                () -> storageService.getInputStream(userId, dto.path()));
     }
 }

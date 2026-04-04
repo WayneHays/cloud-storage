@@ -1,22 +1,19 @@
 package com.waynehays.cloudfilestorage.service.resource.uploader;
 
-import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
-import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
+import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -29,13 +26,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
+    private final ResourceStorageService storageService;
     private final NewFileMapper newFileMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
     private final UploadValidator uploadValidator;
-    private final ResourceStorageApi resourceStorage;
     private final StorageQuotaServiceApi quotaService;
-    private final ResourceStorageKeyResolverApi keyResolver;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
@@ -74,9 +70,8 @@ public class ResourceUploader implements ResourceUploaderApi {
     private List<ResourceDto> uploadFiles(Long userId, List<UploadObjectDto> objects, UploadContext context) {
         List<CompletableFuture<ResourceDto>> futures = objects.stream()
                 .map(o -> CompletableFuture.supplyAsync(() -> {
-                    String storageKey = keyResolver.resolveKey(userId, o.fullPath());
-                    putObjectOrThrow(o, storageKey);
-                    context.addStorageKey(storageKey);
+                    storageService.putObject(userId, o);
+                    context.addStoragePath(o.fullPath());
                     return resourceDtoMapper.fileFromPath(o.fullPath(), o.size());
                 }, uploadExecutor))
                 .toList();
@@ -94,14 +89,6 @@ public class ResourceUploader implements ResourceUploaderApi {
         metadataService.saveFiles(userId, newFileMapper.toNewFiles(objects));
         objects.forEach(o -> context.addMetadataPath(o.fullPath()));
         return result;
-    }
-
-    private void putObjectOrThrow(UploadObjectDto object, String storageKey) {
-        try (InputStream inputStream = object.inputStreamSupplier().get()) {
-            resourceStorage.putObject(inputStream, storageKey, object.size(), object.contentType());
-        } catch (IOException e) {
-            throw new ResourceStorageOperationException("Failed to process file stream");
-        }
     }
 
     private List<ResourceDto> saveNewDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
@@ -136,15 +123,15 @@ public class ResourceUploader implements ResourceUploaderApi {
         }
 
         try {
-            if (!context.getStorageKeys().isEmpty()) {
-                resourceStorage.deleteList(context.getStorageKeys());
+            if (context.containsStoragePaths()) {
+                storageService.deleteObjects(userId, context.getStoragePaths());
             }
         } catch (Exception e) {
-            log.error("Failed to rollback storage keys: userId={}", userId, e);
+            log.error("Failed to rollback storage: userId={}", userId, e);
         }
 
         try {
-            if (!context.getMetadataPaths().isEmpty()) {
+            if (context.containsMetadataPaths()) {
                 metadataService.deleteByPaths(userId, context.getMetadataPaths());
             }
         } catch (Exception e) {
