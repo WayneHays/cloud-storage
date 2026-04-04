@@ -30,7 +30,7 @@ public class DirectoryService implements DirectoryServiceApi {
         log.info("Start creating directory: userId={}, path={}", userId, path);
 
         metadataService.validateDirectoryCreation(userId, path);
-        metadataService.saveDirectories(userId, Set.of(path));
+        metadataService.saveDirectory(userId, path);
 
         log.info("Successfully created directory: userId={}, path={}", userId, path);
         return mapper.directoryFromPath(path);

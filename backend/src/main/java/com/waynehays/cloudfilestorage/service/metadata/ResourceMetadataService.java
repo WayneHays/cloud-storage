@@ -110,16 +110,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public void saveFile(Long userId, String path, long size) {
-        if (path.endsWith(SLASH)) {
-            throw new IllegalArgumentException("File path must not end with %s : %s".formatted(SLASH, path));
-        }
-        ResourceMetadata metadata = mapper.toFile(userId, path, size);
-        repository.save(metadata);
-    }
-
-    @Override
-    @Transactional
     public void saveFiles(Long userId, List<NewFileDto> files) {
         List<ResourceMetadata> entities = files.stream()
                 .map(f -> mapper.toFile(userId, f.path(), f.size()))
@@ -139,7 +129,14 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
                 })
                 .toList();
 
-        repository.insertDirectoriesIfNotExist(params);
+        repository.saveDirectoriesIfNotExist(params);
+    }
+
+    @Override
+    @Transactional
+    public void saveDirectory(Long userId, String path) {
+        ResourceMetadata directory = mapper.toDirectoryEntity(userId, path);
+        repository.save(directory);
     }
 
     @Override

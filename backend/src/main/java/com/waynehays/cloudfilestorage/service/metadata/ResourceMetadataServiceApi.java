@@ -32,11 +32,11 @@ public interface ResourceMetadataServiceApi {
 
     void throwIfAnyExists(Long userId, List<String> paths);
 
-    void saveFile(Long userId, String path, long size);
-
     void saveFiles(Long userId, List<NewFileDto> files);
 
     void saveDirectories(Long userId, Set<String> paths);
+
+    void saveDirectory(Long userId, String path);
 
     void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo);
 
