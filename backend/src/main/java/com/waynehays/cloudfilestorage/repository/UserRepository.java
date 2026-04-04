@@ -20,7 +20,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT u FROM User u WHERE u.id = :userId")
+    @Query("""
+            SELECT u
+            FROM User u
+            WHERE u.id = :userId
+            """)
     Optional<User> findByIdWithLock(@Param("userId") Long userId);
 
     @Modifying(clearAutomatically = true)

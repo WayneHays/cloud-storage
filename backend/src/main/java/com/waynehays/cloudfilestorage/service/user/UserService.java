@@ -44,6 +44,7 @@ public class UserService implements UserServiceApi {
 
     @Override
     public Page<UserDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toDto);
+        return repository.findAll(pageable)
+                .map(mapper::toDto);
     }
 }
