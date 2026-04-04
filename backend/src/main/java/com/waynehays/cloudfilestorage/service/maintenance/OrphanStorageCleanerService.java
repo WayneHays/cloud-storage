@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrphanStorageCleanerService {
-    private final ResourceStorageApi resourceStorage;
+    private final ResourceStorageService storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
@@ -50,7 +50,7 @@ public class OrphanStorageCleanerService {
 
     private void cleanOrphan(ResourceMetadataDto orphan) {
         if (orphan.isFile()) {
-            deleteFromStorage(orphan);
+            storageService.deleteObject(orphan.userId(), orphan.path());
             quotaService.releaseSpace(orphan.userId(), orphan.size());
         }
         metadataService.deleteById(orphan.id());
