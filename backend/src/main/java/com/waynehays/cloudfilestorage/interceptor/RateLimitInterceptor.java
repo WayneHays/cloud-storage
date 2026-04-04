@@ -18,6 +18,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {
+    private static final String HEADER_RATE_LIMIT_REMAINING = "X-Rate-Limit-Remaining";
+
     private final ApiRateLimiter rateLimiter;
 
     @Override
@@ -37,11 +39,11 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
         if (result.allowed()) {
             if (result.remainingTokens() >= 0) {
-                response.addHeader("X-Rate-Limit-Remaining", String.valueOf(result.remainingTokens()));
+                response.addHeader(HEADER_RATE_LIMIT_REMAINING, String.valueOf(result.remainingTokens()));
             }
             return true;
         } else {
-            response.addHeader("Retry-After", String.valueOf(result.retryAfterSeconds()));
+            response.addHeader(HttpHeaders.RETRY_AFTER, String.valueOf(result.retryAfterSeconds()));
             throw new RateLimitException(result.errorMessage(), endpoint, method, result.retryAfterSeconds());
         }
     }
