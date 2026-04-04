@@ -1,8 +1,7 @@
 package com.waynehays.cloudfilestorage.listener;
 
 import com.waynehays.cloudfilestorage.event.UserRegisteredEvent;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -12,13 +11,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserRootDirectoryInitializer {
-    private final ResourceStorageApi resourceStorage;
-    private final ResourceStorageKeyResolverApi keyResolver;
+    private static final String ROOT = "";
+
+    private final ResourceMetadataService metadataService;
 
     @EventListener(UserRegisteredEvent.class)
     public void createUserRootDirectory(UserRegisteredEvent event) {
-        String keyToRoot = keyResolver.resolveKeyToRoot(event.userId());
-        resourceStorage.createDirectory(keyToRoot);
+        metadataService.saveDirectory(event.userId(), ROOT);
         log.info("Root directory created for user with id: {}", event.userId());
     }
 }
