@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.searcher;
 
+import com.waynehays.cloudfilestorage.config.properties.SearchProperties;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
@@ -12,11 +13,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResourceSearcher implements ResourceSearcherApi {
     private final ResourceDtoMapper mapper;
+    private final SearchProperties properties;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public List<ResourceDto> search(Long userId, String query) {
-        return metadataService.findByNameContaining(userId, query)
+        return metadataService.findByNameContaining(userId, query, properties.limit())
                 .stream()
                 .map(mapper::fromResourceMetadataDto)
                 .toList();
