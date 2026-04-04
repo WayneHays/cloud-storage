@@ -34,7 +34,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     public ResourceMetadataDto findOrThrow(Long userId, String path) {
         ResourceMetadata metadata = repository.findByPath(userId, path)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
-        return mapper.toDto(metadata);
+        return mapper.toResourceMetadataDto(metadata);
     }
 
     @Override
@@ -43,31 +43,32 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
             findOrThrow(userId, directoryPath);
         }
         List<ResourceMetadata> result = repository.findDirectChildren(userId, directoryPath);
-        return mapper.toDto(result);
+        return mapper.toResourceMetadataDto(result);
     }
 
     @Override
     public List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix) {
         List<ResourceMetadata> files = repository.findFilesByPrefix(userId, prefix);
-        return mapper.toDto(files);
+        return mapper.toResourceMetadataDto(files);
     }
 
     @Override
-    public List<ResourceMetadataDto> findAllByPrefix(Long userId, String pathPrefix) {
-        List<ResourceMetadata> result = repository.findAllByPrefix(userId, pathPrefix);
-        return mapper.toDto(result);
+    public List<ResourceMetadataDto> findAllByPrefix(Long userId, String prefix) {
+        List<ResourceMetadata> result = repository.findAllByPrefix(userId, prefix);
+        return mapper.toResourceMetadataDto(result);
     }
 
     @Override
-    public List<ResourceMetadataDto> findByNameContaining(Long userId, String query) {
-        List<ResourceMetadata> result = repository.findByNameContaining(userId, query);
-        return mapper.toDto(result);
+    public List<ResourceMetadataDto> findByNameContaining(Long userId, String query, int limit) {
+        List<ResourceMetadata> result = repository.findByNameContaining(userId, query,
+                Pageable.ofSize(limit));
+        return mapper.toResourceMetadataDto(result);
     }
 
     @Override
-    public List<ResourceMetadataDto> findMarkedForDeletion() {
-        List<ResourceMetadata> result = repository.findByMarkedForDeletionTrue();
-        return mapper.toDto(result);
+    public List<ResourceMetadataDto> findMarkedForDeletion(int limit) {
+        List<ResourceMetadata> result = repository.findByMarkedForDeletionTrue(Pageable.ofSize(limit));
+        return mapper.toResourceMetadataDto(result);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Transactional
     public void saveFiles(Long userId, List<NewFileDto> files) {
         List<ResourceMetadata> entities = files.stream()
-                .map(f -> mapper.toFile(userId, f.path(), f.size()))
+                .map(file -> mapper.toFileEntity(userId, file))
                 .toList();
         repository.saveAll(entities);
     }
