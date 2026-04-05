@@ -29,16 +29,11 @@ public class ResourceStorageService implements ResourceStorageServiceApi {
         }
     }
 
-    public Optional<StorageItem> getObject(Long userId, String path) {
-        String key = keyResolver.resolveKey(userId, path);
-        return storage.getObject(key);
-    }
-
-    public InputStream getInputStream(Long userId, String path) {
+    @Override
+    public StorageItem getObject(Long userId, String path) {
         String key = keyResolver.resolveKey(userId, path);
         return storage.getObject(key)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found in storage", path))
-                .inputStream();
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found in storage", path));
     }
 
     @Override
