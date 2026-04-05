@@ -10,7 +10,7 @@ spring:
         format_sql: true
 minio:
   storage:
-    batch-size: 3
+    deletion-batch-size: 3
     connect-timeout: 2s
     read-timeout: 10s
     write-timeout: 10s
