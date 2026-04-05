@@ -2,8 +2,8 @@ package com.waynehays.cloudfilestorage.service.resource.deleter;
 
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceDeleter implements ResourceDeleterApi {
-    private final ResourceStorageService storageProvider;
+    private final ResourceStorageService storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
@@ -30,7 +30,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
     private void deleteFile(Long userId, String path, Long size) {
         log.info("Start deleting file: userId={}, path={}", userId, path);
 
-        storageProvider.deleteObject(userId, path);
+        storageService.deleteObject(userId, path);
         metadataService.delete(userId, path);
         quotaService.releaseSpace(userId, size);
 
@@ -42,7 +42,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
 
         long totalSize = metadataService.sumResourceSizesByPrefix(userId, path);
         metadataService.markForDeletionByPrefix(userId, path);
-        storageProvider.deleteDirectory(userId, path);
+        storageService.deleteDirectory(userId, path);
         metadataService.deleteByPrefix(userId, path);
 
         if (totalSize > 0) {
