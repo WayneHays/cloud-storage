@@ -6,7 +6,7 @@ import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,7 +62,7 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveContent(Long userId, List<ResourceMetadataDto> files, String pathFrom, String pathTo) {
         List<CompletableFuture<Void>> futures = files.stream()
                         .map(f -> CompletableFuture.runAsync(() -> {
-                            String newPath = pathTo + f.path().substring(pathFrom.length());
+                            String newPath = calculateNewPath(pathFrom, pathTo, f.path());
                             storageService.moveObject(userId, f.path(), newPath);
                         }, moveExecutor))
                                 .toList();
@@ -71,5 +71,9 @@ public class ResourceMover implements ResourceMoverApi {
         } catch (CompletionException e) {
             throw new ResourceStorageOperationException("Failed to move some files in storage", e);
         }
+    }
+
+    private String calculateNewPath(String pathFrom, String pathTo, String filePath) {
+        return pathTo + filePath.substring(pathFrom.length());
     }
 }

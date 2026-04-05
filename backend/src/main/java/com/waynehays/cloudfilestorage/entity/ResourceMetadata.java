@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.entity;
 
-import com.waynehays.cloudfilestorage.dto.ResourceType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;

@@ -7,8 +7,8 @@ import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationExceptio
 import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

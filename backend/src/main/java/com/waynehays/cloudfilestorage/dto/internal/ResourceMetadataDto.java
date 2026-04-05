@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.dto.internal;
 
-import com.waynehays.cloudfilestorage.dto.ResourceType;
+import com.waynehays.cloudfilestorage.entity.ResourceType;
 
 public record ResourceMetadataDto(
         Long id,

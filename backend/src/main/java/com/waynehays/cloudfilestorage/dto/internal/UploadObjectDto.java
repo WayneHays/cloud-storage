@@ -1,7 +1,5 @@
 package com.waynehays.cloudfilestorage.dto.internal;
 
-import com.waynehays.cloudfilestorage.dto.InputStreamSupplier;
-
 public record UploadObjectDto(
         String originalFilename,
         String filename,
