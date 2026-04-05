@@ -20,21 +20,22 @@ public class MinioBucketInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void createBucketIfNotExists() {
+        String bucketName = properties.bucketName();
         try {
             if (!minioClient.bucketExists(
                     BucketExistsArgs.builder()
-                            .bucket(properties.bucketName())
+                            .bucket(bucketName)
                             .build())) {
                 minioClient.makeBucket(
                         MakeBucketArgs.builder()
-                                .bucket(properties.bucketName())
+                                .bucket(bucketName)
                                 .build()
                 );
-                log.info("Created bucket: {}", properties.bucketName());
+                log.info("Created bucket: {}", bucketName);
             }
         } catch (Exception e) {
-            log.error("Failed to initialize MinIO bucket: {}", properties.bucketName());
-            throw new ResourceStorageOperationException("Failed to initialize MinIO bucket: " + properties.bucketName());
+            log.error("Failed to initialize MinIO bucket: {}", bucketName);
+            throw new ResourceStorageOperationException("Failed to initialize MinIO bucket: " + bucketName);
         }
     }
 }
