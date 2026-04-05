@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OrphanStorageCleanerService {
+public class OrphanStorageCleaner implements OrphanStorageCleanerApi {
     private final ResourceStorageService storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
