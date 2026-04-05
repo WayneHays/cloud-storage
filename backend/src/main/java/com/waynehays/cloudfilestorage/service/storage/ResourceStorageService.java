@@ -1,25 +1,25 @@
-package com.waynehays.cloudfilestorage.storage.provider;
+package com.waynehays.cloudfilestorage.service.storage;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
-import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.resourcestorage.ResourceStorageApi;
+import com.waynehays.cloudfilestorage.resourcestorage.keyresolver.KeyResolverApi;
+import com.waynehays.cloudfilestorage.resourcestorage.dto.StorageItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-public class ResourceStorageService {
+public class ResourceStorageService implements ResourceStorageServiceApi {
     private final ResourceStorageApi storage;
-    private final ResourceStorageKeyResolverApi keyResolver;
+    private final KeyResolverApi keyResolver;
 
+    @Override
     public void putObject(Long userId, UploadObjectDto uploadObject) {
         String key = keyResolver.resolveKey(userId, uploadObject.fullPath());
         try (InputStream inputStream = uploadObject.inputStreamSupplier().get()) {
@@ -41,11 +41,13 @@ public class ResourceStorageService {
                 .inputStream();
     }
 
+    @Override
     public void deleteObject(Long userId, String path) {
         String key = keyResolver.resolveKey(userId, path);
         storage.deleteObject(key);
     }
 
+    @Override
     public void deleteObjects(Long userId, List<String> paths) {
         List<String> keys = paths.stream()
                 .map(path -> keyResolver.resolveKey(userId, path))
@@ -53,11 +55,13 @@ public class ResourceStorageService {
         storage.deleteList(keys);
     }
 
+    @Override
     public void deleteDirectory(Long userId, String path) {
         String key = keyResolver.resolveKey(userId, path);
         storage.deleteByPrefix(key);
     }
 
+    @Override
     public void moveObject(Long userId, String pathFrom, String pathTo) {
         String keyFrom = keyResolver.resolveKey(userId, pathFrom);
         String keyTo = keyResolver.resolveKey(userId, pathTo);

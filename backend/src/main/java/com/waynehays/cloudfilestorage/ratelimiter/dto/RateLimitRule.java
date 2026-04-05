@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.ratelimiter.dto;
+package com.waynehays.cloudfilestorage.ratelimiter.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

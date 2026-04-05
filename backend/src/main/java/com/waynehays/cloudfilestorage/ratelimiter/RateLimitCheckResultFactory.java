@@ -1,6 +1,6 @@
-package com.waynehays.cloudfilestorage.service.ratelimiter;
+package com.waynehays.cloudfilestorage.ratelimiter;
 
-import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitCheckResult;
+import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitCheckResult;
 import org.springframework.stereotype.Component;
 
 @Component

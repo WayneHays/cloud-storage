@@ -1,10 +1,9 @@
-package com.waynehays.cloudfilestorage.storage.minio;
+package com.waynehays.cloudfilestorage.resourcestorage.keyresolver;
 
-import com.waynehays.cloudfilestorage.storage.ResourceStorageKeyResolverApi;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MinioKeyResolver implements ResourceStorageKeyResolverApi {
+public class MinioKeyResolver implements KeyResolverApi {
     private static final String USER_PREFIX_FORMAT = "user-%d-files/";
 
     public String extractPath(Long userId, String objectKey) {

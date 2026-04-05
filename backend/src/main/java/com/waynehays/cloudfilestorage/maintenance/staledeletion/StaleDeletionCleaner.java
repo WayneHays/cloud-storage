@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.maintenance;
+package com.waynehays.cloudfilestorage.maintenance.staledeletion;
 
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +11,10 @@ import java.time.Instant;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StaleDeletionCleanerService {
+public class StaleDeletionCleaner implements StaleDeletionCleanerApi {
     private final ResourceMetadataServiceApi metadataService;
 
+    @Override
     public void clean(Duration threshold) {
         try {
             log.info("Repository orphans cleanup started");

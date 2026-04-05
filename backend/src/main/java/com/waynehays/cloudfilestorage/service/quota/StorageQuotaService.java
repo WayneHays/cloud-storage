@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.storagequota;
+package com.waynehays.cloudfilestorage.service.quota;
 
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;

@@ -1,9 +1,9 @@
-package com.waynehays.cloudfilestorage.service.maintenance;
+package com.waynehays.cloudfilestorage.maintenance.orphan;
 
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.service.storagequota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.storage.provider.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,7 @@ public class OrphanStorageCleanerService {
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
+    @Override
     public void clean(int limit) {
         try {
             processOrphans(limit);

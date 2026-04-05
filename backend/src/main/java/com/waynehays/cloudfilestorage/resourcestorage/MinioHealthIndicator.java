@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.storage.minio;
+package com.waynehays.cloudfilestorage.resourcestorage;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import io.minio.BucketExistsArgs;

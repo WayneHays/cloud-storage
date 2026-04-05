@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.storage.dto;
+package com.waynehays.cloudfilestorage.resourcestorage.dto;
 
 import java.io.InputStream;
 

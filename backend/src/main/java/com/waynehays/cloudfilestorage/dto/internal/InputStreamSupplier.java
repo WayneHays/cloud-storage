@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto;
+package com.waynehays.cloudfilestorage.dto.internal;
 
 import java.io.IOException;
 import java.io.InputStream;

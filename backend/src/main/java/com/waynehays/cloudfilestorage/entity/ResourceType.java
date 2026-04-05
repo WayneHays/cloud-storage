@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto;
+package com.waynehays.cloudfilestorage.entity;
 
 public enum ResourceType {
     DIRECTORY,

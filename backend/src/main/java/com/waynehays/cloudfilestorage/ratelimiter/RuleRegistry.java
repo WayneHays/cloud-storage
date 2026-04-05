@@ -1,7 +1,7 @@
-package com.waynehays.cloudfilestorage.service.ratelimiter;
+package com.waynehays.cloudfilestorage.ratelimiter;
 
 import com.waynehays.cloudfilestorage.config.properties.RateLimitProperties;
-import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitRule;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

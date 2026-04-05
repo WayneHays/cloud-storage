@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.service.ratelimiter;
+package com.waynehays.cloudfilestorage.ratelimiter;
 
-import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RequestData;
-import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitCheckResult;
-import com.waynehays.cloudfilestorage.service.ratelimiter.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.ratelimiter.dto.RequestData;
+import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitCheckResult;
+import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitRule;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,7 @@ public class ApiRateLimiter {
     private final BucketRegistry bucketRegistry;
     private final RateLimitCheckResultFactory resultFactory;
 
+    @Override
     public RateLimitCheckResult checkRateLimit(RequestData requestData) {
         Optional<RateLimitRule> rule = ruleRegistry.getRule(requestData.endpoint(), requestData.httpMethod());
 
