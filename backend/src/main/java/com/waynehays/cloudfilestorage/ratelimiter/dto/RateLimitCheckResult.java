@@ -6,4 +6,8 @@ public record RateLimitCheckResult(
         long retryAfterSeconds,
         String errorMessage
 ) {
+
+    public boolean hasRemainingTokens() {
+        return remainingTokens >= 0;
+    }
 }

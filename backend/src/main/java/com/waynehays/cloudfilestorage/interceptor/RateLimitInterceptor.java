@@ -38,7 +38,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         RateLimitCheckResult result = rateLimiter.checkRateLimit(requestData);
 
         if (result.allowed()) {
-            if (result.remainingTokens() >= 0) {
+            if (result.hasRemainingTokens()) {
                 response.addHeader(HEADER_RATE_LIMIT_REMAINING, String.valueOf(result.remainingTokens()));
             }
             return true;
