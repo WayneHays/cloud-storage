@@ -6,6 +6,9 @@ import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+import java.util.Set;
+
 @Mapper(componentModel = "spring")
 public interface ResourceDtoMapper {
     String SLASH = "/";
@@ -38,6 +41,12 @@ public interface ResourceDtoMapper {
                 PathUtils.extractFilename(path) + SLASH,
                 null,
                 ResourceType.DIRECTORY);
+    }
+
+    default List<ResourceDto> directoriesFromPaths(Set<String> newDirectories) {
+        return newDirectories.stream()
+                .map(this::directoryFromPath)
+                .toList();
     }
 
     private ResourceDto createDto(String path, String name, Long size, ResourceType type) {
