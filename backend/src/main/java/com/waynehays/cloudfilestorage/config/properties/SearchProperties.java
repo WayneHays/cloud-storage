@@ -1,7 +1,8 @@
 package com.waynehays.cloudfilestorage.config.properties;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,7 +11,8 @@ import org.springframework.validation.annotation.Validated;
 public record SearchProperties(
 
         @NotNull(message = "Search limit must be set")
-        @Size(min = 1, max = 100, message = "Search limit must be > 0 and <= 100")
+        @Min(value = 1, message = "Search limit must be >= 1")
+        @Max(value = 100, message = "Search limit must be <= 100")
         Integer limit
 ) {
 }

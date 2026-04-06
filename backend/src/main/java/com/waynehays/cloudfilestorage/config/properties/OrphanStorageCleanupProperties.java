@@ -1,7 +1,10 @@
 package com.waynehays.cloudfilestorage.config.properties;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.time.DurationMax;
+import org.hibernate.validator.constraints.time.DurationMin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -12,11 +15,13 @@ import java.time.Duration;
 public record OrphanStorageCleanupProperties(
 
         @NotNull(message = "Interval for cleanup orphans from storage must be set")
-        @Size(min = 10, max = 100, message = "Interval for cleanup orphans from storage must be >= 10 and <= 100")
+        @DurationMin(minutes = 1, message = "Cleanup interval must be >= 1m")
+        @DurationMax(hours = 24, message = "Cleanup interval must be <= 24h")
         Duration interval,
 
         @NotNull(message = "Cleanup limit must be set")
-        @Size(min = 10, max = 100, message = "Cleanup limit must be >= 10 and <= 100")
+        @Min(value = 10, message = "Cleanup limit must be >= 10")
+        @Max(value = 100, message = "Cleanup limit must be <= 100")
         Integer limit
 ) {
 }
