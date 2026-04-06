@@ -21,25 +21,23 @@ public interface ResourceMetadataMapper {
     }
 
     default ResourceMetadata toFileEntity(Long userId, String path, Long size) {
+        ResourceMetadata metadata = createEntity(userId, path, ResourceType.FILE);
+        metadata.setSize(size);
+        return metadata;
+    }
+
+    default ResourceMetadata toDirectoryEntity(Long userId, String path) {
+        String dirPath = PathUtils.ensureTrailingSlash(path);
+        return createEntity(userId, dirPath, ResourceType.DIRECTORY);
+    }
+
+    private ResourceMetadata createEntity(Long userId, String path, ResourceType type) {
         ResourceMetadata metadata = new ResourceMetadata();
         metadata.setUserId(userId);
         metadata.setPath(path);
         metadata.setParentPath(PathUtils.extractParentPath(path));
         metadata.setName(PathUtils.extractFilename(path));
-        metadata.setSize(size);
-        metadata.setType(ResourceType.FILE);
-        metadata.setMarkedForDeletion(false);
-        return metadata;
-    }
-
-    default ResourceMetadata toDirectoryEntity(Long userId, String path) {
-        ResourceMetadata metadata = new ResourceMetadata();
-        metadata.setUserId(userId);
-        metadata.setPath(PathUtils.ensureTrailingSlash(path));
-        metadata.setParentPath(PathUtils.extractParentPath(path));
-        metadata.setName(PathUtils.extractFilename(path));
-        metadata.setSize(null);
-        metadata.setType(ResourceType.DIRECTORY);
+        metadata.setType(type);
         metadata.setMarkedForDeletion(false);
         return metadata;
     }
