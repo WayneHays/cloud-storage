@@ -20,7 +20,7 @@ public class DirectoryService implements DirectoryServiceApi {
     public List<ResourceDto> getContent(Long userId, String path) {
         return metadataService.findDirectChildren(userId, path)
                 .stream()
-                .map(mapper::fromResourceMetadataDto)
+                .map(mapper::fromDto)
                 .toList();
     }
 

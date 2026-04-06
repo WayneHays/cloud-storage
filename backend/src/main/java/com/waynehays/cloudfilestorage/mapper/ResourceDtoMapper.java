@@ -10,7 +10,7 @@ import org.mapstruct.Mapper;
 public interface ResourceDtoMapper {
     String SLASH = "/";
 
-    default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
+    default ResourceDto fromDto(ResourceMetadataDto dto) {
         String name = dto.isFile()
                 ? dto.name()
                 : dto.name() + SLASH;
