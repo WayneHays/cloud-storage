@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.resourcestorage.keyresolver;
+package com.waynehays.cloudfilestorage.resourcestorage;
 
 public interface KeyResolverApi {
 

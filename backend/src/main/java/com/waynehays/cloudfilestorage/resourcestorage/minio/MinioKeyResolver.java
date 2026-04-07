@@ -1,5 +1,6 @@
-package com.waynehays.cloudfilestorage.resourcestorage.keyresolver;
+package com.waynehays.cloudfilestorage.resourcestorage.minio;
 
+import com.waynehays.cloudfilestorage.resourcestorage.KeyResolverApi;
 import org.springframework.stereotype.Component;
 
 @Component
