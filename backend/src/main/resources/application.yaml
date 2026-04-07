@@ -60,7 +60,7 @@ resilience4j:
           - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
         ignore-exceptions:
           - io.github.resilience4j.circuitbreaker.CallNotPermittedException
-  circuitbreaker:
+  circuit-breaker:
     instances:
       minioStorage:
         sliding-window-type: count_based

@@ -76,6 +76,13 @@ services:
         condition: service_healthy
     networks:
       - cloud-file-storage-net
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   frontend:
     build: ./frontend
     container_name: frontend
@@ -83,7 +90,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - cloud-file-storage-net
 
