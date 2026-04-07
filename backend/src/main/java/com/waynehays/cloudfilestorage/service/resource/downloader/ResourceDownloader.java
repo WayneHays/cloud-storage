@@ -40,29 +40,31 @@ public class ResourceDownloader implements ResourceDownloaderApi {
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
         log.info("Start downloading file: userId={}, path={}", userId, path);
-        StorageItem item = storageService.getObject(userId, path).orElseThrow();
+        StorageItem item = storageService.getObject(userId, path);
 
         StreamingResponseBody body = outputStream -> {
             try (InputStream inputStream = item.inputStream()) {
                 inputStream.transferTo(outputStream);
             }
+            log.info("Successfully downloaded file: userId={}, path={}", userId, path);
         };
 
-        log.info("Successfully downloaded file: userId={}, path={}", userId, path);
         return new DownloadResult(body, filename, DEFAULT_CONTENT_TYPE);
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
         log.info("Start downloading directory: userId={}, path={}", userId, path);
 
-        List<ArchiveItem> archiveItems = metadataService.findFilesByPrefix(userId, path)
+        List<ArchiveItem> archiveItems = metadataService.findFilesByPathPrefix(userId, path)
                 .stream()
                 .map(metadata -> createArchiveItem(userId, metadata, path))
                 .toList();
 
-        StreamingResponseBody body = outputStream -> archiver.archiveResources(archiveItems, outputStream);
+        StreamingResponseBody body = outputStream -> {
+            archiver.archiveResources(archiveItems, outputStream);
+            log.info("Successfully downloaded directory: userId={}, path={}", userId, path);
+        };
 
-        log.info("Successfully downloaded directory: userId={}, path={}", userId, path);
         return new DownloadResult(body, directoryName + archiver.getExtension(), archiver.getContentType());
     }
 
