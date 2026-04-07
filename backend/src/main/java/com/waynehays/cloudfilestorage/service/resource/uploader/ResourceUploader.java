@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploader implements ResourceUploaderApi {
-    private final ResourceStorageService storageService;
     private final NewFileMapper newFileMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
@@ -113,56 +112,64 @@ public class ResourceUploader implements ResourceUploaderApi {
                 .map(CompletableFuture::join)
                 .toList();
 
-        metadataService.saveFiles(userId, newFileMapper.toNewFiles(objects));
+        List<NewFileDto> newFiles = newFileMapper.toNewFiles(objects);
+        metadataService.saveFiles(userId, newFiles);
         objects.forEach(o -> context.addMetadataPath(o.fullPath()));
         return result;
     }
 
     private List<ResourceDto> saveNewDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
-        Set<String> allDirectories = uploadedResources.stream()
+        Set<String> allDirectoriesPaths = uploadedResources.stream()
                 .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
                 .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
 
-        if (allDirectories.isEmpty()) {
+        if (allDirectoriesPaths.isEmpty()) {
             return List.of();
         }
 
-        Set<String> existingPaths = metadataService.findExistingPaths(userId, allDirectories);
-        metadataService.saveDirectories(userId, allDirectories);
+        Set<String> existingPaths = metadataService.findExistingPaths(userId, allDirectoriesPaths);
+        metadataService.saveDirectories(userId, allDirectoriesPaths);
 
-        Set<String> newDirectories = allDirectories.stream()
+        Set<String> newDirectoriesPaths = allDirectoriesPaths.stream()
                 .filter(d -> !existingPaths.contains(d))
                 .collect(Collectors.toSet());
 
-        newDirectories.forEach(context::addMetadataPath);
-
-        return newDirectories.stream()
-                .map(resourceDtoMapper::directoryFromPath)
-                .toList();
+        newDirectoriesPaths.forEach(context::addMetadataPath);
+        return resourceDtoMapper.directoriesFromPaths(newDirectoriesPaths);
     }
 
     private void rollback(Long userId, long totalSize, UploadContext context) {
-        try {
-            quotaService.releaseSpace(userId, totalSize);
-        } catch (Exception e) {
-            log.error("Failed to release quota during rollback: userId={}", userId, e);
-        }
+        safeExecuteRollback(
+                () -> quotaService.releaseSpace(userId, totalSize),
+                "Failed to release quota during rollback",
+                userId);
 
-        try {
-            if (context.containsStoragePaths()) {
-                storageService.deleteObjects(userId, context.getStoragePaths());
-            }
-        } catch (Exception e) {
-            log.error("Failed to rollback storage: userId={}", userId, e);
-        }
+        safeExecuteRollback(
+                () -> {
+                    if (context.containsStoragePaths()) {
+                        storageService.deleteObjects(userId, context.getStoragePaths());
+                    }
+                },
+                "Failed to rollback storage",
+                userId);
 
+        safeExecuteRollback(
+                () -> {
+                    if (context.containsMetadataPaths()) {
+                        metadataService.deleteByPaths(userId, context.getMetadataPaths());
+                    }
+                },
+                "Failed to rollback metadata",
+                userId);
+
+    }
+
+    private void safeExecuteRollback(Runnable action, String errorMessage, Long userId) {
         try {
-            if (context.containsMetadataPaths()) {
-                metadataService.deleteByPaths(userId, context.getMetadataPaths());
-            }
+            action.run();
         } catch (Exception e) {
-            log.error("Failed to rollback metadata: userId={}", userId, e);
+            log.error("{}: userId={}", errorMessage, userId, e);
         }
     }
 }
