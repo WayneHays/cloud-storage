@@ -73,6 +73,6 @@ public class ResourceDownloader implements ResourceDownloaderApi {
         return new ArchiveItem(
                 entryName,
                 dto.size(),
-                () -> storageService.getInputStream(userId, dto.path()));
+                () -> storageService.getObject(userId, dto.path()).inputStream());
     }
 }
