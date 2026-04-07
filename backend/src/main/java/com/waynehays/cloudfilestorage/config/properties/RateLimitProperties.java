@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.config.properties;
 
 import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitRule;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.time.DurationMax;
 import org.hibernate.validator.constraints.time.DurationMin;
@@ -16,12 +16,24 @@ import java.util.List;
 @ConfigurationProperties(prefix = "rate-limit")
 public record RateLimitProperties(
 
-        @NotEmpty(message = "Rate limit rules list must be set")
+        @NotNull(message = "Rate limit rules list must be set")
         List<@Valid RateLimitRule> rules,
 
         @NotNull(message = "Bucket expiration must be set")
         @DurationMin(minutes = 1, message = "Bucket expiration must be >= 1m")
-        @DurationMax(hours = 24, message = "Bucket expiration must be <= 24h")
+        @DurationMax(hours = 1, message = "Bucket expiration must be <= 1h")
         Duration bucketExpiration
 ) {
+    @AssertTrue(message = "Rate limit rules must be unique by endpoint + httpMethod")
+    boolean isRuleUnique() {
+        if (rules == null || rules.isEmpty()) {
+            return true;
+        }
+
+        long distinctCount = rules.stream()
+                .map(r -> r.endpoint() + ":" + r.httpMethod())
+                .distinct()
+                .count();
+        return distinctCount == rules.size();
+    }
 }
