@@ -31,7 +31,7 @@ public class StorageQuotaPageReconciler {
         Page<UserDto> users = userService.findAll(
                 PageRequest.of(page, properties.reconciliationBatchSize()));
         List<Long> userIds = users.stream().map(UserDto::id).toList();
-        Map<Long, Long> actualUsage = metadataService.getUsedSpaceOfUsers(userIds)
+        Map<Long, Long> actualUsage = metadataService.getUsedSpaceByUsers(userIds)
                 .stream()
                 .collect(Collectors.toMap(
                         UsedSpace::getUserId,

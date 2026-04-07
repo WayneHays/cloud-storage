@@ -31,7 +31,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
         log.info("Start deleting file: userId={}, path={}", userId, path);
 
         storageService.deleteObject(userId, path);
-        metadataService.delete(userId, path);
+        metadataService.deleteByPath(userId, path);
         quotaService.releaseSpace(userId, size);
 
         log.info("Successfully deleted file: userId={}, path={}", userId, path);
@@ -40,10 +40,10 @@ public class ResourceDeleter implements ResourceDeleterApi {
     private void deleteDirectory(Long userId, String path) {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
-        long totalSize = metadataService.sumResourceSizesByPrefix(userId, path);
-        metadataService.markForDeletionByPrefix(userId, path);
+        long totalSize = metadataService.sumFileSizesByPathPrefix(userId, path);
+        metadataService.markForDeletionByPathPrefix(userId, path);
         storageService.deleteDirectory(userId, path);
-        metadataService.deleteByPrefix(userId, path);
+        metadataService.deleteByPathPrefix(userId, path);
 
         if (totalSize > 0) {
             quotaService.releaseSpace(userId, totalSize);

@@ -18,7 +18,7 @@ public class DirectoryService implements DirectoryServiceApi {
 
     @Override
     public List<ResourceDto> getContent(Long userId, String path) {
-        return metadataService.findDirectChildren(userId, path)
+        return metadataService.findDirectoryContent(userId, path)
                 .stream()
                 .map(mapper::fromDto)
                 .toList();

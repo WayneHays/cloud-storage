@@ -12,11 +12,11 @@ public interface ResourceMetadataServiceApi {
 
     ResourceMetadataDto findOrThrow(Long userId, String path);
 
-    List<ResourceMetadataDto> findDirectChildren(Long userId, String directoryPath);
+    List<ResourceMetadataDto> findDirectoryContent(Long userId, String directoryPath);
 
-    List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix);
+    List<ResourceMetadataDto> findFilesByPathPrefix(Long userId, String prefix);
 
-    List<ResourceMetadataDto> findAllByPrefix(Long userId, String prefix);
+    List<ResourceMetadataDto> findAllByPathPrefix(Long userId, String prefix);
 
     List<ResourceMetadataDto> findByNameContaining(Long userId, String query, int limit);
 
@@ -24,13 +24,9 @@ public interface ResourceMetadataServiceApi {
 
     Set<String> findExistingPaths(Long userId, Set<String> paths);
 
-    List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds);
+    List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds);
 
-    long sumResourceSizesByPrefix(Long userId, String prefix);
-
-    void validateDirectoryCreation(Long userId, String path);
-
-    void throwIfAnyExists(Long userId, List<String> paths);
+    long sumFileSizesByPathPrefix(Long userId, String prefix);
 
     void saveFiles(Long userId, List<NewFileDto> files);
 
@@ -42,15 +38,15 @@ public interface ResourceMetadataServiceApi {
 
     void markForDeletion(Long userId, String path);
 
-    void markForDeletionByPrefix(Long userId, String pathPrefix);
+    void markForDeletionByPathPrefix(Long userId, String pathPrefix);
 
-    void delete(Long userId, String path);
+    void deleteByPath(Long userId, String path);
 
-    void deleteByPrefix(Long userId, String pathPrefix);
+    void deleteByPathPrefix(Long userId, String pathPrefix);
 
     void deleteByPaths(Long userId, List<String> paths);
 
     void deleteById(Long id);
 
-    int deleteStaleDeletionRecords(Instant threshold);
+    int deleteStaleMarkedRecords(Instant threshold);
 }

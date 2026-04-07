@@ -20,7 +20,7 @@ public class StaleDeletionCleaner implements StaleDeletionCleanerApi {
             log.info("Repository orphans cleanup started");
 
             Instant cutOff = Instant.now().minus(threshold);
-            int cleaned = metadataService.deleteStaleDeletionRecords(cutOff);
+            int cleaned = metadataService.deleteStaleMarkedRecords(cutOff);
 
             log.info("Repository orphan cleanup completed: {} orphans found", cleaned);
         } catch (Exception e) {

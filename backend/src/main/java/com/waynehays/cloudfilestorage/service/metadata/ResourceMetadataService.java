@@ -4,7 +4,6 @@ import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
@@ -17,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,23 +34,23 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<ResourceMetadataDto> findDirectChildren(Long userId, String directoryPath) {
-        if (StringUtils.isNotEmpty(directoryPath)) {
-            findOrThrow(userId, directoryPath);
+    public List<ResourceMetadataDto> findDirectoryContent(Long userId, String path) {
+        if (StringUtils.isNotEmpty(path)) {
+            findOrThrow(userId, path);
         }
-        List<ResourceMetadata> result = repository.findDirectChildren(userId, directoryPath);
+        List<ResourceMetadata> result = repository.findByParentPath(userId, path);
         return mapper.toResourceMetadataDto(result);
     }
 
     @Override
-    public List<ResourceMetadataDto> findFilesByPrefix(Long userId, String prefix) {
-        List<ResourceMetadata> files = repository.findFilesByPrefix(userId, prefix);
+    public List<ResourceMetadataDto> findFilesByPathPrefix(Long userId, String prefix) {
+        List<ResourceMetadata> files = repository.findFilesByPathPrefix(userId, prefix);
         return mapper.toResourceMetadataDto(files);
     }
 
     @Override
-    public List<ResourceMetadataDto> findAllByPrefix(Long userId, String prefix) {
-        List<ResourceMetadata> result = repository.findAllByPrefix(userId, prefix);
+    public List<ResourceMetadataDto> findAllByPathPrefix(Long userId, String prefix) {
+        List<ResourceMetadata> result = repository.findAllByPathPrefix(userId, prefix);
         return mapper.toResourceMetadataDto(result);
     }
 
@@ -76,37 +73,15 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<UsedSpace> getUsedSpaceOfUsers(List<Long> userIds) {
-        return repository.sumSizeGroupByUserId(userIds, ResourceType.FILE);
+    public List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds) {
+        return repository.sumFileSizesGroupByUserId(userIds, ResourceType.FILE);
     }
 
     @Override
-    public long sumResourceSizesByPrefix(Long userId, String prefix) {
-        return repository.sumSizeByPrefix(userId, prefix, ResourceType.FILE);
+    public long sumFileSizesByPathPrefix(Long userId, String prefix) {
+        return repository.sumFileSizesByPathPrefix(userId, prefix, ResourceType.FILE);
     }
 
-    @Override
-    public void validateDirectoryCreation(Long userId, String path) {
-        String parentPath = PathUtils.extractParentPath(path);
-        List<String> paths = List.of(path, parentPath);
-        Set<String> existing = repository.findExistingPaths(userId, new HashSet<>(paths));
-
-        if (existing.contains(path)) {
-            throw new ResourceAlreadyExistsException("Directory already exists", path);
-        }
-
-        if (!parentPath.isEmpty() && !existing.contains(parentPath)) {
-            throw new ResourceNotFoundException("Directory not found", parentPath);
-        }
-    }
-
-    @Override
-    public void throwIfAnyExists(Long userId, List<String> paths) {
-        Set<String> existing = repository.findExistingPaths(userId, new HashSet<>(paths));
-        if (!existing.isEmpty()) {
-            throw new ResourceAlreadyExistsException("Resources already exist", new ArrayList<>(existing));
-        }
-    }
 
     @Override
     @Transactional
@@ -140,31 +115,31 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo) {
-        repository.updatePathsByPrefix(userId, prefixFrom, prefixTo);
+        repository.updatePathsByPathPrefix(userId, prefixFrom, prefixTo);
     }
 
     @Override
     @Transactional
     public void markForDeletion(Long userId, String path) {
-        repository.markForDeletion(userId, path);
+        repository.markForDeletionByPath(userId, path);
     }
 
     @Override
     @Transactional
-    public void markForDeletionByPrefix(Long userId, String pathPrefix) {
-        repository.markForDeletionByPrefix(userId, pathPrefix);
+    public void markForDeletionByPathPrefix(Long userId, String pathPrefix) {
+        repository.markForDeletionByPathPrefix(userId, pathPrefix);
     }
 
     @Override
     @Transactional
-    public void delete(Long userId, String path) {
+    public void deleteByPath(Long userId, String path) {
         repository.deleteByPath(userId, path);
     }
 
     @Override
     @Transactional
-    public void deleteByPrefix(Long userId, String pathPrefix) {
-        repository.deleteByPrefix(userId, pathPrefix);
+    public void deleteByPathPrefix(Long userId, String pathPrefix) {
+        repository.deleteByPathPrefix(userId, pathPrefix);
     }
 
     @Override
@@ -181,7 +156,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public int deleteStaleDeletionRecords(Instant threshold) {
-        return repository.deleteStaleDeletionRecords(threshold);
+    public int deleteStaleMarkedRecords(Instant threshold) {
+        return repository.deleteStaleMarkedRecords(threshold);
     }
 }

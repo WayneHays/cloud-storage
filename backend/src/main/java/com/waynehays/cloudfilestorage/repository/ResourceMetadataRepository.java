@@ -33,8 +33,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             AND r.path LIKE CONCAT(:prefix, '%')
             AND r.markedForDeletion = false
             """)
-    List<ResourceMetadata> findAllByPrefix(@Param("userId") Long userId,
-                                           @Param("prefix") String prefix);
+    List<ResourceMetadata> findAllByPathPrefix(@Param("userId") Long userId,
+                                               @Param("prefix") String prefix);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -42,8 +42,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             AND r.parentPath = :parentPath
             AND r.markedForDeletion = false
             """)
-    List<ResourceMetadata> findDirectChildren(@Param("userId") Long userId,
-                                              @Param("parentPath") String parentPath);
+    List<ResourceMetadata> findByParentPath(@Param("userId") Long userId,
+                                            @Param("parentPath") String parentPath);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -64,8 +64,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             AND r.type = 'FILE'
             AND r.markedForDeletion = false
             """)
-    List<ResourceMetadata> findFilesByPrefix(@Param("userId") Long userId,
-                                             @Param("prefix") String prefix);
+    List<ResourceMetadata> findFilesByPathPrefix(@Param("userId") Long userId,
+                                                 @Param("prefix") String prefix);
 
     @Query("""
             SELECT r.path
@@ -83,18 +83,19 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             AND r.path LIKE CONCAT(:prefix, '%')
             AND r.type = :type
             """)
-    long sumSizeByPrefix(@Param("userId") Long userId,
-                         @Param("prefix") String prefix,
-                         @Param("type") ResourceType type);
+    long sumFileSizesByPathPrefix(@Param("userId") Long userId,
+                                  @Param("prefix") String prefix,
+                                  @Param("type") ResourceType type);
 
     @Query("""
             SELECT r.userId AS userId, COALESCE(SUM(r.size), 0) AS totalSize
             FROM ResourceMetadata r
-            WHERE r.type = :type AND userId IN :userIds
+            WHERE r.type = :type
+            AND userId IN :userIds
             GROUP BY r.userId
             """)
-    List<UsedSpace> sumSizeGroupByUserId(@Param("userIds") List<Long> userIds,
-                                         @Param("type") ResourceType type);
+    List<UsedSpace> sumFileSizesGroupByUserId(@Param("userIds") List<Long> userIds,
+                                              @Param("type") ResourceType type);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -103,8 +104,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             WHERE r.userId = :userId
             AND r.path = :path
             """)
-    void markForDeletion(@Param("userId") Long userId,
-                         @Param("path") String path);
+    void markForDeletionByPath(@Param("userId") Long userId,
+                               @Param("path") String path);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -113,8 +114,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             WHERE r.userId = :userId
             AND r.path LIKE CONCAT(:prefix, '%')
             """)
-    void markForDeletionByPrefix(@Param("userId") Long userId,
-                                 @Param("prefix") String prefix);
+    void markForDeletionByPathPrefix(@Param("userId") Long userId,
+                                     @Param("prefix") String prefix);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -124,9 +125,9 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             WHERE r.userId = :userId
             AND r.path LIKE CONCAT(:prefixFrom, '%')
             """)
-    void updatePathsByPrefix(@Param("userId") Long userId,
-                             @Param("prefixFrom") String prefixFrom,
-                             @Param("prefixTo") String prefixTo);
+    void updatePathsByPathPrefix(@Param("userId") Long userId,
+                                 @Param("prefixFrom") String prefixFrom,
+                                 @Param("prefixTo") String prefixTo);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -143,8 +144,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
              WHERE r.userId = :userId
              AND r.path LIKE CONCAT(:prefix, '%')
             """)
-    void deleteByPrefix(@Param("userId") Long userId,
-                        @Param("prefix") String prefix);
+    void deleteByPathPrefix(@Param("userId") Long userId,
+                            @Param("prefix") String prefix);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -161,5 +162,5 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             WHERE r.updatedAt < :threshold
             AND r.markedForDeletion = true
             """)
-    int deleteStaleDeletionRecords(@Param("threshold") Instant threshold);
+    int deleteStaleMarkedRecords(@Param("threshold") Instant threshold);
 }
