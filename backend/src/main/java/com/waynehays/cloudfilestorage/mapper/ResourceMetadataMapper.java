@@ -16,19 +16,21 @@ public interface ResourceMetadataMapper {
 
     List<ResourceMetadataDto> toResourceMetadataDto(List<ResourceMetadata> entities);
 
-    default ResourceMetadata toFileEntity(Long userId, NewFileDto dto) {
-        return toFileEntity(userId, dto.path(), dto.size());
-    }
-
-    default ResourceMetadata toFileEntity(Long userId, String path, Long size) {
-        ResourceMetadata metadata = createEntity(userId, path, ResourceType.FILE);
-        metadata.setSize(size);
-        return metadata;
+    default List<ResourceMetadata> toFileEntity(Long userId, List<NewFileDto> newFiles) {
+        return newFiles.stream()
+                .map(f -> toFileEntity(userId, f))
+                .toList();
     }
 
     default ResourceMetadata toDirectoryEntity(Long userId, String path) {
         String dirPath = PathUtils.ensureTrailingSlash(path);
         return createEntity(userId, dirPath, ResourceType.DIRECTORY);
+    }
+
+    private ResourceMetadata toFileEntity(Long userId, NewFileDto dto) {
+        ResourceMetadata metadata = createEntity(userId, dto.path(), ResourceType.FILE);
+        metadata.setSize(dto.size());
+        return metadata;
     }
 
     private ResourceMetadata createEntity(Long userId, String path, ResourceType type) {

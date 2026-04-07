@@ -111,9 +111,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void saveFiles(Long userId, List<NewFileDto> files) {
-        List<ResourceMetadata> entities = files.stream()
-                .map(file -> mapper.toFileEntity(userId, file))
-                .toList();
+        List<ResourceMetadata> entities = mapper.toFileEntity(userId, files);
         repository.saveAll(entities);
     }
 
