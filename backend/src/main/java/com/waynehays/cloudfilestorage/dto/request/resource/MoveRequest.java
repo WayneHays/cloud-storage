@@ -1,10 +1,9 @@
 package com.waynehays.cloudfilestorage.dto.request.resource;
 
-import com.waynehays.cloudfilestorage.annotation.PathNotEquals;
 import com.waynehays.cloudfilestorage.annotation.ValidPath;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 
-@PathNotEquals
 public record MoveRequest(
 
         @NotBlank(message = "Source path cannot be empty")
@@ -15,4 +14,11 @@ public record MoveRequest(
         @ValidPath(message = "Invalid target path")
         String to
 ) {
+    @AssertTrue(message = "Source and target paths must be different")
+    boolean isPathsNotEqual() {
+        if (from == null || to == null) {
+            return true;
+        }
+        return !from.equalsIgnoreCase(to);
+    }
 }

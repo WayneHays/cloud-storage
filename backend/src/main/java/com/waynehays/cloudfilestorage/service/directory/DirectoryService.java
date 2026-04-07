@@ -28,10 +28,24 @@ public class DirectoryService implements DirectoryServiceApi {
     public ResourceDto createDirectory(Long userId, String path) {
         log.info("Start creating directory: userId={}, path={}", userId, path);
 
-        metadataService.validateDirectoryCreation(userId, path);
+        validateDirectoryCreation(userId, path);
         metadataService.saveDirectory(userId, path);
 
         log.info("Successfully created directory: userId={}, path={}", userId, path);
         return mapper.directoryFromPath(path);
+    }
+
+    private void validateDirectoryCreation(Long userId, String path) {
+        String parentPath = PathUtils.extractParentPath(path);
+        List<String> paths = List.of(path, parentPath);
+        Set<String> existing = metadataService.findExistingPaths(userId, new HashSet<>(paths));
+
+        if (existing.contains(path)) {
+            throw new ResourceAlreadyExistsException("Directory already exists", path);
+        }
+
+        if (!parentPath.isEmpty() && !existing.contains(parentPath)) {
+            throw new ResourceNotFoundException("Directory not found", parentPath);
+        }
     }
 }

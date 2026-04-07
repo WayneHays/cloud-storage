@@ -1,12 +1,13 @@
 package com.waynehays.cloudfilestorage.service.resource.mover;
 
-import com.waynehays.cloudfilestorage.component.validator.MoveValidator;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,14 +22,13 @@ import java.util.concurrent.ExecutorService;
 @RequiredArgsConstructor
 public class ResourceMover implements ResourceMoverApi {
     private final ResourceStorageService storageService;
-    private final MoveValidator validator;
     private final ExecutorService moveExecutor;
     private final ResourceDtoMapper mapper;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
-        validator.validate(userId, pathFrom, pathTo);
+        validateMove(pathFrom, pathTo);
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, pathFrom);
 
         if (dto.isFile()) {
@@ -52,7 +52,7 @@ public class ResourceMover implements ResourceMoverApi {
     private void moveDirectory(Long userId, String pathFrom, String pathTo) {
         log.info("Start move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
-        List<ResourceMetadataDto> files = metadataService.findFilesByPrefix(userId, pathFrom);
+        List<ResourceMetadataDto> files = metadataService.findFilesByPathPrefix(userId, pathFrom);
         moveContent(userId, files, pathFrom, pathTo);
         metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
 
@@ -75,5 +75,15 @@ public class ResourceMover implements ResourceMoverApi {
 
     private String calculateNewPath(String pathFrom, String pathTo, String filePath) {
         return pathTo + filePath.substring(pathFrom.length());
+    }
+
+    private void validateMove(String pathFrom, String pathTo) {
+        if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
+            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
+        }
+
+        if (PathUtils.isDirectory(pathFrom) && pathTo.startsWith(pathFrom)) {
+            throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
+        }
     }
 }

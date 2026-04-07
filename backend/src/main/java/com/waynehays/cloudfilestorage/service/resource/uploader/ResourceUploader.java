@@ -1,8 +1,9 @@
 package com.waynehays.cloudfilestorage.service.resource.uploader;
 
-import com.waynehays.cloudfilestorage.component.validator.UploadValidator;
+import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +32,7 @@ public class ResourceUploader implements ResourceUploaderApi {
     private final NewFileMapper newFileMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
-    private final UploadValidator uploadValidator;
+    private final ResourceStorageService storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
@@ -38,7 +40,7 @@ public class ResourceUploader implements ResourceUploaderApi {
     public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
         log.info("Upload started: userId={}, objects count={}", userId, objects.size());
 
-        uploadValidator.validate(userId, objects);
+        validateUpload(userId, objects);
         long totalSize = calculateObjectsSize(objects);
         quotaService.reserveSpace(userId, totalSize);
 
@@ -58,6 +60,31 @@ public class ResourceUploader implements ResourceUploaderApi {
             rollback(userId, totalSize, context);
             log.warn("Rollback successful for userId={}", userId);
             throw e;
+        }
+    }
+
+    private void validateUpload(Long userId, List<UploadObjectDto> objects) {
+        List<String> paths = objects.stream()
+                .map(UploadObjectDto::fullPath)
+                .toList();
+
+        Set<String> seen = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
+
+        for (String path : paths) {
+            if (!seen.add(path)) {
+                duplicates.add(path);
+            }
+        }
+
+        if (!duplicates.isEmpty()) {
+            throw new ResourceAlreadyExistsException("Duplicate paths in upload request", duplicates.stream().toList());
+        }
+
+        Set<String> existing = metadataService.findExistingPaths(userId, new HashSet<>(paths));
+
+        if (!existing.isEmpty()) {
+            throw new ResourceAlreadyExistsException("Resources already exist", new ArrayList<>(existing));
         }
     }
 
