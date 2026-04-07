@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.resource.infoprovider;
+package com.waynehays.cloudfilestorage.service.resource.info;
 
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ResourceInfoProvider implements ResourceInfoProviderApi {
+public class ResourceInfoService implements ResourceInfoServiceApi {
     private final ResourceDtoMapper mapper;
     private final ResourceMetadataServiceApi metadataService;
 

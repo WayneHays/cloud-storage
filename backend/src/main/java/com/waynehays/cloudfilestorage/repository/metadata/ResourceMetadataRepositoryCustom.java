@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.repository;
+package com.waynehays.cloudfilestorage.repository.metadata;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.resource.mover;
+package com.waynehays.cloudfilestorage.service.resource.move;
 
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ResourceMover implements ResourceMoverApi {
+public class ResourceMoveService implements ResourceMoveServiceApi {
     private final ResourceStorageService storageService;
     private final ExecutorService moveExecutor;
     private final ResourceDtoMapper mapper;

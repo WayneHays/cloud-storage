@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.resource.searcher;
+package com.waynehays.cloudfilestorage.service.resource.search;
 
 import com.waynehays.cloudfilestorage.config.properties.SearchProperties;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
@@ -11,7 +11,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ResourceSearcher implements ResourceSearcherApi {
+public class ResourceSearchService implements ResourceSearchServiceApi {
     private final ResourceDtoMapper mapper;
     private final SearchProperties properties;
     private final ResourceMetadataServiceApi metadataService;

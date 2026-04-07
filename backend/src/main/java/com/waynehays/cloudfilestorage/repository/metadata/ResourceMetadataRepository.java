@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.repository;
+package com.waynehays.cloudfilestorage.repository.metadata;
 
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;

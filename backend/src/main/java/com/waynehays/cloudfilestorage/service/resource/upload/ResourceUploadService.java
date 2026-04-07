@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.resource.uploader;
+package com.waynehays.cloudfilestorage.service.resource.upload;
 
 import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;

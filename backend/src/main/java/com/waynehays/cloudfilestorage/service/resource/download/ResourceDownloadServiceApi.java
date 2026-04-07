@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.service.resource.downloader;
+package com.waynehays.cloudfilestorage.service.resource.download;
 
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 
-public interface ResourceDownloaderApi {
+public interface ResourceDownloadServiceApi {
 
     DownloadResult download(Long userId, String path);
 }
