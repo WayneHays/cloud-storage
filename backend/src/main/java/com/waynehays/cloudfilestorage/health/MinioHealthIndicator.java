@@ -17,18 +17,19 @@ public class MinioHealthIndicator implements HealthIndicator {
 
     @Override
     public @Nullable Health health() {
+        String bucketName = properties.bucketName();
         try {
             minioClient.bucketExists(
                     BucketExistsArgs.builder()
-                            .bucket(properties.bucketName())
+                            .bucket(bucketName)
                             .build()
             );
             return Health.up()
-                    .withDetail("bucket", properties.bucketName())
+                    .withDetail("bucket", bucketName)
                     .build();
         } catch (Exception e) {
             return Health.down(e)
-                    .withDetail("bucket", properties.bucketName())
+                    .withDetail("bucket", bucketName)
                     .build();
         }
     }
