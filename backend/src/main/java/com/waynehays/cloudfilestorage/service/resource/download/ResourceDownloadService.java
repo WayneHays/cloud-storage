@@ -19,7 +19,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ResourceDownloader implements ResourceDownloaderApi {
+public class ResourceDownloadService implements ResourceDownloadServiceApi {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final ArchiverApi archiver;

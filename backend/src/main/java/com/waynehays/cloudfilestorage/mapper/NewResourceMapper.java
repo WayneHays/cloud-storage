@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface NewFileMapper {
+public interface NewResourceMapper {
 
     @Mapping(target = "path", source = "fullPath")
     NewFileDto toNewFile(UploadObjectDto uploadObject);

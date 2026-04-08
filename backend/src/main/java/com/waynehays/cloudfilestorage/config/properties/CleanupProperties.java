@@ -11,8 +11,8 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 @Validated
-@ConfigurationProperties(prefix = "cleanup.orphan-storage")
-public record OrphanStorageCleanupProperties(
+@ConfigurationProperties(prefix = "cleanup")
+public record CleanupProperties(
 
         @NotNull(message = "Interval for cleanup orphans from storage must be set")
         @DurationMin(minutes = 1, message = "Cleanup interval must be >= 1m")
