@@ -16,6 +16,6 @@ public class ResourceInfoService implements ResourceInfoServiceApi {
     @Override
     public ResourceDto getInfo(Long userId, String path) {
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, path);
-        return mapper.fromDto(dto);
+        return mapper.fromResourceMetadataDto(dto);
     }
 }

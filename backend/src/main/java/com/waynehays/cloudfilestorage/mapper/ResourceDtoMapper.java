@@ -13,7 +13,7 @@ import java.util.Set;
 public interface ResourceDtoMapper {
     String SLASH = "/";
 
-    default ResourceDto fromDto(ResourceMetadataDto dto) {
+    default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
         String name = dto.isFile()
                 ? dto.name()
                 : dto.name() + SLASH;

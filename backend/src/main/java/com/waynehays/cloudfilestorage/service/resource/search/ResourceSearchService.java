@@ -20,7 +20,7 @@ public class ResourceSearchService implements ResourceSearchServiceApi {
     public List<ResourceDto> search(Long userId, String query) {
         return metadataService.findByNameContaining(userId, query, properties.limit())
                 .stream()
-                .map(mapper::fromDto)
+                .map(mapper::fromResourceMetadataDto)
                 .toList();
     }
 }

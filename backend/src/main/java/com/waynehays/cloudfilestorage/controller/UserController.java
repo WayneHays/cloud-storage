@@ -19,6 +19,6 @@ public class UserController {
 
     @GetMapping("/me")
     public UserDto me(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return authMapper.toUserDto(userDetails);
+        return authMapper.toDto(userDetails);
     }
 }

@@ -25,7 +25,7 @@ public class DirectoryService implements DirectoryServiceApi {
     public List<ResourceDto> getContent(Long userId, String path) {
         return metadataService.findDirectoryContent(userId, path)
                 .stream()
-                .map(mapper::fromDto)
+                .map(mapper::fromResourceMetadataDto)
                 .toList();
     }
 
