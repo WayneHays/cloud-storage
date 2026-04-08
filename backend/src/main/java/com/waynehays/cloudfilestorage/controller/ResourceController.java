@@ -10,8 +10,13 @@ import com.waynehays.cloudfilestorage.dto.request.resource.SearchRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.UploadRequest;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.service.resource.ResourceServiceApi;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
+import com.waynehays.cloudfilestorage.service.resource.deletion.ResourceDeletionServiceApi;
+import com.waynehays.cloudfilestorage.service.resource.download.ResourceDownloadServiceApi;
+import com.waynehays.cloudfilestorage.service.resource.info.ResourceInfoServiceApi;
+import com.waynehays.cloudfilestorage.service.resource.move.ResourceMoveServiceApi;
+import com.waynehays.cloudfilestorage.service.resource.search.ResourceSearchServiceApi;
+import com.waynehays.cloudfilestorage.service.resource.upload.ResourceUploadServiceApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -38,26 +43,31 @@ import java.util.List;
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
 public class ResourceController {
-    private final ResourceServiceApi resourceService;
     private final MultipartFileDataParser multipartFileDataParser;
+    private final ResourceDeletionServiceApi deletionService;
+    private final ResourceDownloadServiceApi downloadService;
+    private final ResourceInfoServiceApi infoService;
+    private final ResourceMoveServiceApi moveService;
+    private final ResourceSearchServiceApi searchService;
+    private final ResourceUploadServiceApi uploadService;
 
     @GetMapping()
     public ResourceDto getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                        @Valid GetInfoRequest getInfoRequest) {
-        return resourceService.getInfo(userDetails.id(), getInfoRequest.path());
+        return infoService.getInfo(userDetails.id(), getInfoRequest.path());
     }
 
     @DeleteMapping()
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                @Valid DeleteRequest deleteRequest) {
-        resourceService.delete(userDetails.id(), deleteRequest.path());
+        deletionService.delete(userDetails.id(), deleteRequest.path());
     }
 
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> downloadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                   @Valid DownloadRequest downloadRequest) {
-        DownloadResult result = resourceService.download(userDetails.id(), downloadRequest.path());
+        DownloadResult result = downloadService.download(userDetails.id(), downloadRequest.path());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(result.contentType()))
@@ -68,13 +78,13 @@ public class ResourceController {
     @PutMapping("/move")
     public ResourceDto moveOrRenameResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid MoveRequest moveRequest) {
-        return resourceService.move(userDetails.id(), moveRequest.from(), moveRequest.to());
+        return moveService.move(userDetails.id(), moveRequest.from(), moveRequest.to());
     }
 
     @GetMapping("/search")
     public List<ResourceDto> searchResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid SearchRequest searchRequest) {
-        return resourceService.search(userDetails.id(), searchRequest.query());
+        return searchService.search(userDetails.id(), searchRequest.query());
     }
 
     @PostMapping()
@@ -82,9 +92,9 @@ public class ResourceController {
     public List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                             @Valid UploadRequest uploadRequest,
                                                             @RequestParam("object") List<MultipartFile> objects) {
-        List<UploadObjectDto> uploadObjectDtoList = objects.stream()
+        List<UploadObjectDto> uploadObjects = objects.stream()
                 .map(file -> multipartFileDataParser.parse(file, uploadRequest.path()))
                 .toList();
-        return resourceService.upload(userDetails.id(), uploadObjectDtoList);
+        return uploadService.upload(userDetails.id(), uploadObjects);
     }
 }
