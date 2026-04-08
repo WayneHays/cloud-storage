@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewDirectoryDto;
 import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.quota.UsedSpace;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -16,21 +16,19 @@ public interface ResourceMetadataServiceApi {
 
     List<ResourceMetadataDto> findFilesByPathPrefix(Long userId, String prefix);
 
-    List<ResourceMetadataDto> findAllByPathPrefix(Long userId, String prefix);
-
     List<ResourceMetadataDto> findByNameContaining(Long userId, String query, int limit);
 
-    List<ResourceMetadataDto> findMarkedForDeletion(int limit);
+    List<ResourceMetadataDto> findFilesMarkedForDeletion(int limit);
 
     Set<String> findExistingPaths(Long userId, Set<String> paths);
 
     List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds);
 
-    long sumFileSizesByPathPrefix(Long userId, String prefix);
+    long markForDeletionAndSumFileSize(Long userId, String path);
 
     void saveFiles(Long userId, List<NewFileDto> files);
 
-    void saveDirectories(Long userId, Set<String> paths);
+    void saveDirectories(Long userId, List<NewDirectoryDto> newDirectories);
 
     void saveDirectory(Long userId, String path);
 
@@ -38,15 +36,11 @@ public interface ResourceMetadataServiceApi {
 
     void markForDeletion(Long userId, String path);
 
-    void markForDeletionByPathPrefix(Long userId, String pathPrefix);
-
     void deleteByPath(Long userId, String path);
 
     void deleteByPathPrefix(Long userId, String pathPrefix);
 
     void deleteByPaths(Long userId, List<String> paths);
 
-    void deleteById(Long id);
-
-    int deleteStaleMarkedRecords(Instant threshold);
+    void deleteAllByIds(List<Long> ids);
 }

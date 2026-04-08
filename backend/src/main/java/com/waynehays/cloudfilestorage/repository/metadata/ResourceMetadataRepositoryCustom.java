@@ -4,5 +4,9 @@ import java.util.List;
 
 public interface ResourceMetadataRepositoryCustom {
 
-    void saveDirectoriesIfNotExist(List<Object[]> params);
+    void saveDirectories(List<Object[]> params);
+
+    void saveFiles(List<Object[]> params);
+
+    long markForDeletionAndSumSize(Long userId, String prefix);
 }

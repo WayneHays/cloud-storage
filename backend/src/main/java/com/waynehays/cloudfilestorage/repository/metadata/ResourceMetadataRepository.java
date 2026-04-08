@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.repository.metadata;
 
-import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.service.quota.UsedSpace;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -26,15 +25,6 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             """)
     Optional<ResourceMetadata> findByPath(@Param("userId") Long userId,
                                           @Param("path") String path);
-
-    @Query("""
-            SELECT r FROM ResourceMetadata r
-            WHERE r.userId = :userId
-            AND r.path LIKE CONCAT(:prefix, '%')
-            AND r.markedForDeletion = false
-            """)
-    List<ResourceMetadata> findAllByPathPrefix(@Param("userId") Long userId,
-                                               @Param("prefix") String prefix);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -55,7 +45,13 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
                                                 @Param("name") String name,
                                                 Pageable pageable);
 
-    List<ResourceMetadata> findByMarkedForDeletionTrue(Pageable pageable);
+    @Query("""
+            SELECT r
+            FROM ResourceMetadata r
+            WHERE r.type = 'FILE'
+            AND r.markedForDeletion = true
+            """)
+    List<ResourceMetadata> findFilesMarkedForDeletion(Pageable pageable);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -156,11 +152,11 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     void deleteByPaths(@Param("userId") Long userId,
                        @Param("paths") List<String> paths);
 
+
     @Modifying(clearAutomatically = true)
     @Query("""
             DELETE FROM ResourceMetadata r
-            WHERE r.updatedAt < :threshold
-            AND r.markedForDeletion = true
+            WHERE r.id IN :ids
             """)
-    int deleteStaleMarkedRecords(@Param("threshold") Instant threshold);
+    void deleteAllByIds(@Param("ids") List<Long> ids);
 }

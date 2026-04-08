@@ -1,21 +1,20 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewDirectoryDto;
 import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
-import com.waynehays.cloudfilestorage.repository.ResourceMetadataRepository;
+import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.service.quota.UsedSpace;
-import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -49,12 +48,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<ResourceMetadataDto> findAllByPathPrefix(Long userId, String prefix) {
-        List<ResourceMetadata> result = repository.findAllByPathPrefix(userId, prefix);
-        return mapper.toResourceMetadataDto(result);
-    }
-
-    @Override
     public List<ResourceMetadataDto> findByNameContaining(Long userId, String query, int limit) {
         List<ResourceMetadata> result = repository.findByNameContaining(userId, query,
                 Pageable.ofSize(limit));
@@ -62,9 +55,9 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<ResourceMetadataDto> findMarkedForDeletion(int limit) {
-        List<ResourceMetadata> result = repository.findByMarkedForDeletionTrue(Pageable.ofSize(limit));
-        return mapper.toResourceMetadataDto(result);
+    public List<ResourceMetadataDto> findFilesMarkedForDeletion(int limit) {
+        List<ResourceMetadata> files = repository.findFilesMarkedForDeletion(Pageable.ofSize(limit));
+        return mapper.toResourceMetadataDto(files);
     }
 
     @Override
@@ -78,31 +71,38 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public long sumFileSizesByPathPrefix(Long userId, String prefix) {
-        return repository.sumFileSizesByPathPrefix(userId, prefix, ResourceType.FILE);
+    public long markForDeletionAndSumFileSize(Long userId, String path) {
+        return repository.markForDeletionAndSumSize(userId, path);
     }
-
 
     @Override
     @Transactional
     public void saveFiles(Long userId, List<NewFileDto> files) {
-        List<ResourceMetadata> entities = mapper.toFileEntity(userId, files);
-        repository.saveAll(entities);
+        List<Object[]> params = files.stream()
+                .map(f -> new Object[]{
+                        userId,
+                        f.path(),
+                        f.parentPath(),
+                        f.name(),
+                        f.size(),
+                })
+                .toList();
+        repository.saveFiles(params);
     }
 
     @Override
     @Transactional
-    public void saveDirectories(Long userId, Set<String> paths) {
-        List<Object[]> params = paths.stream()
-                .map(path -> new Object[]{
+    public void saveDirectories(Long userId, List<NewDirectoryDto> newDirectories) {
+        List<Object[]> params = newDirectories.stream()
+                .map(d -> new Object[]{
                         userId,
-                        path,
-                        PathUtils.extractParentPath(path),
-                        PathUtils.extractFilename(path)
+                        d.path(),
+                        d.parentPath(),
+                        d.name()
                 })
                 .toList();
 
-        repository.saveDirectoriesIfNotExist(params);
+        repository.saveDirectories(params);
     }
 
     @Override
@@ -126,12 +126,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public void markForDeletionByPathPrefix(Long userId, String pathPrefix) {
-        repository.markForDeletionByPathPrefix(userId, pathPrefix);
-    }
-
-    @Override
-    @Transactional
     public void deleteByPath(Long userId, String path) {
         repository.deleteByPath(userId, path);
     }
@@ -150,13 +144,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public void deleteById(Long id) {
-        repository.deleteById(id);
-    }
-
-    @Override
-    @Transactional
-    public int deleteStaleMarkedRecords(Instant threshold) {
-        return repository.deleteStaleMarkedRecords(threshold);
+    public void deleteAllByIds(List<Long> ids) {
+        repository.deleteAllByIds(ids);
     }
 }
