@@ -13,21 +13,16 @@ archive:
   buffer-size: 8192
 
 cleanup:
-  orphan-storage:
-    interval: 1h
-    limit: 50
-  stale-deletion:
-    interval: 30m
-    threshold: 10m
+  interval: 5m
+  limit: 50
 
 search:
   limit: 100
 
-user:
-  storage:
-    default-limit: 1GB
-    reconciliation-interval: 30m
-    reconciliation-batch-size: 10
+storage-quota:
+  default-limit: 1GB
+  interval: 30m
+  batch-size: 10
 
 executors:
   move-thread-pool-size: 10
