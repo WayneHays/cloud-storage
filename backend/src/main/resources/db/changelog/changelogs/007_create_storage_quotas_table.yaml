@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-storage-quotas-table
+      author: waynehays
+      changes:
+        - createTable:
+            tableName: storage_quotas
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_storage_quota_user
+                    references: users(id)
+              - column:
+                  name: used_space
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_limit
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIMEZONE
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIMEZONE
+                  defaultValueComputed: NOW()
+        - addUniqueConstraint:
+            tableName: storage_quotas
+            columnNames: user_id
+            constraintName: uq_storage_quota_user_id

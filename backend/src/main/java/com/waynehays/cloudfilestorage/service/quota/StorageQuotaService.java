@@ -1,46 +1,76 @@
 package com.waynehays.cloudfilestorage.service.quota;
 
-import com.waynehays.cloudfilestorage.entity.User;
+import com.waynehays.cloudfilestorage.dto.internal.SpaceReleaseDto;
+import com.waynehays.cloudfilestorage.dto.internal.StorageQuotaDto;
+import com.waynehays.cloudfilestorage.dto.internal.UsedSpaceCorrectionDto;
+import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
-import com.waynehays.cloudfilestorage.exception.UserNotFoundException;
-import com.waynehays.cloudfilestorage.repository.UserRepository;
+import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
+import com.waynehays.cloudfilestorage.mapper.StorageQuotaMapper;
+import com.waynehays.cloudfilestorage.repository.storagequota.StorageQuotaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StorageQuotaService implements StorageQuotaServiceApi {
-    private final UserRepository userRepository;
+    private final StorageQuotaMapper mapper;
+    private final StorageQuotaRepository repository;
+
+    @Override
+    @Transactional
+    public void createStorageQuota(Long userId, long storageLimit) {
+        StorageQuota quota = mapper.toEntity(userId, storageLimit);
+        repository.save(quota);
+    }
 
     @Override
     @Transactional
     public void reserveSpace(Long userId, long bytes) {
-        User user = findOrThrow(userId);
-        long freeSpace = user.getStorageLimit() - user.getUsedSpace();
+        StorageQuota quota = repository.findByUserIdWithLock(userId)
+                .orElseThrow(() -> new StorageQuotaNotFoundException("Quota not found for user", userId));
+        long freeSpace = quota.getStorageLimit() - quota.getUsedSpace();
 
         if (bytes > freeSpace) {
             throw new ResourceStorageLimitException("Not enough storage space", bytes, freeSpace);
         }
 
-        user.setUsedSpace(user.getUsedSpace() + bytes);
+        quota.setUsedSpace(quota.getUsedSpace() + bytes);
     }
 
     @Override
     @Transactional
     public void releaseSpace(Long userId, long bytes) {
-        User user = findOrThrow(userId);
-        user.setUsedSpace(Math.max(0, user.getUsedSpace() - bytes));
+        repository.decreaseUsedSpace(userId, bytes);
+    }
+
+    @Override
+    public Page<StorageQuotaDto> findAllQuotas(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toDto);
     }
 
     @Override
     @Transactional
-    public void correctUsedSpace(Long userId, long actualUsedSpace) {
-        userRepository.updateUsedSpace(userId, actualUsedSpace);
+    public void batchUpdateUsedSpace(List<UsedSpaceCorrectionDto> corrections) {
+        List<Object[]> params = corrections.stream()
+                .map(c -> new Object[]{c.actualUsedSpace(), c.userId()})
+                .toList();
+        repository.batchUpdateUsedSpace(params);
     }
 
-    private User findOrThrow(Long userId) {
-        return userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found", userId));
+    @Override
+    @Transactional
+    public void batchDecreaseUsedSpace(List<SpaceReleaseDto> releases) {
+        List<Object[]> params = releases.stream()
+                .map(r -> new Object[]{r.bytes(), r.userId()})
+                .toList();
+        repository.batchDecreaseUsedSpace(params);
     }
 }

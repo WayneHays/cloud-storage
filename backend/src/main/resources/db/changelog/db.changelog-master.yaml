@@ -11,3 +11,7 @@ databaseChangeLog:
       file: db/changelog/changelogs/005_add_storage_limit_to_users_table.yaml
   - include:
       file: db/changelog/changelogs/006_add_used_space_to_users_table.yaml
+  - include:
+      file: db/changelog/changelogs/007_create_storage_quotas_table.yaml
+  - include:
+      file: db/changelog/changelogs/008_remove_used_space_storage_limit_from_users_table.yaml
