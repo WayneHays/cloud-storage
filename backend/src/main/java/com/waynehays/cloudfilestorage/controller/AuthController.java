@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.mapper.AuthMapper;
-import com.waynehays.cloudfilestorage.mapper.UserMapper;
+import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.user.UserServiceApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserMapper userMapper;
     private final AuthMapper authMapper;
     private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
@@ -54,11 +53,12 @@ public class AuthController {
     public UserDto signIn(@RequestBody @Valid SignInRequest signInRequest,
                                           HttpServletRequest request,
                                           HttpServletResponse response) {
-        processLogin(signInRequest.username(), signInRequest.password(), request, response);
-        return authMapper.toUserDto(signInRequest);
+        Authentication authentication = processLogin(signInRequest.username(), signInRequest.password(), request, response);
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return authMapper.toDto(userDetails);
     }
 
-    private void processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
+    private Authentication processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
         Authentication authentication = authenticationManager.authenticate(token);
 
@@ -69,5 +69,6 @@ public class AuthController {
         securityContextRepository.saveContext(context, request, response);
 
         log.info("User signed in: {}", username);
+        return authentication;
     }
 }
