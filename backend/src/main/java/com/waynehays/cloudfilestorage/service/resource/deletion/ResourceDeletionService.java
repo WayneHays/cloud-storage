@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ResourceDeleter implements ResourceDeleterApi {
+public class ResourceDeletionService implements ResourceDeletionServiceApi {
     private final ResourceStorageService storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
@@ -30,6 +30,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
     private void deleteFile(Long userId, String path, Long size) {
         log.info("Start deleting file: userId={}, path={}", userId, path);
 
+        metadataService.markForDeletion(userId, path);
         storageService.deleteObject(userId, path);
         metadataService.deleteByPath(userId, path);
         quotaService.releaseSpace(userId, size);
@@ -40,8 +41,7 @@ public class ResourceDeleter implements ResourceDeleterApi {
     private void deleteDirectory(Long userId, String path) {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
-        long totalSize = metadataService.sumFileSizesByPathPrefix(userId, path);
-        metadataService.markForDeletionByPathPrefix(userId, path);
+        long totalSize = metadataService.markForDeletionAndSumFileSize(userId, path);
         storageService.deleteDirectory(userId, path);
         metadataService.deleteByPathPrefix(userId, path);
 
