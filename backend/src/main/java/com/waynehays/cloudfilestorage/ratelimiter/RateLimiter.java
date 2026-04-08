@@ -16,25 +16,24 @@ import java.util.concurrent.TimeUnit;
 public class RateLimiter implements RateLimiterApi {
     private final RuleRegistry ruleRegistry;
     private final BucketRegistry bucketRegistry;
-    private final RateLimitCheckResultFactory resultFactory;
 
     @Override
     public RateLimitCheckResult checkRateLimit(RequestData requestData) {
         Optional<RateLimitRule> rule = ruleRegistry.getRule(requestData.endpoint(), requestData.httpMethod());
 
         if (rule.isEmpty()) {
-            return resultFactory.unlimited();
+            return RateLimitCheckResult.unlimited();
         }
 
         Bucket bucket = bucketRegistry.getOrCreateBucket(requestData, rule.get());
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
         if (probe.isConsumed()) {
-            return resultFactory.allowed(probe.getRemainingTokens());
+            return RateLimitCheckResult.allowed(probe.getRemainingTokens());
         }
 
         long waitSeconds = convertNanosToSeconds(probe.getNanosToWaitForRefill());
-        return resultFactory.rejected(waitSeconds,
+        return RateLimitCheckResult.rejected(waitSeconds,
                 "Too many requests to: " + requestData.endpoint());
     }
 
