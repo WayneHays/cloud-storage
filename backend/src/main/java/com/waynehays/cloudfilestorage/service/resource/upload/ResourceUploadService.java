@@ -1,11 +1,12 @@
 package com.waynehays.cloudfilestorage.service.resource.upload;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewDirectoryDto;
 import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.mapper.NewFileMapper;
+import com.waynehays.cloudfilestorage.mapper.NewResourceMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
@@ -27,8 +28,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ResourceUploader implements ResourceUploaderApi {
-    private final NewFileMapper newFileMapper;
+public class ResourceUploadService implements ResourceUploadServiceApi {
+    private final NewResourceMapper newResourceMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
     private final ResourceStorageService storageService;
@@ -68,13 +69,9 @@ public class ResourceUploader implements ResourceUploaderApi {
                 .toList();
 
         Set<String> seen = new HashSet<>();
-        Set<String> duplicates = new HashSet<>();
-
-        for (String path : paths) {
-            if (!seen.add(path)) {
-                duplicates.add(path);
-            }
-        }
+        List<String> duplicates = paths.stream()
+                .filter(p -> !seen.add(p))
+                .toList();
 
         if (!duplicates.isEmpty()) {
             throw new ResourceAlreadyExistsException("Duplicate paths in upload request", duplicates.stream().toList());
@@ -94,6 +91,12 @@ public class ResourceUploader implements ResourceUploaderApi {
     }
 
     private List<ResourceDto> uploadFiles(Long userId, List<UploadObjectDto> objects, UploadContext context) {
+        List<ResourceDto> result = uploadToStorage(userId, objects, context);
+        saveFileMetadata(userId, objects, context);
+        return result;
+    }
+
+    private List<ResourceDto> uploadToStorage(Long userId, List<UploadObjectDto> objects, UploadContext context) {
         List<CompletableFuture<ResourceDto>> futures = objects.stream()
                 .map(o -> CompletableFuture.supplyAsync(() -> {
                     storageService.putObject(userId, o);
@@ -108,41 +111,54 @@ public class ResourceUploader implements ResourceUploaderApi {
             throw new ResourceStorageOperationException("Failed to upload some files to storage", e);
         }
 
-        List<ResourceDto> result = futures.stream()
+        return futures.stream()
                 .map(CompletableFuture::join)
                 .toList();
+    }
 
-        List<NewFileDto> newFiles = newFileMapper.toNewFiles(objects);
+    private void saveFileMetadata(Long userId, List<UploadObjectDto> objects, UploadContext context) {
+        List<NewFileDto> newFiles = newResourceMapper.toNewFiles(objects);
         metadataService.saveFiles(userId, newFiles);
         objects.forEach(o -> context.addMetadataPath(o.fullPath()));
-        return result;
     }
 
     private List<ResourceDto> saveNewDirectories(Long userId, List<ResourceDto> uploadedResources, UploadContext context) {
-        Set<String> allDirectoriesPaths = uploadedResources.stream()
-                .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
-                .map(PathUtils::ensureTrailingSlash)
-                .collect(Collectors.toSet());
+        Set<String> allDirectoriesPaths = collectDirectoryPaths(uploadedResources);
 
         if (allDirectoriesPaths.isEmpty()) {
             return List.of();
         }
 
         Set<String> existingPaths = metadataService.findExistingPaths(userId, allDirectoriesPaths);
-        metadataService.saveDirectories(userId, allDirectoriesPaths);
+        List<NewDirectoryDto> directoriesToSave = newResourceMapper.toNewDirectories(allDirectoriesPaths);
+        metadataService.saveDirectories(userId, directoriesToSave);
 
-        Set<String> newDirectoriesPaths = allDirectoriesPaths.stream()
-                .filter(d -> !existingPaths.contains(d))
+        Set<String> createdPaths = filterNewPaths(allDirectoriesPaths, existingPaths);
+        createdPaths.forEach(context::addMetadataPath);
+        return resourceDtoMapper.directoriesFromPaths(createdPaths);
+    }
+
+    private Set<String> collectDirectoryPaths(List<ResourceDto> resources) {
+        return resources.stream()
+                .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
+                .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
+    }
 
-        newDirectoriesPaths.forEach(context::addMetadataPath);
-        return resourceDtoMapper.directoriesFromPaths(newDirectoriesPaths);
+    private Set<String> filterNewPaths(Set<String> allPaths, Set<String> existingPaths) {
+        return allPaths.stream()
+                .filter(p -> !existingPaths.contains(p))
+                .collect(Collectors.toSet());
     }
 
     private void rollback(Long userId, long totalSize, UploadContext context) {
         safeExecuteRollback(
-                () -> quotaService.releaseSpace(userId, totalSize),
-                "Failed to release quota during rollback",
+                () -> {
+                    if (context.containsMetadataPaths()) {
+                        metadataService.deleteByPaths(userId, context.getMetadataPaths());
+                    }
+                },
+                "Failed to rollback metadata",
                 userId);
 
         safeExecuteRollback(
@@ -155,14 +171,9 @@ public class ResourceUploader implements ResourceUploaderApi {
                 userId);
 
         safeExecuteRollback(
-                () -> {
-                    if (context.containsMetadataPaths()) {
-                        metadataService.deleteByPaths(userId, context.getMetadataPaths());
-                    }
-                },
-                "Failed to rollback metadata",
+                () -> quotaService.releaseSpace(userId, totalSize),
+                "Failed to release quota during rollback",
                 userId);
-
     }
 
     private void safeExecuteRollback(Runnable action, String errorMessage, Long userId) {

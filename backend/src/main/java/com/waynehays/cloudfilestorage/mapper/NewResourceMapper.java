@@ -1,17 +1,36 @@
 package com.waynehays.cloudfilestorage.mapper;
 
+import com.waynehays.cloudfilestorage.dto.internal.NewDirectoryDto;
 import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.List;
+import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface NewResourceMapper {
 
-    @Mapping(target = "path", source = "fullPath")
-    NewFileDto toNewFile(UploadObjectDto uploadObject);
+    default NewFileDto toNewFile(UploadObjectDto uploadObject) {
+        String path = uploadObject.fullPath();
+        return new NewFileDto(
+                path,
+                PathUtils.extractParentPath(path),
+                PathUtils.extractFilename(path),
+                uploadObject.size()
+        );
+    }
+
+    default NewDirectoryDto toNewDirectory(String path) {
+        return new NewDirectoryDto(
+                path,
+                PathUtils.extractParentPath(path),
+                PathUtils.extractFilename(path)
+        );
+    }
 
     List<NewFileDto> toNewFiles(List<UploadObjectDto> uploadObjects);
+
+    List<NewDirectoryDto> toNewDirectories(Set<String> paths);
 }
