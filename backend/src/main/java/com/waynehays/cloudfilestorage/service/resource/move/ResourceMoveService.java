@@ -40,6 +40,16 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         return mapper.directoryFromPath(pathTo);
     }
 
+    private void validateMove(String pathFrom, String pathTo) {
+        if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
+            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
+        }
+
+        if (PathUtils.isDirectory(pathFrom) && pathTo.startsWith(pathFrom)) {
+            throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
+        }
+    }
+
     private void moveFile(Long userId, String pathFrom, String pathTo) {
         log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
@@ -53,19 +63,29 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         log.info("Start move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
 
         List<ResourceMetadataDto> files = metadataService.findFilesByPathPrefix(userId, pathFrom);
-        moveContent(userId, files, pathFrom, pathTo);
-        metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+        MoveContext context = new MoveContext();
+
+        try {
+            moveContent(userId, files, pathFrom, pathTo, context);
+            metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+        } catch (Exception e) {
+            log.warn("Move failed for userId={}, initiating rollback", userId);
+            rollback(userId, context);
+            throw e;
+        }
 
         log.info("Successfully moved directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
-    private void moveContent(Long userId, List<ResourceMetadataDto> files, String pathFrom, String pathTo) {
+    private void moveContent(Long userId, List<ResourceMetadataDto> files,
+                             String pathFrom, String pathTo, MoveContext context) {
         List<CompletableFuture<Void>> futures = files.stream()
-                        .map(f -> CompletableFuture.runAsync(() -> {
-                            String newPath = calculateNewPath(pathFrom, pathTo, f.path());
-                            storageService.moveObject(userId, f.path(), newPath);
-                        }, moveExecutor))
-                                .toList();
+                .map(f -> CompletableFuture.runAsync(() -> {
+                    String newPath = calculateNewPath(pathFrom, pathTo, f.path());
+                    storageService.moveObject(userId, f.path(), newPath);
+                    context.addMovedObject(f.path(), newPath);
+                }, moveExecutor))
+                .toList();
         try {
             CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         } catch (CompletionException e) {
@@ -77,13 +97,17 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         return pathTo + filePath.substring(pathFrom.length());
     }
 
-    private void validateMove(String pathFrom, String pathTo) {
-        if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
-            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
+    private void rollback(Long userId, MoveContext context) {
+        if (context.doesNotContainMovedObjects()) {
+            return;
         }
 
-        if (PathUtils.isDirectory(pathFrom) && pathTo.startsWith(pathFrom)) {
-            throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
-        }
+        context.getMovedObjects().forEach(m -> {
+            try {
+                storageService.moveObject(userId, m.pathTo(), m.pathFrom());
+            } catch (Exception e) {
+                log.error("Failed to rollback move: {} -> {}", m.pathTo(), m.pathFrom(), e);
+            }
+        });
     }
 }
