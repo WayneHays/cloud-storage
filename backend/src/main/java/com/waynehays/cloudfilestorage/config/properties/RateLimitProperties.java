@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.config.properties;
 
-import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitRule;
+import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitRule;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;

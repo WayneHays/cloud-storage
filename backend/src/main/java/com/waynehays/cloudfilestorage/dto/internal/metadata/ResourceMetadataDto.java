@@ -1,0 +1,17 @@
+package com.waynehays.cloudfilestorage.dto.internal.metadata;
+
+import com.waynehays.cloudfilestorage.entity.ResourceType;
+
+public record ResourceMetadataDto(
+        Long id,
+        Long userId,
+        String path,
+        String parentPath,
+        String name,
+        Long size,
+        ResourceType type
+) {
+    public boolean isFile() {
+        return type.isFile();
+    }
+}
