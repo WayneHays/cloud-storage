@@ -44,3 +44,11 @@ databaseChangeLog:
             tableName: storage_quotas
             columnNames: user_id
             constraintName: uq_storage_quota_user_id
+        - sql:
+            sql: >
+              ALTER TABLE storage_quotas
+              ADD CONSTRAINT chk_used_space_non_negative CHECK (used_space >= 0);
+        - sql:
+           sql: >
+              ALTER TABLE storage_quotas
+              ADD CONSTRAINT chk_storage_limit_positive CHECK (storage_limit > 0);

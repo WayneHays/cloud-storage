@@ -91,3 +91,23 @@ databaseChangeLog:
                   name: user_id
               - column:
                   name: parent_path
+  - changeSet:
+      id: add-resource-metadata-check-constraints
+      author: waynehays
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE resource_metadata
+              ADD CONSTRAINT chk_resource_metadata_size_non_negative CHECK (size >= 0);
+        - sql:
+            sql: >
+              ALTER TABLE resource_metadata
+              ADD CONSTRAINT chk_resource_metadata_file_has_size CHECK (
+                type != 'FILE' OR size IS NOT NULL
+              );
+        - sql:
+            sql: >
+              ALTER TABLE resource_metadata
+              ADD CONSTRAINT chk_resource_metadata_type CHECK (
+                type IN ('FILE', 'DIRECTORY')
+              );
