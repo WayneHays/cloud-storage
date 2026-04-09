@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Getter
-public class MoveContext {
+class MoveContext {
     private final List<MovedObject> movedObjects = Collections.synchronizedList(new ArrayList<>());
 
     void addMovedObject(String pathFrom, String pathTo) {
