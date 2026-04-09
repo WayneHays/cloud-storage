@@ -4,7 +4,6 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
