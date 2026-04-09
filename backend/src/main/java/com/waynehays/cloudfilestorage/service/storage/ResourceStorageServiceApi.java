@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.storage;
 
-import com.waynehays.cloudfilestorage.dto.internal.storage.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 
 import java.util.List;
 

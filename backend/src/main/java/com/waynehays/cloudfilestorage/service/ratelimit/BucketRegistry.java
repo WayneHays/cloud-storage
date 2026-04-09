@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.ratelimiter;
+package com.waynehays.cloudfilestorage.service.ratelimit;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

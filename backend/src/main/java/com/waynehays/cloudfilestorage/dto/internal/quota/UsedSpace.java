@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.service.quota;
+package com.waynehays.cloudfilestorage.dto.internal.quota;
 
 public interface UsedSpace {
 

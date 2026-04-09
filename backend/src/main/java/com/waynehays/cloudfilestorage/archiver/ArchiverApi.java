@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.archiver;
 
-import com.waynehays.cloudfilestorage.dto.internal.archive.ArchiveItem;
+import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 
 import java.io.OutputStream;
 import java.util.List;

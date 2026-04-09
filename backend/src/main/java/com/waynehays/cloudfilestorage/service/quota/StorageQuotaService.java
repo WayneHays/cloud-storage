@@ -7,7 +7,7 @@ import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.StorageQuotaMapper;
-import com.waynehays.cloudfilestorage.repository.storagequota.StorageQuotaRepository;
+import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

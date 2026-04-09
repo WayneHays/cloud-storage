@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.repository.storagequota;
+package com.waynehays.cloudfilestorage.repository.quota;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;

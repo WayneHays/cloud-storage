@@ -8,7 +8,7 @@ import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
-import com.waynehays.cloudfilestorage.service.quota.UsedSpace;
+import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Pageable;

@@ -3,8 +3,6 @@ package com.waynehays.cloudfilestorage.service.ratelimit;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RequestData;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitCheckResult;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitRule;
-import com.waynehays.cloudfilestorage.ratelimiter.BucketRegistry;
-import com.waynehays.cloudfilestorage.ratelimiter.RuleRegistry;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
 import lombok.RequiredArgsConstructor;

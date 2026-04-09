@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.repository.metadata;
 
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
-import com.waynehays.cloudfilestorage.service.quota.UsedSpace;
+import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

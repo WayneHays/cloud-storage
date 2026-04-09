@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.archiver;
 
-import com.waynehays.cloudfilestorage.dto.internal.archive.ArchiveItem;
+import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.archiver.ZipArchiver;
 import com.waynehays.cloudfilestorage.config.properties.ArchiveProperties;
 import com.waynehays.cloudfilestorage.exception.ArchiveException;

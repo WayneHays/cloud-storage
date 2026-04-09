@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.service.storage;
 
-import com.waynehays.cloudfilestorage.dto.internal.storage.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.KeyResolverApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

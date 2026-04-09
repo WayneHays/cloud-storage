@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.service.resource.upload;
 
+import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
-import com.waynehays.cloudfilestorage.dto.internal.storage.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
@@ -140,7 +140,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
 
     private Set<String> collectDirectoryPaths(List<ResourceDto> resources) {
         return resources.stream()
-                .flatMap(r -> PathUtils.getAllDirectories(r.parentPath()).stream())
+                .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
                 .map(PathUtils::ensureTrailingSlash)
                 .collect(Collectors.toSet());
     }

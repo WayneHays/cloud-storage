@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.ratelimiter;
+package com.waynehays.cloudfilestorage.service.ratelimit;
 
 import com.waynehays.cloudfilestorage.config.properties.RateLimitProperties;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitRule;

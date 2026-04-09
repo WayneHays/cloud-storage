@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.repository.storagequota;
+package com.waynehays.cloudfilestorage.repository.quota;
 
 import java.util.List;
 
