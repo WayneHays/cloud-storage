@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.deletion;
 
-import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;

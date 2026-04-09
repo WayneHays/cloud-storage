@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.mapper;
 
 import com.waynehays.cloudfilestorage.entity.ResourceType;
-import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;

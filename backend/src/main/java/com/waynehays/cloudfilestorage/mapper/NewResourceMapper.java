@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.dto.internal.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.NewFileDto;
-import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UploadObjectDto;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;
 

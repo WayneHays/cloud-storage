@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.upload;
 
-import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 
 import java.util.List;

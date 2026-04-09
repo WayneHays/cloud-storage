@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.service.quota;
 
-import com.waynehays.cloudfilestorage.dto.internal.SpaceReleaseDto;
-import com.waynehays.cloudfilestorage.dto.internal.StorageQuotaDto;
-import com.waynehays.cloudfilestorage.dto.internal.UsedSpaceCorrectionDto;
+import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
+import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
+import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

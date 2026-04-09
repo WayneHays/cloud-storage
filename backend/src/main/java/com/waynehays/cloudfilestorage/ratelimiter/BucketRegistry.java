@@ -3,8 +3,8 @@ package com.waynehays.cloudfilestorage.ratelimiter;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.waynehays.cloudfilestorage.config.properties.RateLimitProperties;
-import com.waynehays.cloudfilestorage.ratelimiter.dto.RateLimitRule;
-import com.waynehays.cloudfilestorage.ratelimiter.dto.RequestData;
+import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitRule;
+import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RequestData;
 import io.github.bucket4j.Bucket;
 import org.springframework.stereotype.Component;
 

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.info;
 
-import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;

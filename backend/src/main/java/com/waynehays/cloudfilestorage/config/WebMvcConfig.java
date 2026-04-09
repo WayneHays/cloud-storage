@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.config;
 
-import com.waynehays.cloudfilestorage.interceptor.RateLimitInterceptor;
+import com.waynehays.cloudfilestorage.ratelimiter.RateLimitInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

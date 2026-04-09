@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.service.resource.download;
 
-import com.waynehays.cloudfilestorage.component.archiver.ArchiverApi;
-import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
-import com.waynehays.cloudfilestorage.dto.internal.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.dto.internal.archive.ArchiveItem;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.service.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;

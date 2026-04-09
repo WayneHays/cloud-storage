@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.dto.internal.StorageQuotaDto;
+import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import org.mapstruct.Mapper;
 
