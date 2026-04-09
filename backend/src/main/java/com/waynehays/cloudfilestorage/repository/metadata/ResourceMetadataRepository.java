@@ -72,16 +72,6 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             """)
     Set<String> findExistingPaths(@Param("userId") Long userId, @Param("paths") Set<String> paths);
 
-    @Query("""
-            SELECT COALESCE(SUM(r.size), 0)
-            FROM ResourceMetadata r
-            WHERE r.userId = :userId
-            AND r.path LIKE CONCAT(:prefix, '%')
-            AND r.type = :type
-            """)
-    long sumFileSizesByPathPrefix(@Param("userId") Long userId,
-                                  @Param("prefix") String prefix,
-                                  @Param("type") ResourceType type);
 
     @Query("""
             SELECT r.userId AS userId, COALESCE(SUM(r.size), 0) AS totalSize
@@ -103,15 +93,6 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     void markForDeletionByPath(@Param("userId") Long userId,
                                @Param("path") String path);
 
-    @Modifying(clearAutomatically = true)
-    @Query("""
-            UPDATE ResourceMetadata r
-            SET r.markedForDeletion = true
-            WHERE r.userId = :userId
-            AND r.path LIKE CONCAT(:prefix, '%')
-            """)
-    void markForDeletionByPathPrefix(@Param("userId") Long userId,
-                                     @Param("prefix") String prefix);
 
     @Modifying(clearAutomatically = true)
     @Query("""
