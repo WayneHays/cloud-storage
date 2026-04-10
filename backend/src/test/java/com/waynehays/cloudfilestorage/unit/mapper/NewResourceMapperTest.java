@@ -39,7 +39,7 @@ class NewResourceMapperTest {
         // given
         UploadObjectDto uploadObject = new UploadObjectDto(
                 "file.txt", "file.txt", "", "file.txt",
-                100L, "text/plain", () -> InputStream.nullInputStream());
+                100L, "text/plain", InputStream::nullInputStream);
 
         // when
         NewFileDto result = mapper.toNewFile(uploadObject);
@@ -55,10 +55,10 @@ class NewResourceMapperTest {
         // given
         UploadObjectDto first = new UploadObjectDto(
                 "a.txt", "a.txt", "docs/", "docs/a.txt",
-                100L, "text/plain", () -> InputStream.nullInputStream());
+                100L, "text/plain", InputStream::nullInputStream);
         UploadObjectDto second = new UploadObjectDto(
                 "b.txt", "b.txt", "docs/", "docs/b.txt",
-                200L, "text/plain", () -> InputStream.nullInputStream());
+                200L, "text/plain", InputStream::nullInputStream);
 
         // when
         List<NewFileDto> result = mapper.toNewFiles(List.of(first, second));

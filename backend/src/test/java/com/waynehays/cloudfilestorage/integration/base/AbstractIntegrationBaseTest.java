@@ -6,7 +6,6 @@ import com.waynehays.cloudfilestorage.integration.config.PostgresTestContainerIn
 import com.waynehays.cloudfilestorage.integration.config.RedisTestContainerInitializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

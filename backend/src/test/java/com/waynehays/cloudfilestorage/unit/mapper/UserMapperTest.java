@@ -1,14 +1,10 @@
 package com.waynehays.cloudfilestorage.unit.mapper;
 
-import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
 import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
-import com.waynehays.cloudfilestorage.mapper.UserMapperImpl;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

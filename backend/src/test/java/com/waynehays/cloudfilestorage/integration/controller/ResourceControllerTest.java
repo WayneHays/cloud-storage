@@ -499,13 +499,6 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     .andExpect(status().isBadRequest());
         }
 
-        private ResultActions moveResourceWithoutSession(String from, String to) throws Exception {
-            return mockMvc.perform(put(MOVE_PATH)
-                    .with(csrf())
-                    .param(PARAM_FROM, from)
-                    .param(PARAM_TO, to));
-        }
-
         @Test
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
