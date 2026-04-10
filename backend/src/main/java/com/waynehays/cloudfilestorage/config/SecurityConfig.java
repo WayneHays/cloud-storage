@@ -22,12 +22,14 @@ public class SecurityConfig {
     private static final String PATH_SIGN_UP = "/api/auth/sign-up";
     private static final String PATH_SIGN_IN = "/api/auth/sign-in";
     private static final String PATH_SIGN_OUT = "/api/auth/sign-out";
+    private static final String PATH_ACTUATOR = "/actuator/health";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PATH_SIGN_UP, PATH_SIGN_IN).permitAll()
+                        .requestMatchers(PATH_ACTUATOR).permitAll()
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
