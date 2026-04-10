@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.service.resource.move;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -28,7 +30,7 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
 
     @Override
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
-        validateMove(pathFrom, pathTo);
+        validateMove(userId, pathFrom, pathTo);
         ResourceMetadataDto dto = metadataService.findOrThrow(userId, pathFrom);
 
         if (dto.isFile()) {
@@ -40,13 +42,19 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         return mapper.directoryFromPath(pathTo);
     }
 
-    private void validateMove(String pathFrom, String pathTo) {
+    private void validateMove(Long userId, String pathFrom, String pathTo) {
         if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
             throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
         }
 
         if (PathUtils.isDirectory(pathFrom) && pathTo.startsWith(pathFrom)) {
             throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
+        }
+
+        Set<String> existing = metadataService.findExistingPaths(userId, Set.of(pathTo));
+
+        if (!existing.isEmpty()) {
+            throw new ResourceAlreadyExistsException("Resource already exists at target path", pathTo);
         }
     }
 
