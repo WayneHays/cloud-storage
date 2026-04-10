@@ -25,97 +25,94 @@ class MultipartFileDataParserTest {
     @InjectMocks
     private MultipartFileDataParser parser;
 
-    @Nested
-    class Parse {
+    @Test
+    void shouldParseBasicFile() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "document.txt", "text/plain", "content".getBytes());
 
-        @Test
-        void shouldParseBasicFile() {
-            // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "document.txt", "text/plain", "content".getBytes());
+        // when
+        UploadObjectDto result = parser.parse(file, "directory/");
 
-            // when
-            UploadObjectDto result = parser.parse(file, "directory/");
+        // then
+        assertThat(result.originalFilename()).isEqualTo("document.txt");
+        assertThat(result.filename()).isEqualTo("document.txt");
+        assertThat(result.directory()).isEqualTo("directory");
+        assertThat(result.fullPath()).isEqualTo("directory/document.txt");
+        assertThat(result.size()).isEqualTo(7L);
+        assertThat(result.contentType()).isEqualTo("text/plain");
+    }
 
-            // then
-            assertThat(result.originalFilename()).isEqualTo("document.txt");
-            assertThat(result.filename()).isEqualTo("document.txt");
-            assertThat(result.directory()).isEqualTo("directory");
-            assertThat(result.fullPath()).isEqualTo("directory/document.txt");
-            assertThat(result.size()).isEqualTo(7L);
-            assertThat(result.contentType()).isEqualTo("text/plain");
-        }
+    @Test
+    void shouldParseFileWithNestedPath() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "subdirectory/document.txt", "text/plain", "content".getBytes());
 
-        @Test
-        void shouldParseFileWithNestedPath() {
-            // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "subdirectory/document.txt", "text/plain", "content".getBytes());
+        // when
+        UploadObjectDto result = parser.parse(file, "directory/");
 
-            // when
-            UploadObjectDto result = parser.parse(file, "directory/");
+        // then
+        assertThat(result.filename()).isEqualTo("document.txt");
+        assertThat(result.directory()).isEqualTo("directory/subdirectory");
+        assertThat(result.fullPath()).isEqualTo("directory/subdirectory/document.txt");
+    }
 
-            // then
-            assertThat(result.filename()).isEqualTo("document.txt");
-            assertThat(result.directory()).isEqualTo("directory/subdirectory");
-            assertThat(result.fullPath()).isEqualTo("directory/subdirectory/document.txt");
-        }
+    @Test
+    void shouldNormalizeBackslashes() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "sub\\directory\\file.txt", "text/plain", "content".getBytes());
 
-        @Test
-        void shouldNormalizeBackslashes() {
-            // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "sub\\directory\\file.txt", "text/plain", "content".getBytes());
+        // when
+        UploadObjectDto result = parser.parse(file, "root/");
 
-            // when
-            UploadObjectDto result = parser.parse(file, "root/");
+        // then
+        assertThat(result.filename()).isEqualTo("file.txt");
+        assertThat(result.directory()).isEqualTo("root/sub/directory");
+    }
 
-            // then
-            assertThat(result.filename()).isEqualTo("file.txt");
-            assertThat(result.directory()).isEqualTo("root/sub/directory");
-        }
+    @Test
+    void shouldPreserveNullContentType() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "file.bin", null, "content".getBytes());
 
-        @Test
-        void shouldPreserveNullContentType() {
-            // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "file.bin", null, "content".getBytes());
+        // when
+        UploadObjectDto result = parser.parse(file, "directory/");
 
-            // when
-            UploadObjectDto result = parser.parse(file, "directory/");
+        // then
+        assertThat(result.contentType()).isEqualTo("application/octet-stream");
+    }
 
-            // then
-            assertThat(result.contentType()).isEqualTo("application/octet-stream");
-        }
+    @Test
+    void shouldProvideWorkingInputStreamSupplier() throws IOException {
+        // given
+        byte[] content = "file content".getBytes();
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "file.txt", "text/plain", content);
 
-        @Test
-        void shouldProvideWorkingInputStreamSupplier() throws IOException {
-            // given
-            byte[] content = "file content".getBytes();
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "file.txt", "text/plain", content);
+        // when
+        UploadObjectDto result = parser.parse(file, "directory/");
 
-            // when
-            UploadObjectDto result = parser.parse(file, "directory/");
-
-            // then
-            try (InputStream is = result.inputStreamSupplier().get()) {
-                assertThat(is.readAllBytes()).isEqualTo(content);
-            }
-        }
-
-        @Test
-        void shouldParseFileInRootDirectory() {
-            // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "file", "file.txt", "text/plain", "content".getBytes());
-
-            // when
-            UploadObjectDto result = parser.parse(file, "");
-
-            // then
-            assertThat(result.filename()).isEqualTo("file.txt");
-            assertThat(result.fullPath()).isEqualTo("file.txt");
+        // then
+        try (InputStream is = result.inputStreamSupplier().get()) {
+            assertThat(is.readAllBytes()).isEqualTo(content);
         }
     }
+
+    @Test
+    void shouldParseFileInRootDirectory() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "file.txt", "text/plain", "content".getBytes());
+
+        // when
+        UploadObjectDto result = parser.parse(file, "");
+
+        // then
+        assertThat(result.filename()).isEqualTo("file.txt");
+        assertThat(result.fullPath()).isEqualTo("file.txt");
+    }
 }
+

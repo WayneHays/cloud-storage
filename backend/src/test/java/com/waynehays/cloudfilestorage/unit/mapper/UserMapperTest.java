@@ -10,77 +10,55 @@ import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserMapperTest {
 
-    private UserMapper userMapper;
+    private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
 
-    @BeforeEach
-    void setUp() {
-        userMapper = new UserMapperImpl();
+    @Test
+    void toDtoFromUser_shouldMapIdAndUsername() {
+        // given
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("john_doe");
+
+        // when
+        UserDto result = mapper.toDto(user);
+
+        // then
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.username()).isEqualTo("john_doe");
     }
 
-    @Nested
-    class ToDto {
+    @Test
+    void toDtoFromUserDetails_shouldMapIdAndUsername() {
+        // given
+        CustomUserDetails userDetails = new CustomUserDetails(42L, "jane_doe", "secret");
 
-        @Test
-        void shouldMapUserToDto() {
-            // given
-            User user = new User();
-            user.setId(1L);
-            user.setUsername("testuser");
-            user.setPassword("encoded_password");
+        // when
+         UserDto result = mapper.toDto(userDetails);
 
-            // when
-            UserDto result = userMapper.toDto(user);
-
-            // then
-            assertThat(result.username()).isEqualTo("testuser");
-        }
-
-        @Test
-        void shouldMapSignInRequestToDto() {
-            // given
-            SignInRequest request = new SignInRequest("testuser", "password123");
-
-            // when
-            UserDto result = userMapper.toDto(request);
-
-            // then
-            assertThat(result.username()).isEqualTo("testuser");
-        }
-
-        @Test
-        void shouldMapCustomUserDetailsToDto() {
-            // given
-            CustomUserDetails userDetails = new CustomUserDetails(1L, "testuser", "encoded_password");
-
-            // when
-            UserDto result = userMapper.toDto(userDetails);
-
-            // then
-            assertThat(result.username()).isEqualTo("testuser");
-        }
+        // then
+        assertThat(result.id()).isEqualTo(42L);
+        assertThat(result.username()).isEqualTo("jane_doe");
     }
 
-    @Nested
-    class ToEntity {
+    @Test
+    void toEntity_shouldMapUsernameAndIgnoreOtherFields() {
+        // given
+        SignUpRequest request = new SignUpRequest("jane_doe", "secret123");
 
-        @Test
-        void shouldMapSignUpRequestToUser() {
-            // given
-            SignUpRequest request = new SignUpRequest("testuser", "password123");
+        // when
+        User result = mapper.toEntity(request);
 
-            // when
-            User result = userMapper.toEntity(request);
-
-            // then
-            assertThat(result.getUsername()).isEqualTo("testuser");
-            assertThat(result.getId()).isNull();
-            assertThat(result.getPassword()).isNull();
-            assertThat(result.getStorageLimit()).isNull();
-        }
+        // then
+        assertThat(result.getUsername()).isEqualTo("jane_doe");
+        assertThat(result.getId()).isNull();
+        assertThat(result.getPassword()).isNull();
+        assertThat(result.getCreatedAt()).isNull();
+        assertThat(result.getUpdatedAt()).isNull();
     }
 }

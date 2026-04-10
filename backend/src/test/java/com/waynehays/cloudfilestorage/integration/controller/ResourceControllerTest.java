@@ -9,6 +9,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -26,9 +28,72 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ResourceControllerTest extends AbstractRestControllerBaseTest {
-    private static final String MOVE_PATH = RESOURCE_PATH + "/move";
-    private static final String DOWNLOAD_PATH = RESOURCE_PATH + "/download";
-    private static final String SEARCH_PATH = RESOURCE_PATH + "/search";
+    private static final String MOVE_PATH = PATH_RESOURCE + "/move";
+    private static final String DOWNLOAD_PATH = PATH_RESOURCE + "/download";
+    private static final String SEARCH_PATH = PATH_RESOURCE + "/search";
+
+    private static final String PARAM_FROM = "from";
+    private static final String PARAM_TO = "to";
+    private static final String PARAM_QUERY = "query";
+
+    private Cookie registerAndLoginUser(String username, String password) throws Exception {
+        String requestBody = buildBody(username, password);
+        MvcResult result = mockMvc.perform(post(PATH_SIGN_UP)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return result.getResponse().getCookie("SESSION");
+    }
+
+    private ResultActions uploadRequest(Cookie session, String path, MockMultipartFile... files) throws Exception {
+        MockMultipartHttpServletRequestBuilder builder = multipart(PATH_RESOURCE)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(session);
+        for (MockMultipartFile file : files) {
+            builder.file(file);
+        }
+        return mockMvc.perform(builder);
+    }
+
+    private ResultActions getResource(Cookie session, String path) throws Exception {
+        return mockMvc.perform(get(PATH_RESOURCE)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(session));
+    }
+
+    private ResultActions deleteResource(Cookie session, String path) throws Exception {
+        return mockMvc.perform(delete(PATH_RESOURCE)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(session));
+    }
+
+    private ResultActions downloadResource(Cookie session, String path) throws Exception {
+        return mockMvc.perform(get(DOWNLOAD_PATH)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(session));
+    }
+
+    private ResultActions moveResource(Cookie session, String from, String to) throws Exception {
+        return mockMvc.perform(put(MOVE_PATH)
+                .with(csrf())
+                .param(PARAM_FROM, from)
+                .param(PARAM_TO, to)
+                .cookie(session));
+    }
+
+    private ResultActions searchResources(Cookie session, String query) throws Exception {
+        return mockMvc.perform(get(SEARCH_PATH)
+                .with(csrf())
+                .param(PARAM_QUERY, query)
+                .cookie(session));
+    }
 
     @Nested
     class UploadTests {
@@ -42,11 +107,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "file.txt", "text/plain", "content".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .with(csrf())
-                            .file(file)
-                            .param("path", "")
-                            .cookie(session))
+            uploadRequest(session, "", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
                     .andExpect(jsonPath("$[*].type", hasItem("FILE")));
@@ -62,11 +123,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "file.txt", "text/plain", "content".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .with(csrf())
-                            .file(file)
-                            .param("path", "docs/")
-                            .cookie(session))
+            uploadRequest(session, "docs/", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
                     .andExpect(jsonPath("$[*].path", hasItem("docs/")));
@@ -84,12 +141,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "file2.txt", "text/plain", "content2".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .with(csrf())
-                            .file(file1)
-                            .file(file2)
-                            .param("path", "docs/")
-                            .cookie(session))
+            uploadRequest(session, "docs/", file1, file2)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItems("file1.txt", "file2.txt")));
         }
@@ -103,11 +155,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "work/report.txt", "text/plain", "content".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .with(csrf())
-                            .file(file)
-                            .param("path", "docs/")
-                            .cookie(session))
+            uploadRequest(session, "docs/", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItems("report.txt", "docs/", "work/")));
         }
@@ -122,11 +170,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "file.txt", "text/plain", "content".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
-                            .with(csrf())
-                            .file(duplicate)
-                            .param("path", "docs/")
-                            .cookie(session))
+            uploadRequest(session, "docs/", duplicate)
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.message").exists());
         }
@@ -139,10 +183,10 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                     "object", "file.txt", "text/plain", "content".getBytes());
 
             // when & then
-            mockMvc.perform(multipart(RESOURCE_PATH)
+            mockMvc.perform(multipart(PATH_RESOURCE)
                             .with(csrf())
                             .file(file)
-                            .param("path", ""))
+                            .param(PARAM_PATH, ""))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -158,10 +202,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
+            getResource(session, "docs/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("file.txt"))
                     .andExpect(jsonPath("$.path").value("docs/"))
@@ -177,10 +218,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "docs/");
 
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            getResource(session, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("docs/"))
                     .andExpect(jsonPath("$.path").value(""))
@@ -195,25 +233,19 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "nonexistent.txt")
-                            .cookie(session))
+            getResource(session, "nonexistent.txt")
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Resource not found: nonexistent.txt"));
         }
 
         @Test
-        @DisplayName("Should return 400 when path is invalid")
+        @DisplayName("Should return 400 when parentPath is invalid")
         void shouldReturn400_whenPathInvalid() throws Exception {
             // given
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "../hack")
-                            .cookie(session))
+            getResource(session, "../hack")
                     .andExpect(status().isBadRequest());
         }
 
@@ -221,9 +253,9 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
+            mockMvc.perform(get(PATH_RESOURCE)
                             .with(csrf())
-                            .param("path", "file.txt"))
+                            .param(PARAM_PATH, "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -239,16 +271,10 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(delete(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
+            deleteResource(session, "docs/file.txt")
                     .andExpect(status().isNoContent());
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
+            getResource(session, "docs/file.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -260,22 +286,13 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(delete(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            deleteResource(session, "docs/")
                     .andExpect(status().isNoContent());
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            getResource(session, "docs/")
                     .andExpect(status().isNotFound());
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
+            getResource(session, "docs/file.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -287,16 +304,10 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "empty/");
 
             // when & then
-            mockMvc.perform(delete(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "empty/")
-                            .cookie(session))
+            deleteResource(session, "empty/")
                     .andExpect(status().isNoContent());
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "empty/")
-                            .cookie(session))
+            getResource(session, "empty/")
                     .andExpect(status().isNotFound());
         }
 
@@ -307,10 +318,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(delete(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "nonexistent.txt")
-                            .cookie(session))
+            deleteResource(session, "nonexistent.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -318,9 +326,9 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(delete(RESOURCE_PATH)
+            mockMvc.perform(delete(PATH_RESOURCE)
                             .with(csrf())
-                            .param("path", "file.txt"))
+                            .param(PARAM_PATH, "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -337,10 +345,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", content);
 
             // when & then
-            mockMvc.perform(get(DOWNLOAD_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
+            downloadResource(session, "docs/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE))
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("file.txt")))
@@ -356,10 +361,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
 
             // when & then
-            mockMvc.perform(get(DOWNLOAD_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            downloadResource(session, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/zip"))
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("docs.zip")));
@@ -372,10 +374,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(get(DOWNLOAD_PATH)
-                            .with(csrf())
-                            .param("path", "nonexistent.txt")
-                            .cookie(session))
+            downloadResource(session, "nonexistent.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -385,7 +384,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             // when & then
             mockMvc.perform(get(DOWNLOAD_PATH)
                             .with(csrf())
-                            .param("path", "file.txt"))
+                            .param(PARAM_PATH, "file.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -401,27 +400,14 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "old.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/old.txt")
-                            .param("to", "docs/new.txt")
-                            .cookie(session))
+            moveResource(session, "docs/old.txt", "docs/new.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("new.txt"))
                     .andExpect(jsonPath("$.path").value("docs/"))
                     .andExpect(jsonPath("$.type").value("FILE"));
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/old.txt")
-                            .cookie(session))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/new.txt")
-                            .cookie(session))
-                    .andExpect(status().isOk());
+            getResource(session, "docs/old.txt").andExpect(status().isNotFound());
+            getResource(session, "docs/new.txt").andExpect(status().isOk());
         }
 
         @Test
@@ -433,26 +419,13 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "archive/");
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/file.txt")
-                            .param("to", "archive/file.txt")
-                            .cookie(session))
+            moveResource(session, "docs/file.txt", "archive/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.path").value("archive/"))
                     .andExpect(jsonPath("$.name").value("file.txt"));
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "archive/file.txt")
-                            .cookie(session))
-                    .andExpect(status().isOk());
+            getResource(session, "docs/file.txt").andExpect(status().isNotFound());
+            getResource(session, "archive/file.txt").andExpect(status().isOk());
         }
 
         @Test
@@ -464,27 +437,14 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/")
-                            .param("to", "target/docs/")
-                            .cookie(session))
+            moveResource(session, "docs/", "target/docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("docs/"))
                     .andExpect(jsonPath("$.path").value("target/"))
                     .andExpect(jsonPath("$.type").value("DIRECTORY"));
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/file.txt")
-                            .cookie(session))
-                    .andExpect(status().isNotFound());
-
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "target/docs/file.txt")
-                            .cookie(session))
-                    .andExpect(status().isOk());
+            getResource(session, "docs/file.txt").andExpect(status().isNotFound());
+            getResource(session, "target/docs/file.txt").andExpect(status().isOk());
         }
 
         @Test
@@ -495,20 +455,12 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/")
-                            .param("to", "documents/")
-                            .cookie(session))
+            moveResource(session, "docs/", "documents/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("documents/"))
                     .andExpect(jsonPath("$.type").value("DIRECTORY"));
 
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "documents/file.txt")
-                            .cookie(session))
-                    .andExpect(status().isOk());
+            getResource(session, "documents/file.txt").andExpect(status().isOk());
         }
 
         @Test
@@ -518,11 +470,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "nonexistent.txt")
-                            .param("to", "other.txt")
-                            .cookie(session))
+            moveResource(session, "nonexistent.txt", "other.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -535,11 +483,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/file1.txt")
-                            .param("to", "docs/file2.txt")
-                            .cookie(session))
+            moveResource(session, "docs/file1.txt", "docs/file2.txt")
                     .andExpect(status().isConflict());
         }
 
@@ -551,12 +495,15 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "docs/");
 
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
-                            .with(csrf())
-                            .param("from", "docs/")
-                            .param("to", "file.txt")
-                            .cookie(session))
+            moveResource(session, "docs/", "file.txt")
                     .andExpect(status().isBadRequest());
+        }
+
+        private ResultActions moveResourceWithoutSession(String from, String to) throws Exception {
+            return mockMvc.perform(put(MOVE_PATH)
+                    .with(csrf())
+                    .param(PARAM_FROM, from)
+                    .param(PARAM_TO, to));
         }
 
         @Test
@@ -565,8 +512,8 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             // when & then
             mockMvc.perform(put(MOVE_PATH)
                             .with(csrf())
-                            .param("from", "file.txt")
-                            .param("to", "other.txt"))
+                            .param(PARAM_FROM, "file.txt")
+                            .param(PARAM_TO, "other.txt"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -583,10 +530,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "photo.png", "content".getBytes());
 
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "report")
-                            .cookie(session))
+            searchResources(session, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("report.txt"));
@@ -600,10 +544,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "Report.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "report")
-                            .cookie(session))
+            searchResources(session, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("Report.txt"));
@@ -617,10 +558,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/work/", "report.txt", "content".getBytes());
 
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "report")
-                            .cookie(session))
+            searchResources(session, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("report.txt"));
@@ -633,11 +571,9 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
             uploadFile(session, "docs/", "file.txt", "content".getBytes());
 
+
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "nonexistent")
-                            .cookie(session))
+            searchResources(session, "nonexistent")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
@@ -649,10 +585,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "")
-                            .cookie(session))
+            searchResources(session, "")
                     .andExpect(status().isBadRequest());
         }
 
@@ -662,7 +595,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             // when & then
             mockMvc.perform(get(SEARCH_PATH)
                             .with(csrf())
-                            .param("query", "test"))
+                            .param(PARAM_QUERY, "test"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -680,10 +613,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session2 = registerAndLoginUser("user2", "password2");
 
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
-                            .with(csrf())
-                            .param("query", "secret")
-                            .cookie(session2))
+            searchResources(session2, "secret")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
@@ -698,10 +628,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             Cookie session2 = registerAndLoginUser("user2", "password2");
 
             // when & then
-            mockMvc.perform(get(RESOURCE_PATH)
-                            .with(csrf())
-                            .param("path", "docs/secret.txt")
-                            .cookie(session2))
+            getResource(session2, "docs/secret.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -716,35 +643,8 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session1, "docs/");
             createDirectory(session2, "docs/");
 
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session1))
-                    .andExpect(status().isOk());
-
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session2))
-                    .andExpect(status().isOk());
+            getDirectoryContent(session1, "docs/").andExpect(status().isOk());
+            getDirectoryContent(session2, "docs/").andExpect(status().isOk());
         }
-    }
-
-    private Cookie registerAndLoginUser(String username, String password) throws Exception {
-        String requestBody = """
-                {
-                    "username": "%s",
-                    "password": "%s"
-                }
-                """.formatted(username, password);
-
-        MvcResult result = mockMvc.perform(post("/api/auth/sign-up")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        return result.getResponse().getCookie("SESSION");
     }
 }

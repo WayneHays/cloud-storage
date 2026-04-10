@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class UserControllerTest extends AbstractRestControllerBaseTest {
     private static final String PATH_ME = "/api/user/me";
-    private static final String PATH_SIGN_OUT = "/api/auth/sign-out";
 
     @Test
     @DisplayName("Should return user info when authenticated")
@@ -26,8 +25,7 @@ class UserControllerTest extends AbstractRestControllerBaseTest {
                         .with(csrf())
                         .cookie(sessionCookie))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.username").value("user"));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test

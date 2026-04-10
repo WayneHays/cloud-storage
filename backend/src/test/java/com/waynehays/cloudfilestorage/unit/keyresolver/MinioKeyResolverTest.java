@@ -1,6 +1,6 @@
-package com.waynehays.cloudfilestorage.unit.component.keyresolver;
+package com.waynehays.cloudfilestorage.unit.keyresolver;
 
-import com.waynehays.cloudfilestorage.storage.minio.MinioKeyResolver;
+import com.waynehays.cloudfilestorage.infrastructure.storage.minio.MinioKeyResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

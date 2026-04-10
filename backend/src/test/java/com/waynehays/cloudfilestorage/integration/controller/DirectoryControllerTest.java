@@ -1,10 +1,12 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
 import com.waynehays.cloudfilestorage.integration.base.AbstractRestControllerBaseTest;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.ResultActions;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
@@ -17,6 +19,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class DirectoryControllerTest extends AbstractRestControllerBaseTest {
+
+    private ResultActions createDirectoryRequest(Cookie session, String path) throws Exception {
+        return mockMvc.perform(post(PATH_DIRECTORY)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(session));
+    }
+
+    private void createDirectoryAndExpectSuccess(Cookie sessionCookie, String path) throws Exception {
+        String parentPath = PathUtils.extractParentPath(path);
+        String name = PathUtils.extractFilename(path) + "/";
+
+        mockMvc.perform(post(PATH_DIRECTORY)
+                        .with(csrf())
+                        .param(PARAM_PATH, path)
+                        .cookie(sessionCookie))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.path").value(parentPath))
+                .andExpect(jsonPath("$.name").value(name))
+                .andExpect(jsonPath("$.size").doesNotExist())
+                .andExpect(jsonPath("$.type").value("DIRECTORY"));
+    }
 
     @Nested
     class CreateDirectoryTests {
@@ -50,10 +74,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "docs/");
 
             // when & then
-            mockMvc.perform(post(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            createDirectoryRequest(session, "docs/")
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.message").value("Resources already exists: [docs/]"));
         }
@@ -65,10 +86,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(post(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/work/")
-                            .cookie(session))
+            createDirectoryRequest(session, "docs/work/")
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Resource not found: docs/"));
         }
@@ -80,10 +98,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(post(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "../hack/")
-                            .cookie(session))
+            createDirectoryRequest(session, "../hack/")
                     .andExpect(status().isBadRequest());
         }
 
@@ -94,10 +109,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(post(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs")
-                            .cookie(session))
+            createDirectoryRequest(session, "docs")
                     .andExpect(status().isBadRequest());
         }
 
@@ -105,9 +117,9 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when user not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(post(DIRECTORY_PATH)
+            mockMvc.perform(post(PATH_DIRECTORY)
                             .with(csrf())
-                            .param("path", "docs/"))
+                            .param(PARAM_PATH, "docs/"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -124,10 +136,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "images/");
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "")
-                            .cookie(session))
+            getDirectoryContent(session, "")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("docs/", "images/")))
@@ -144,10 +153,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/", "file3.txt", "content3".getBytes());
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            getDirectoryContent(session, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(3)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "file2.txt", "file3.txt")))
@@ -164,10 +170,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/work/", "file2.txt", "content2".getBytes());
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            getDirectoryContent(session, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "work/")))
@@ -184,10 +187,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             uploadFile(session, "docs/work/reports/", "file3.txt", "content3".getBytes());
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "docs/")
-                            .cookie(session))
+            getDirectoryContent(session, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "work/")));
@@ -201,10 +201,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             createDirectory(session, "empty/");
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "empty/")
-                            .cookie(session))
+            getDirectoryContent(session, "empty/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
@@ -216,10 +213,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
             Cookie session = registerAndLoginDefaultUser();
 
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
-                            .with(csrf())
-                            .param("path", "nonexistent/")
-                            .cookie(session))
+            getDirectoryContent(session, "nonexistent/")
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Resource not found: nonexistent/"));
         }
@@ -228,10 +222,11 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when user not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(get(DIRECTORY_PATH)
+            mockMvc.perform(get(PATH_DIRECTORY)
                             .with(csrf())
-                            .param("path", "docs/"))
+                            .param(PARAM_PATH, "docs/"))
                     .andExpect(status().isUnauthorized());
+
         }
     }
 }
