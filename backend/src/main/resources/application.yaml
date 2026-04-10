@@ -9,6 +9,11 @@ spring:
         jdbc:
           batch_size: 50
 
+server:
+  servlet:
+    session:
+      timeout: 30m
+
 archive:
   buffer-size: 8192
 
@@ -21,7 +26,7 @@ search:
 
 storage-quota:
   default-limit: 1GB
-  interval: 30m
+  interval: 1h
   batch-size: 10
 
 executors:
@@ -66,13 +71,11 @@ resilience4j:
         record-exceptions:
           - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
 management:
-  server:
-    port: 8081
   endpoints:
     web:
       exposure:
         include: health
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
