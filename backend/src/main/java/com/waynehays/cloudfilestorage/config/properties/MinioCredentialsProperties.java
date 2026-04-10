@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
 public record MinioCredentialsProperties(
 
         @NotBlank(message = "URL MinIO must be set")
-        @Pattern(regexp = "https?://.+", message = "URL must begin with https://")
+        @Pattern(regexp = "https?://.+", message = "URL must begin with http:// or https://")
         String url,
 
         @NotBlank(message = "Access key must be set")
