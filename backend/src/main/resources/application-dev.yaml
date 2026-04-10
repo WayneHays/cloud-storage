@@ -17,8 +17,8 @@ spring:
 minio:
   security:
     url: http://localhost:9000
-    accessKey: minioadmin
-    secretKey: minioadmin123
+    access-key: minioadmin
+    secret-key: minioadmin123
   storage:
     bucketName: dev-bucket
     connect-timeout: 2s
