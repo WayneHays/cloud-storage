@@ -15,7 +15,6 @@ public record RateLimitRule(
         @NotBlank(message = "HTTP method must not be blank")
         @Pattern(regexp = "GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD",
                 message = "HTTP method must be one of: GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD")
-        @Size(max = 10, message = "HTTP method too long")
         String httpMethod,
 
         @Min(value = 1, message = "Capacity must be at least 1")

@@ -25,17 +25,19 @@ public record StorageQuotaProperties(
         Duration interval,
 
         @NotNull(message = "Reconciliation batch size must be set")
-        @Min(value = 10, message = "Buffer size must be >= 10")
-        @Max(value = 1000, message = "Buffer size must be <= 1000")
+        @Min(value = 10, message = "Batch size must be >= 10")
+        @Max(value = 1000, message = "Batch size must be <= 1000")
         Integer batchSize
 ) {
+    private static final DataSize MIN_LIMIT = DataSize.ofMegabytes(1);
+    private static final DataSize MAX_LIMIT = DataSize.ofGigabytes(100);
+
     @AssertTrue(message = "Default storage limit must be between 1 MB and 100 GB")
     boolean isDefaultLimitValid() {
         if (defaultLimit == null) {
             return true;
         }
         long bytes = defaultLimit.toBytes();
-        return bytes >= DataSize.ofMegabytes(1).toBytes()
-                && bytes <= DataSize.ofGigabytes(100).toBytes();
+        return bytes >= MIN_LIMIT.toBytes() && bytes <= MAX_LIMIT.toBytes();
     }
 }
