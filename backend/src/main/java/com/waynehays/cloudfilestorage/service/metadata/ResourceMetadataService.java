@@ -144,7 +144,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public void deleteAllByIds(List<Long> ids) {
+    public void deleteByIds(List<Long> ids) {
         repository.deleteAllByIds(ids);
     }
 }

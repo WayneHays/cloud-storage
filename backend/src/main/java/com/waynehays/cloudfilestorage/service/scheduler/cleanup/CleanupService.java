@@ -94,6 +94,6 @@ public class CleanupService implements CleanupServiceApi {
         List<Long> ids = files.stream()
                 .map(ResourceMetadataDto::id)
                 .toList();
-        metadataService.deleteAllByIds(ids);
+        metadataService.deleteByIds(ids);
     }
 }

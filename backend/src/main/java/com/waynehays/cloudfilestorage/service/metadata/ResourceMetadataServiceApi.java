@@ -42,5 +42,5 @@ public interface ResourceMetadataServiceApi {
 
     void deleteByPaths(Long userId, List<String> paths);
 
-    void deleteAllByIds(List<Long> ids);
+    void deleteByIds(List<Long> ids);
 }
