@@ -2,14 +2,13 @@ package com.waynehays.cloudfilestorage.service.scheduler.quota;
 
 import com.waynehays.cloudfilestorage.config.properties.StorageQuotaProperties;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
+import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
