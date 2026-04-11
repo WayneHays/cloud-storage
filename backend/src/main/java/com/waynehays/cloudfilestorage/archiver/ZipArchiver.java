@@ -4,6 +4,7 @@ import com.waynehays.cloudfilestorage.config.properties.ArchiveProperties;
 import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.exception.ArchiveException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ZipArchiver implements ArchiverApi {
@@ -30,6 +32,7 @@ public class ZipArchiver implements ArchiverApi {
             }
             zos.finish();
         } catch (IOException e) {
+            log.error("Failed to create ZIP archive", e);
             throw new ArchiveException("Failed to create ZIP archive", e);
         }
     }
