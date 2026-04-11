@@ -5,12 +5,14 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,8 +111,12 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void saveDirectory(Long userId, String path) {
-        ResourceMetadata directory = mapper.toDirectoryEntity(userId, path);
-        repository.save(directory);
+        try {
+            ResourceMetadata directory = mapper.toDirectoryEntity(userId, path);
+            repository.saveAndFlush(directory);
+        } catch (DataIntegrityViolationException e) {
+            throw new ResourceAlreadyExistsException("Directory already exists", path);
+        }
     }
 
     @Override
