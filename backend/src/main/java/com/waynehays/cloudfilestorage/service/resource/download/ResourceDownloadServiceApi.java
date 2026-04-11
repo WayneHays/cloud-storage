@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.service.resource.download;
 
-import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
+import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 
 public interface ResourceDownloadServiceApi {
 

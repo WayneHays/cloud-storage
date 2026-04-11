@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.dto.response;
+package com.waynehays.cloudfilestorage.dto.internal;
 
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
