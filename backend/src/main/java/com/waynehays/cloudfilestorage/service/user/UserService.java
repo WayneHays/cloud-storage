@@ -30,7 +30,7 @@ public class UserService implements UserServiceApi {
         user.setPassword(passwordEncoder.encode(signUpRequest.password()));
 
         try {
-            User saved = repository.save(user);
+            User saved = repository.saveAndFlush(user);
             eventPublisher.publishEvent(new UserRegisteredEvent(saved.getId()));
             return mapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
