@@ -26,8 +26,11 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
     @Override
     @Transactional
     public void createStorageQuota(Long userId, long storageLimit) {
-        StorageQuota quota = mapper.toEntity(userId, storageLimit);
-        repository.save(quota);
+        StorageQuota quota = new StorageQuota();
+        quota.setUserId(userId);
+        quota.setUsedSpace(0);
+        quota.setStorageLimit(storageLimit);
+        repository.saveAndFlush(quota);
     }
 
     @Override
