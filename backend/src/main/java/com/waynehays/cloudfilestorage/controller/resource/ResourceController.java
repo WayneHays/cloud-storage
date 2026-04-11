@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.controller;
+package com.waynehays.cloudfilestorage.controller.resource;
 
 import com.waynehays.cloudfilestorage.parser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
@@ -8,7 +8,7 @@ import com.waynehays.cloudfilestorage.dto.request.resource.GetInfoRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.MoveRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.SearchRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.UploadRequest;
-import com.waynehays.cloudfilestorage.dto.response.DownloadResult;
+import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.resource.deletion.ResourceDeletionServiceApi;
@@ -38,11 +38,10 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.List;
 
-@Validated
 @RestController
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
-public class ResourceController {
+public class ResourceController implements ResourceControllerApi {
     private final MultipartFileDataParser multipartFileDataParser;
     private final ResourceDeletionServiceApi deletionService;
     private final ResourceDownloadServiceApi downloadService;
@@ -51,23 +50,26 @@ public class ResourceController {
     private final ResourceSearchServiceApi searchService;
     private final ResourceUploadServiceApi uploadService;
 
-    @GetMapping()
+    @Override
+    @GetMapping
     public ResourceDto getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                       @Valid GetInfoRequest getInfoRequest) {
-        return infoService.getInfo(userDetails.id(), getInfoRequest.path());
+                                       @Valid GetInfoRequest request) {
+        return infoService.getInfo(userDetails.id(), request.path());
     }
 
-    @DeleteMapping()
+    @Override
+    @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteResource(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                               @Valid DeleteRequest deleteRequest) {
-        deletionService.delete(userDetails.id(), deleteRequest.path());
+                               @Valid DeleteRequest request) {
+        deletionService.delete(userDetails.id(), request.path());
     }
 
+    @Override
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> downloadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                                  @Valid DownloadRequest downloadRequest) {
-        DownloadResult result = downloadService.download(userDetails.id(), downloadRequest.path());
+                                                                  @Valid DownloadRequest request) {
+        DownloadResult result = downloadService.download(userDetails.id(), request.path());
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(result.contentType()))
@@ -75,25 +77,28 @@ public class ResourceController {
                 .body(result.body());
     }
 
+    @Override
     @PutMapping("/move")
     public ResourceDto moveOrRenameResource(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                            @Valid MoveRequest moveRequest) {
-        return moveService.move(userDetails.id(), moveRequest.from(), moveRequest.to());
+                                            @Valid MoveRequest request) {
+        return moveService.move(userDetails.id(), request.from(), request.to());
     }
 
+    @Override
     @GetMapping("/search")
     public List<ResourceDto> searchResource(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                            @Valid SearchRequest searchRequest) {
-        return searchService.search(userDetails.id(), searchRequest.query());
+                                            @Valid SearchRequest request) {
+        return searchService.search(userDetails.id(), request.query());
     }
 
-    @PostMapping()
+    @Override
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                            @Valid UploadRequest uploadRequest,
-                                                            @RequestParam("object") List<MultipartFile> objects) {
+                                            @Valid UploadRequest request,
+                                            @RequestParam("object") List<MultipartFile> objects) {
         List<UploadObjectDto> uploadObjects = objects.stream()
-                .map(file -> multipartFileDataParser.parse(file, uploadRequest.path()))
+                .map(file -> multipartFileDataParser.parse(file, request.path()))
                 .toList();
         return uploadService.upload(userDetails.id(), uploadObjects);
     }

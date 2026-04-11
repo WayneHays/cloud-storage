@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.controller;
+package com.waynehays.cloudfilestorage.controller.directory;
 
 import com.waynehays.cloudfilestorage.dto.request.directory.CreateDirectoryRequest;
 import com.waynehays.cloudfilestorage.dto.request.directory.GetDirectoryContentRequest;
@@ -18,23 +18,24 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Validated
 @RestController
 @RequestMapping("/api/directory")
 @RequiredArgsConstructor
-public class DirectoryController {
+public class DirectoryController implements DirectoryControllerApi{
     private final DirectoryServiceApi directoryService;
 
+    @Override
     @GetMapping
     public List<ResourceDto> getContent(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                        @Valid GetDirectoryContentRequest getContentRequest) {
-        return directoryService.getContent(userDetails.id(), getContentRequest.path());
+                                                        @Valid GetDirectoryContentRequest request) {
+        return directoryService.getContent(userDetails.id(), request.path());
     }
 
+    @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResourceDto createDirectory(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                       @Valid CreateDirectoryRequest createRequest) {
-        return directoryService.createDirectory(userDetails.id(), createRequest.path());
+                                                       @Valid CreateDirectoryRequest request) {
+        return directoryService.createDirectory(userDetails.id(), request.path());
     }
 }

@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.controller;
+package com.waynehays.cloudfilestorage.controller.auth;
 
 import com.waynehays.cloudfilestorage.dto.request.auth.SignInRequest;
 import com.waynehays.cloudfilestorage.dto.request.auth.SignUpRequest;
@@ -19,7 +19,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,21 +26,21 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@Validated
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthControllerApi {
     private final UserMapper mapper;
     private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
 
+    @Override
     @PostMapping("/sign-up")
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto signUp(@RequestBody @Valid SignUpRequest signUpRequest,
-                                          HttpServletRequest request,
-                                          HttpServletResponse response) {
+                          HttpServletRequest request,
+                          HttpServletResponse response) {
         UserDto registeredUser = userService.signUp(signUpRequest);
         log.info("User registered: {}", signUpRequest.username());
 
@@ -49,16 +48,18 @@ public class AuthController {
         return registeredUser;
     }
 
+    @Override
     @PostMapping("/sign-in")
     public UserDto signIn(@RequestBody @Valid SignInRequest signInRequest,
-                                          HttpServletRequest request,
-                                          HttpServletResponse response) {
+                          HttpServletRequest request,
+                          HttpServletResponse response) {
         Authentication authentication = processLogin(signInRequest.username(), signInRequest.password(), request, response);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         return mapper.toDto(userDetails);
     }
 
-    private Authentication processLogin(String username, String password, HttpServletRequest request, HttpServletResponse response) {
+    private Authentication processLogin(String username, String password,
+                                        HttpServletRequest request, HttpServletResponse response) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
         Authentication authentication = authenticationManager.authenticate(token);
 
