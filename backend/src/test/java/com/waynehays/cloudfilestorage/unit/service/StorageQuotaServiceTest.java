@@ -49,15 +49,11 @@ class StorageQuotaServiceTest {
 
         @Test
         void shouldCreateAndSaveQuota() {
-            // given
-            StorageQuota entity = new StorageQuota();
-            when(mapper.toEntity(USER_ID, 10000L)).thenReturn(entity);
-
             // when
             service.createStorageQuota(USER_ID, 10000L);
 
             // then
-            verify(repository).save(entity);
+            verify(repository).saveAndFlush(any());
         }
     }
 

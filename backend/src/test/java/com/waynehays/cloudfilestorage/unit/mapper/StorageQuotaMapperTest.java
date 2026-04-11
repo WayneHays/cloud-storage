@@ -28,19 +28,4 @@ class StorageQuotaMapperTest {
         assertThat(result.usedSpace()).isEqualTo(500L);
         assertThat(result.storageLimit()).isEqualTo(10000L);
     }
-
-    @Test
-    void toEntity_shouldMapUserIdAndStorageLimitAndSetUsedSpaceToZero() {
-        // given
-        Long userId = 1L;
-        long storageLimit = 10000L;
-
-        // when
-        StorageQuota result = mapper.toEntity(userId, storageLimit);
-
-        // then
-        assertThat(result.getUserId()).isEqualTo(1L);
-        assertThat(result.getStorageLimit()).isEqualTo(10000L);
-        assertThat(result.getUsedSpace()).isZero();
-    }
 }

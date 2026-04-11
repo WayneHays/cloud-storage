@@ -6,6 +6,7 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
+import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -265,7 +267,19 @@ class ResourceMetadataServiceTest {
             service.saveDirectory(USER_ID, "docs/");
 
             // then
-            verify(repository).save(entity);
+            verify(repository).saveAndFlush(entity);
+        }
+
+        @Test
+        void saveDirectory_shouldThrowException() {
+            // given
+            ResourceMetadata directory = new ResourceMetadata();
+            when(mapper.toDirectoryEntity(USER_ID, "docs/")).thenReturn(directory);
+            when(repository.saveAndFlush(directory)).thenThrow(new DataIntegrityViolationException("Duplicate"));
+
+            // when & then
+            assertThatThrownBy(() -> service.saveDirectory(USER_ID, "docs/"))
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
         }
 
         @Test
