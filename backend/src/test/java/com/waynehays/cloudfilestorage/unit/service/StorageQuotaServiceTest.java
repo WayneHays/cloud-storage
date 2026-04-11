@@ -149,7 +149,7 @@ class StorageQuotaServiceTest {
             when(mapper.toDto(entity)).thenReturn(dto);
 
             // when
-            Page<StorageQuotaDto> result = service.findAllQuotas(PageRequest.of(0, 10));
+            Page<StorageQuotaDto> result = service.findAllQuotas(0, 10);
 
             // then
             assertThat(result.getContent()).hasSize(1);

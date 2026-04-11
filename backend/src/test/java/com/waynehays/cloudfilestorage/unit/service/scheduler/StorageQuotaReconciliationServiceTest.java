@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -68,7 +69,7 @@ class StorageQuotaReconciliationServiceTest {
             when(usedSpace.getTotalSize()).thenReturn(300L);
 
             when(properties.batchSize()).thenReturn(100);
-            when(quotaService.findAllQuotas(any(Pageable.class)))
+            when(quotaService.findAllQuotas(anyInt(), anyInt()))
                     .thenReturn(new PageImpl<>(List.of(quota)));
             when(metadataService.getUsedSpaceByUsers(List.of(1L)))
                     .thenReturn(List.of(usedSpace));
@@ -93,7 +94,7 @@ class StorageQuotaReconciliationServiceTest {
             when(usedSpace.getTotalSize()).thenReturn(500L);
 
             when(properties.batchSize()).thenReturn(100);
-            when(quotaService.findAllQuotas(any(Pageable.class)))
+            when(quotaService.findAllQuotas(anyInt(), anyInt()))
                     .thenReturn(new PageImpl<>(List.of(quota)));
             when(metadataService.getUsedSpaceByUsers(List.of(1L)))
                     .thenReturn(List.of(usedSpace));
@@ -111,7 +112,7 @@ class StorageQuotaReconciliationServiceTest {
             StorageQuotaDto quota = new StorageQuotaDto(1L, 500L, 10000L);
 
             when(properties.batchSize()).thenReturn(100);
-            when(quotaService.findAllQuotas(any(Pageable.class)))
+            when(quotaService.findAllQuotas(anyInt(), anyInt()))
                     .thenReturn(new PageImpl<>(List.of(quota)));
             when(metadataService.getUsedSpaceByUsers(List.of(1L)))
                     .thenReturn(List.of());
@@ -138,16 +139,16 @@ class StorageQuotaReconciliationServiceTest {
                     List.of(quota2), PageRequest.of(1, 1), 2);
 
             when(properties.batchSize()).thenReturn(1);
-            when(quotaService.findAllQuotas(PageRequest.of(0, 1))).thenReturn(firstPage);
-            when(quotaService.findAllQuotas(PageRequest.of(1, 1))).thenReturn(secondPage);
+            when(quotaService.findAllQuotas(0, 1)).thenReturn(firstPage);
+            when(quotaService.findAllQuotas(1, 1)).thenReturn(secondPage);
             when(metadataService.getUsedSpaceByUsers(anyList())).thenReturn(List.of());
 
             // when
             service.reconcileStorageQuotas();
 
             // then
-            verify(quotaService).findAllQuotas(PageRequest.of(0, 1));
-            verify(quotaService).findAllQuotas(PageRequest.of(1, 1));
+            verify(quotaService).findAllQuotas(0, 1);
+            verify(quotaService).findAllQuotas(1, 1);
         }
     }
 
@@ -158,7 +159,7 @@ class StorageQuotaReconciliationServiceTest {
         void shouldStopOnPageFailure() {
             // given
             when(properties.batchSize()).thenReturn(100);
-            when(quotaService.findAllQuotas(any(Pageable.class)))
+            when(quotaService.findAllQuotas(anyInt(), anyInt()))
                     .thenThrow(new RuntimeException("DB error"));
 
             // when
