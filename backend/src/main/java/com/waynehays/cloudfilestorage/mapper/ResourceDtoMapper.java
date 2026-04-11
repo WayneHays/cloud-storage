@@ -11,18 +11,13 @@ import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface ResourceDtoMapper {
-    String SLASH = "/";
 
     default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
         String name = dto.isFile()
                 ? dto.name()
-                : dto.name() + SLASH;
+                : PathUtils.ensureTrailingSlash(dto.name());
 
-        return createDto(
-                dto.path(),
-                name,
-                dto.size(),
-                dto.type()
+        return createDto(dto.path(), name, dto.size(), dto.type()
         );
     }
 
@@ -38,7 +33,7 @@ public interface ResourceDtoMapper {
     default ResourceDto directoryFromPath(String path) {
         return createDto(
                 path,
-                PathUtils.extractFilename(path) + SLASH,
+                PathUtils.ensureTrailingSlash(PathUtils.extractFilename(path)),
                 null,
                 ResourceType.DIRECTORY);
     }
