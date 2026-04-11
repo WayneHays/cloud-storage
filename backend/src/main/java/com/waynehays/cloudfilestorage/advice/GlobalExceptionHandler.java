@@ -16,6 +16,7 @@ import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -182,7 +183,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ResourceStorageOperationException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorDto handleResourceStorageException(ResourceStorageOperationException e) {
+    public ErrorDto handleResourceStorageOperationException(ResourceStorageOperationException e) {
         log.error("{}: {}", e.getMessage(), getCurrentUserInfo(), e);
         return createErrorDto("Failed to process operation");
     }
@@ -209,7 +210,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private record UserInfo(Long id, String username) {
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "user='%s', id=%s".formatted(username, id != null ? id : "N/A");
         }
     }
