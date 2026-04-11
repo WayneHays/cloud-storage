@@ -4,7 +4,6 @@ import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -16,7 +15,7 @@ public interface StorageQuotaServiceApi {
 
     void releaseSpace(Long userId, long bytes);
 
-    Page<StorageQuotaDto> findAllQuotas(Pageable pageable);
+    Page<StorageQuotaDto> findAllQuotas(int page, int limit);
 
     void batchUpdateUsedSpace(List<UsedSpaceCorrectionDto> corrections);
 

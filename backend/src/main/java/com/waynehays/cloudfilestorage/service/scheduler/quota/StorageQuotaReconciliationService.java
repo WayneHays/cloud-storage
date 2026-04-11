@@ -54,8 +54,7 @@ public class StorageQuotaReconciliationService implements StorageQuotaReconcilia
 
     private Page<StorageQuotaDto> reconcileQuotas(int page) {
         return transactionTemplate.execute(status -> {
-            Page<StorageQuotaDto> quotas = quotaService.findAllQuotas(
-                    PageRequest.of(page, properties.batchSize()));
+            Page<StorageQuotaDto> quotas = quotaService.findAllQuotas(page, properties.batchSize());
             List<Long> userIds = quotas.stream()
                     .map(StorageQuotaDto::userId)
                     .toList();

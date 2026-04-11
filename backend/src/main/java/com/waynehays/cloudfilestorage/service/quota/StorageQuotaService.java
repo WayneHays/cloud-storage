@@ -10,6 +10,7 @@ import com.waynehays.cloudfilestorage.mapper.StorageQuotaMapper;
 import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,8 +55,8 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
     }
 
     @Override
-    public Page<StorageQuotaDto> findAllQuotas(Pageable pageable) {
-        return repository.findAll(pageable)
+    public Page<StorageQuotaDto> findAllQuotas(int page, int limit) {
+        return repository.findAll(PageRequest.of(page, limit))
                 .map(mapper::toDto);
     }
 
