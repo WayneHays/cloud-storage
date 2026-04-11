@@ -18,6 +18,7 @@ public class MinioHealthIndicator implements HealthIndicator {
     @Override
     public @Nullable Health health() {
         String bucketName = properties.bucketName();
+        String key = "bucket";
         try {
             minioClient.bucketExists(
                     BucketExistsArgs.builder()
@@ -25,11 +26,11 @@ public class MinioHealthIndicator implements HealthIndicator {
                             .build()
             );
             return Health.up()
-                    .withDetail("bucket", bucketName)
+                    .withDetail(key, bucketName)
                     .build();
         } catch (Exception e) {
             return Health.down(e)
-                    .withDetail("bucket", bucketName)
+                    .withDetail(key, bucketName)
                     .build();
         }
     }
