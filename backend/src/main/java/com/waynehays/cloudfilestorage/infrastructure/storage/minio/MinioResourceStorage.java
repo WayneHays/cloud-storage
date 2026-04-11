@@ -47,6 +47,12 @@ public class MinioResourceStorage implements ResourceStorageApi {
         void execute() throws Exception;
     }
 
+    private record BatchDeleteResult(List<String> failedKeys, boolean hasProcessingError) {
+        boolean hasFailures() {
+            return !failedKeys.isEmpty() || hasProcessingError;
+        }
+    }
+
     @Override
     @Retry(name = "minioStorage")
     @CircuitBreaker(name = "minioStorage")
@@ -191,25 +197,31 @@ public class MinioResourceStorage implements ResourceStorageApi {
                         .build()
         );
 
+        BatchDeleteResult result = collectFailures(results);
+
+        if (result.hasFailures()) {
+            log.error("Failed to delete objects: {}", result.failedKeys());
+            throw new ResourceStorageOperationException("Failed to delete some objects: " + result.failedKeys());
+        }
+    }
+
+    private BatchDeleteResult collectFailures(Iterable<Result<DeleteError>> results) {
         List<String> failedKeys = new ArrayList<>();
+        boolean hasProcessingError = false;
 
         for (Result<DeleteError> result : results) {
             try {
                 DeleteError error = result.get();
                 failedKeys.add(error.objectName());
-                log.error("Failed to delete object: {}", error.objectName());
             } catch (IOException e) {
                 throw new ResourceStorageTransientException("Failed to process batch delete results", e);
             } catch (Exception e) {
                 log.error("Error while processing delete object result", e);
+                hasProcessingError = true;
             }
         }
 
-        batch.clear();
-
-        if (!failedKeys.isEmpty()) {
-            throw new ResourceStorageOperationException("Failed to delete objects: " + failedKeys);
-        }
+        return new BatchDeleteResult(failedKeys, hasProcessingError);
     }
 
     private void executeWithExceptionHandling(VoidStorageOperation operation, String errorMessage) {
