@@ -40,7 +40,8 @@ dependencies {
 	implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.aspectj:aspectjweaver'
-	implementation'com.squareup.okhttp3:okhttp:4.12.0'
+	implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
 	compileOnly 'org.projectlombok:lombok'
 
