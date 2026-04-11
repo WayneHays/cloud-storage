@@ -39,8 +39,8 @@ public class CleanupService implements CleanupServiceApi {
         log.info("Deletion cleanup completed: {} resources removed", totalCleaned);
     }
 
-    private int executeCleanup(int batchSize) {
-        List<ResourceMetadataDto> files = metadataService.findFilesMarkedForDeletion(batchSize);
+    private int executeCleanup(int limit) {
+        List<ResourceMetadataDto> files = metadataService.findFilesMarkedForDeletion(limit);
 
         if (files.isEmpty()) {
             return 0;
