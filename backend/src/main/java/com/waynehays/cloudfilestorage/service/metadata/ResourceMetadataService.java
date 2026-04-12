@@ -68,6 +68,11 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
+    public Set<String> findMissingPaths(Long userId, Set<String> paths) {
+        return repository.findMissingPaths(userId, paths);
+    }
+
+    @Override
     public List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds) {
         return repository.sumFileSizesGroupByUserId(userIds, ResourceType.FILE);
     }
@@ -80,32 +85,14 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public void saveFiles(Long userId, List<NewFileDto> files) {
-        List<Object[]> params = files.stream()
-                .map(f -> new Object[]{
-                        userId,
-                        f.path(),
-                        f.parentPath(),
-                        f.name(),
-                        f.size(),
-                })
-                .toList();
-        repository.saveFiles(params);
+    public void saveFiles(Long userId, List<FileRow> files) {
+        repository.saveFiles(userId, files);
     }
 
     @Override
     @Transactional
-    public void saveDirectories(Long userId, List<NewDirectoryDto> newDirectories) {
-        List<Object[]> params = newDirectories.stream()
-                .map(d -> new Object[]{
-                        userId,
-                        d.path(),
-                        d.parentPath(),
-                        d.name()
-                })
-                .toList();
-
-        repository.saveDirectories(params);
+    public void saveDirectories(Long userId, List<DirectoryRow> directories) {
+        repository.saveDirectories(userId, directories);
     }
 
     @Override
@@ -152,6 +139,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     @Override
     @Transactional
     public void deleteByIds(List<Long> ids) {
-        repository.deleteAllByIds(ids);
+        repository.deleteByIds(ids);
     }
 }

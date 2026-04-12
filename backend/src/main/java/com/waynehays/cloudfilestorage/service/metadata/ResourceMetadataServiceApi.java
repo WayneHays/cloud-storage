@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 
@@ -22,13 +22,15 @@ public interface ResourceMetadataServiceApi {
 
     Set<String> findExistingPaths(Long userId, Set<String> paths);
 
+    Set<String> findMissingPaths(Long userId, Set<String> paths);
+
     List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds);
 
     long markForDeletionAndSumFileSize(Long userId, String path);
 
-    void saveFiles(Long userId, List<NewFileDto> files);
+    void saveFiles(Long userId, List<FileRow> files);
 
-    void saveDirectories(Long userId, List<NewDirectoryDto> newDirectories);
+    void saveDirectories(Long userId, List<DirectoryRow> directories);
 
     void saveDirectory(Long userId, String path);
 
