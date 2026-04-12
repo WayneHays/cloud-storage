@@ -7,13 +7,13 @@ import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationExceptio
 import com.waynehays.cloudfilestorage.infrastructure.storage.KeyResolverApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class ResourceStorageService implements ResourceStorageServiceApi {
     private final ResourceStorageApi storage;
