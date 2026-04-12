@@ -1,13 +1,13 @@
 package com.waynehays.cloudfilestorage.service.resource.upload;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.mapper.NewResourceMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploadService implements ResourceUploadServiceApi {
-    private final NewResourceMapper newResourceMapper;
+    private final ResourceRowMapper resourceRowMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
     private final ResourceStorageService storageService;
@@ -118,6 +118,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
 
     private void saveFileMetadata(Long userId, List<UploadObjectDto> objects, UploadContext context) {
         List<NewFileDto> newFiles = newResourceMapper.toNewFiles(objects);
+        List<FileRow> newFiles = resourceRowMapper.toFileRows(objects);
         metadataService.saveFiles(userId, newFiles);
         objects.forEach(o -> context.addMetadataPath(o.fullPath()));
     }

@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;

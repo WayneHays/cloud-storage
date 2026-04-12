@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;
 
@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Set;
 
 @Mapper(componentModel = "spring")
-public interface NewResourceMapper {
+public interface ResourceRowMapper {
 
-    default NewFileDto toNewFile(UploadObjectDto uploadObject) {
+    default FileRow toFileRow(UploadObjectDto uploadObject) {
         String path = uploadObject.fullPath();
-        return new NewFileDto(
+        return new FileRow(
                 path,
                 PathUtils.extractParentPath(path),
                 PathUtils.extractFilename(path),
@@ -22,15 +22,15 @@ public interface NewResourceMapper {
         );
     }
 
-    default NewDirectoryDto toNewDirectory(String path) {
-        return new NewDirectoryDto(
+    default DirectoryRow toDirectoryRow(String path) {
+        return new DirectoryRow(
                 path,
                 PathUtils.extractParentPath(path),
                 PathUtils.extractFilename(path)
         );
     }
 
-    List<NewFileDto> toNewFiles(List<UploadObjectDto> uploadObjects);
+    List<FileRow> toFileRows(List<UploadObjectDto> uploadObjects);
 
-    List<NewDirectoryDto> toNewDirectories(Set<String> paths);
+    List<DirectoryRow> toDirectoryRows(Set<String> paths);
 }

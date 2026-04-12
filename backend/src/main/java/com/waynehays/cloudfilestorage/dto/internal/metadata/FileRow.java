@@ -1,8 +1,9 @@
 package com.waynehays.cloudfilestorage.dto.internal.metadata;
 
-public record NewDirectoryDto(
+public record FileRow(
         String path,
         String parentPath,
-        String name
+        String name,
+        long size
 ) {
 }

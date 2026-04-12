@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.dto.internal.quota;
 
-public record UsedSpaceCorrectionDto(
+public record SpaceCorrectionDto(
         Long userId,
         long actualUsedSpace
 ) {
