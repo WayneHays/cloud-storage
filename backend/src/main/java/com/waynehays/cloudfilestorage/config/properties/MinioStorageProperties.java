@@ -21,7 +21,7 @@ public record MinioStorageProperties(
         String bucketName,
 
         @NotNull(message = "Batch size must be set")
-        @Min(value = 3, message = "Batch size must be >= 3")
+        @Min(value = 2, message = "Batch size must be >= 3")
         @Max(value = 1000, message = "Batch size must be <= 1000")
         Integer deletionBatchSize,
 
