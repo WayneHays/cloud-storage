@@ -1,10 +1,8 @@
 package com.waynehays.cloudfilestorage.unit.archiver;
 
-import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.archiver.ZipArchiver;
-import com.waynehays.cloudfilestorage.config.properties.ArchiveProperties;
+import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.exception.ArchiveException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,20 +19,11 @@ import java.util.zip.ZipInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class ZipArchiverTest {
 
-    private ZipArchiver zipArchiver;
-
-    @BeforeEach
-    void setUp() {
-        ArchiveProperties archiveProperties = mock(ArchiveProperties.class);
-        lenient().when(archiveProperties.bufferSize()).thenReturn(8192);
-        zipArchiver = new ZipArchiver(archiveProperties);
-    }
+    private ZipArchiver zipArchiver = new ZipArchiver();
 
     @Nested
     class ArchiveFiles {
