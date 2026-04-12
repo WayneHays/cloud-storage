@@ -1,7 +1,7 @@
-package com.waynehays.cloudfilestorage.unit.service;
+package com.waynehays.cloudfilestorage.unit.service.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -223,38 +222,25 @@ class ResourceMetadataServiceTest {
         @Test
         void saveFiles_shouldConvertToParamsAndDelegate() {
             // given
-            NewFileDto file = new NewFileDto("docs/file.txt", "docs/", "file.txt", 100L);
+            FileRow file = new FileRow("docs/file.txt", "docs/", "file.txt", 100L);
 
             // when
             service.saveFiles(USER_ID, List.of(file));
 
             // then
-            verify(repository).saveFiles(argThat(params -> {
-                Object[] row = params.getFirst();
-                return row[0].equals(USER_ID)
-                        && row[1].equals("docs/file.txt")
-                        && row[2].equals("docs/")
-                        && row[3].equals("file.txt")
-                        && row[4].equals(100L);
-            }));
+            verify(repository).saveFiles(USER_ID, List.of(file));
         }
 
         @Test
         void saveDirectories_shouldConvertToParamsAndDelegate() {
             // given
-            NewDirectoryDto dir = new NewDirectoryDto("docs/reports/", "docs/", "reports");
+            DirectoryRow directory = new DirectoryRow("docs/reports/", "docs/", "reports");
 
             // when
-            service.saveDirectories(USER_ID, List.of(dir));
+            service.saveDirectories(USER_ID, List.of(directory));
 
             // then
-            verify(repository).saveDirectories(argThat(params -> {
-                Object[] row = params.getFirst();
-                return row[0].equals(USER_ID)
-                        && row[1].equals("docs/reports/")
-                        && row[2].equals("docs/")
-                        && row[3].equals("reports");
-            }));
+            verify(repository).saveDirectories(USER_ID, List.of(directory));
         }
 
         @Test
@@ -356,7 +342,7 @@ class ResourceMetadataServiceTest {
             service.deleteByIds(ids);
 
             // then
-            verify(repository).deleteAllByIds(ids);
+            verify(repository).deleteByIds(ids);
         }
     }
 }

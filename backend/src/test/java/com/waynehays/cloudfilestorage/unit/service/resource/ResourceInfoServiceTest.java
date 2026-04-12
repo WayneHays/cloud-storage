@@ -7,6 +7,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.info.ResourceInfoService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +33,7 @@ class ResourceInfoServiceTest {
     private static final Long USER_ID = 1L;
 
     @Test
+    @DisplayName("Should return mapped resource")
     void shouldReturnMappedResource() {
         // given
         ResourceMetadataDto metadata = new ResourceMetadataDto(
@@ -50,6 +52,7 @@ class ResourceInfoServiceTest {
     }
 
     @Test
+    @DisplayName("Should throw exception when resource not found in database")
     void shouldThrowWhenResourceNotFound() {
         // given
         when(metadataService.findOrThrow(USER_ID, "missing.txt"))

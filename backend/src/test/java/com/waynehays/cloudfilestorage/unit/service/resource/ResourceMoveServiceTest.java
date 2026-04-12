@@ -11,6 +11,7 @@ import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceAp
 import com.waynehays.cloudfilestorage.service.resource.move.ResourceMoveService;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +61,7 @@ class ResourceMoveServiceTest {
     class MoveFile {
 
         @Test
+        @DisplayName("Should move resource in storage and then update metadata in database")
         void shouldMoveStorageThenUpdateMetadata() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
@@ -85,6 +87,7 @@ class ResourceMoveServiceTest {
     class MoveDirectory {
 
         @Test
+        @DisplayName("Should move all files in storage and then update metadata in database")
         void shouldMoveAllFilesThenUpdateMetadata() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
@@ -109,6 +112,7 @@ class ResourceMoveServiceTest {
         }
 
         @Test
+        @DisplayName("Should rollback when move resource in storage fails")
         void shouldRollbackOnStorageFailure() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
@@ -140,6 +144,7 @@ class ResourceMoveServiceTest {
     class Validation {
 
         @Test
+        @DisplayName("Should throw exception when move directory to file ")
         void shouldThrowWhenMovingDirectoryToFile() {
             // when & then
             assertThatThrownBy(() -> service.move(USER_ID, "docs/", "file.txt"))
@@ -148,6 +153,7 @@ class ResourceMoveServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw exception when move directory into itself")
         void shouldThrowWhenMovingDirectoryIntoItself() {
             // when & then
             assertThatThrownBy(() -> service.move(USER_ID, "docs/", "docs/sub/"))
@@ -156,6 +162,7 @@ class ResourceMoveServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw exception when metadata not found in database")
         void shouldThrowWhenResourceNotFound() {
             // given
             when(metadataService.findOrThrow(USER_ID, "missing.txt"))

@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.unit.mapper;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewDirectoryDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.mapper.NewResourceMapper;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -13,19 +13,19 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class NewResourceMapperTest {
+class ResourceRowMapperTest {
 
-    private final NewResourceMapper mapper = Mappers.getMapper(NewResourceMapper.class);
+    private final ResourceRowMapper mapper = Mappers.getMapper(ResourceRowMapper.class);
 
     @Test
-    void toNewFile_shouldMapPathParentPathNameAndSize() {
+    void toFile_Row_shouldMapPathParentPathNameAndSize() {
         // given
         UploadObjectDto uploadObject = new UploadObjectDto(
                 "report.pdf", "report.pdf", "docs/", "docs/report.pdf",
                 2048L, "application/pdf", InputStream::nullInputStream);
 
         // when
-        NewFileDto result = mapper.toNewFile(uploadObject);
+        FileRow result = mapper.toFileRow(uploadObject);
 
         // then
         assertThat(result.path()).isEqualTo("docs/report.pdf");
@@ -35,14 +35,14 @@ class NewResourceMapperTest {
     }
 
     @Test
-    void toNewFile_shouldHandleRootLevelFile() {
+    void toFile_shouldHandleRootLevelFileRow() {
         // given
         UploadObjectDto uploadObject = new UploadObjectDto(
                 "file.txt", "file.txt", "", "file.txt",
                 100L, "text/plain", InputStream::nullInputStream);
 
         // when
-        NewFileDto result = mapper.toNewFile(uploadObject);
+        FileRow result = mapper.toFileRow(uploadObject);
 
         // then
         assertThat(result.path()).isEqualTo("file.txt");
@@ -51,7 +51,7 @@ class NewResourceMapperTest {
     }
 
     @Test
-    void toNewFiles_shouldMapList() {
+    void toFileRows_shouldMapList() {
         // given
         UploadObjectDto first = new UploadObjectDto(
                 "a.txt", "a.txt", "docs/", "docs/a.txt",
@@ -61,21 +61,21 @@ class NewResourceMapperTest {
                 200L, "text/plain", InputStream::nullInputStream);
 
         // when
-        List<NewFileDto> result = mapper.toNewFiles(List.of(first, second));
+        List<FileRow> result = mapper.toFileRows(List.of(first, second));
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(NewFileDto::name)
+        assertThat(result).extracting(FileRow::name)
                 .containsExactly("a.txt", "b.txt");
     }
 
     @Test
-    void toNewDirectory_shouldMapPathParentPathAndName() {
+    void toDirectory_Row_shouldMapPathParentPathAndName() {
         // given
         String path = "docs/reports/";
 
         // when
-        NewDirectoryDto result = mapper.toNewDirectory(path);
+        DirectoryRow result = mapper.toDirectoryRow(path);
 
         // then
         assertThat(result.path()).isEqualTo("docs/reports/");
@@ -84,12 +84,12 @@ class NewResourceMapperTest {
     }
 
     @Test
-    void toNewDirectory_shouldHandleRootLevelDirectory() {
+    void toDirectory_shouldHandleRootLevelDirectoryRow() {
         // given
         String path = "docs/";
 
         // when
-        NewDirectoryDto result = mapper.toNewDirectory(path);
+        DirectoryRow result = mapper.toDirectoryRow(path);
 
         // then
         assertThat(result.path()).isEqualTo("docs/");
@@ -98,16 +98,16 @@ class NewResourceMapperTest {
     }
 
     @Test
-    void toNewDirectories_shouldMapSet() {
+    void toDirectoryRows_shouldMapSet() {
         // given
         Set<String> paths = Set.of("docs/", "images/");
 
         // when
-        List<NewDirectoryDto> result = mapper.toNewDirectories(paths);
+        List<DirectoryRow> result = mapper.toDirectoryRows(paths);
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(NewDirectoryDto::name)
+        assertThat(result).extracting(DirectoryRow::name)
                 .containsExactlyInAnyOrder("docs", "images");
     }
 }

@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.unit.service;
+package com.waynehays.cloudfilestorage.unit.service.directory;
 
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;

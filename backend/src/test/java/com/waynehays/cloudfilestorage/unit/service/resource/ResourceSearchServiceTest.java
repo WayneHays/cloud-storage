@@ -7,6 +7,7 @@ import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.search.ResourceSearchService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,6 +37,7 @@ class ResourceSearchServiceTest {
     private static final Long USER_ID = 1L;
 
     @Test
+    @DisplayName("Should return mapped results")
     void shouldReturnMappedResults() {
         // given
         ResourceMetadataDto metadata = new ResourceMetadataDto(
@@ -57,6 +59,7 @@ class ResourceSearchServiceTest {
     }
 
     @Test
+    @DisplayName("Should return empty list when nothing found")
     void shouldReturnEmptyListWhenNothingFound() {
         // given
         when(properties.limit()).thenReturn(20);

@@ -1,14 +1,15 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.download.ResourceDownloadService;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +46,7 @@ class ResourceDownloadServiceTest {
     class DownloadFile {
 
         @Test
+        @DisplayName("Should return correct DownloadResult with file name")
         void shouldReturnDownloadResultWithFilename() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
@@ -69,6 +71,7 @@ class ResourceDownloadServiceTest {
     class DownloadDirectory {
 
         @Test
+        @DisplayName("Should return correct DownloadResult with archive name")
         void shouldReturnDownloadResultWithArchiveFilename() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
@@ -94,6 +97,7 @@ class ResourceDownloadServiceTest {
     }
 
     @Test
+    @DisplayName("Should throw exception when metadata not found in database")
     void shouldThrowWhenResourceNotFound() {
         // given
         when(metadataService.findOrThrow(USER_ID, "missing.txt"))

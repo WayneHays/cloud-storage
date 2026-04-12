@@ -7,6 +7,7 @@ import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceAp
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.deletion.ResourceDeletionService;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +43,11 @@ class ResourceDeletionServiceTest {
     class DeleteFile {
 
         @Test
-        void shouldMarkThenDeleteFromStorageThenDeleteMetadataThenReleaseQuota() {
+        @DisplayName("""
+                Should mark for deletion, then delete from storage, then delete metadata from database,
+                then release quota
+                """)
+        void shouldCorrectlyDeleteFile() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
                     1L, USER_ID, "docs/file.txt", "docs/", "file.txt",
@@ -66,6 +71,10 @@ class ResourceDeletionServiceTest {
     class DeleteDirectory {
 
         @Test
+        @DisplayName("""
+                Should mark for deletion and sum content sizes,
+                then delete from storage, then delete metadata from database, then release quota
+                """)
         void shouldMarkAndSumThenDeleteFromStorageThenDeleteMetadataThenReleaseQuota() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
@@ -87,6 +96,7 @@ class ResourceDeletionServiceTest {
         }
 
         @Test
+        @DisplayName("Should not release quota space when directory is empty")
         void shouldSkipReleaseSpaceWhenDirectoryIsEmpty() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
@@ -106,6 +116,7 @@ class ResourceDeletionServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw exception when metadata not found")
         void shouldThrowWhenResourceNotFound() {
             // given
             when(metadataService.findOrThrow(USER_ID, "missing/"))

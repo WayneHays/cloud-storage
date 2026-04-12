@@ -43,15 +43,12 @@ public abstract class AbstractRestControllerBaseTest extends AbstractIntegration
     @Autowired
     protected ResourceMetadataRepository metadataRepository;
 
-    @Autowired
-    protected MinioTestCleaner minioCleaner;
-
     @AfterEach
     void cleanStorage() {
         metadataRepository.deleteAll();
         quotaRepository.deleteAll();
         userRepository.deleteAll();
-        minioCleaner.deleteAll();
+        cleanMinioBucket();
     }
 
     protected String buildBody(String username, String password) {

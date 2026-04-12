@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.unit.service;
+package com.waynehays.cloudfilestorage.unit.service.storage;
 
 import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;

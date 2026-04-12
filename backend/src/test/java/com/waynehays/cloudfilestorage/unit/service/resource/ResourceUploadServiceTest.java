@@ -1,19 +1,21 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.NewFileDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.mapper.NewResourceMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.upload.ResourceUploadService;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +31,11 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -41,7 +45,7 @@ class ResourceUploadServiceTest {
 
 
     @Mock
-    private NewResourceMapper newResourceMapper;
+    private ResourceRowMapper resourceRowMapper;
 
     @Mock
     private ResourceDtoMapper resourceDtoMapper;
@@ -63,7 +67,7 @@ class ResourceUploadServiceTest {
     void setUp() {
         ExecutorService uploadExecutor = Executors.newSingleThreadExecutor();
         service = new ResourceUploadService(
-                newResourceMapper, resourceDtoMapper, uploadExecutor,
+                resourceRowMapper, resourceDtoMapper, uploadExecutor,
                 storageService, quotaService, metadataService);
     }
 
@@ -71,23 +75,26 @@ class ResourceUploadServiceTest {
     class SuccessfulUpload {
 
         @Test
-        void shouldReserveQuotaUploadAndSaveMetadata() {
+        @DisplayName("Should reserve quota, upload resource and save metadata")
+        void shouldUploadResource() {
             // given
             UploadObjectDto object = new UploadObjectDto(
                     "file.txt", "file.txt", "docs/", "docs/file.txt",
                     100L, "text/plain", InputStream::nullInputStream);
             ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-            NewFileDto newFile = new NewFileDto("docs/file.txt", "docs/", "file.txt", 100L);
+            FileRow newFile = new FileRow("docs/file.txt", "docs/", "file.txt", 100L);
 
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(newResourceMapper.toNewFiles(List.of(object)))
+            when(resourceRowMapper.toFileRows(List.of(object)))
                     .thenReturn(List.of(newFile));
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of("docs/"));
             when(resourceDtoMapper.directoriesFromPaths(anySet()))
                     .thenReturn(List.of());
-            when(newResourceMapper.toNewDirectories(anySet()))
+            when(resourceRowMapper.toDirectoryRows(anySet()))
                     .thenReturn(List.of());
 
             // when
@@ -105,7 +112,8 @@ class ResourceUploadServiceTest {
     class Validation {
 
         @Test
-        void shouldThrowWhenDuplicatePathsInRequest() {
+        @DisplayName("Should throw exception when duplicate paths in upload request")
+        void shouldThrowWhenDuplicate() {
             // given
             UploadObjectDto object1 = new UploadObjectDto(
                     "file.txt", "file.txt", "docs/", "docs/file.txt",
@@ -122,7 +130,8 @@ class ResourceUploadServiceTest {
         }
 
         @Test
-        void shouldThrowWhenResourceAlreadyExists() {
+        @DisplayName("Should throw exception when resource already exists")
+        void shouldThrowWhenExists() {
             // given
             UploadObjectDto object = new UploadObjectDto(
                     "file.txt", "file.txt", "docs/", "docs/file.txt",
@@ -139,6 +148,7 @@ class ResourceUploadServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw exception when not enough storage space")
         void shouldThrowWhenNotEnoughQuota() {
             // given
             UploadObjectDto object = new UploadObjectDto(
@@ -161,6 +171,7 @@ class ResourceUploadServiceTest {
     class Rollback {
 
         @Test
+        @DisplayName("Should rollback storage when storage save fails")
         void shouldRollbackOnStorageFailure() {
             // given
             UploadObjectDto object = new UploadObjectDto(
@@ -179,7 +190,8 @@ class ResourceUploadServiceTest {
         }
 
         @Test
-        void shouldRollbackMetadataAndStorageOnMetadataSaveFailure() {
+        @DisplayName("Should rollback metadata and storage when metadata save fails")
+        void shouldRollbackOnMetadataFailure() {
             // given
             UploadObjectDto object = new UploadObjectDto(
                     "file.txt", "file.txt", "docs/", "docs/file.txt",
@@ -190,7 +202,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(newResourceMapper.toNewFiles(anyList()))
+            when(resourceRowMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             doThrow(new RuntimeException("DB error"))
                     .when(metadataService).saveFiles(eq(USER_ID), anyList());
@@ -200,6 +212,69 @@ class ResourceUploadServiceTest {
                     .isInstanceOf(RuntimeException.class);
             verify(storageService).deleteObjects(eq(USER_ID), anyList());
             verify(quotaService).releaseSpace(USER_ID, 100L);
+        }
+    }
+
+    @Nested
+    class CreateMissingDirectories {
+
+        @Test
+        @DisplayName("Should save only missing directories")
+        void shouldSaveOnlyMissingDirectories() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "docs/sub/", "docs/sub/file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto = new ResourceDto("docs/sub/", "file.txt", 100L, ResourceType.FILE);
+            List<DirectoryRow> missingRows = List.of(
+                    new DirectoryRow("docs/sub/", "docs/", "sub")
+            );
+
+            when(resourceDtoMapper.fileFromPath("docs/sub/file.txt", 100L))
+                    .thenReturn(fileDto);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of("docs/sub/"));
+            when(resourceRowMapper.toDirectoryRows(Set.of("docs/sub/")))
+                    .thenReturn(missingRows);
+            when(resourceDtoMapper.directoriesFromPaths(anySet()))
+                    .thenReturn(List.of());
+
+            // when
+            service.upload(USER_ID, List.of(object));
+
+            // then
+            verify(resourceRowMapper).toDirectoryRows(Set.of("docs/sub/"));
+            verify(metadataService).saveDirectories(USER_ID, missingRows);
+        }
+
+        @Test
+        @DisplayName("Should not save directories when all already exists")
+        void shouldNotSaveDirectoriesWhenAllAlreadyExists() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "docs/", "docs/file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
+
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
+                    .thenReturn(fileDto);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());  // все директории уже есть
+
+            // when
+            service.upload(USER_ID, List.of(object));
+
+            // then
+            verify(metadataService, never()).saveDirectories(anyLong(), anyList());
+            verify(resourceRowMapper, never()).toDirectoryRows(anySet());
         }
     }
 }

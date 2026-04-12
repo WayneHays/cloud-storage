@@ -1,8 +1,8 @@
-package com.waynehays.cloudfilestorage.unit.service;
+package com.waynehays.cloudfilestorage.unit.service.quota;
 
+import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
@@ -25,7 +25,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -162,22 +161,16 @@ class StorageQuotaServiceTest {
         @Test
         void shouldConvertToParamsAndDelegate() {
             // given
-            List<UsedSpaceCorrectionDto> corrections = List.of(
-                    new UsedSpaceCorrectionDto(1L, 500L),
-                    new UsedSpaceCorrectionDto(2L, 300L)
+            List<SpaceCorrectionDto> corrections = List.of(
+                    new SpaceCorrectionDto(1L, 500L),
+                    new SpaceCorrectionDto(2L, 300L)
             );
 
             // when
             service.batchUpdateUsedSpace(corrections);
 
             // then
-            verify(repository).batchUpdateUsedSpace(argThat(params -> {
-                Object[] first = params.get(0);
-                Object[] second = params.get(1);
-                return params.size() == 2
-                        && first[0].equals(500L) && first[1].equals(1L)
-                        && second[0].equals(300L) && second[1].equals(2L);
-            }));
+            verify(repository).batchUpdateUsedSpace(corrections);
         }
     }
 
@@ -196,13 +189,7 @@ class StorageQuotaServiceTest {
             service.batchDecreaseUsedSpace(releases);
 
             // then
-            verify(repository).batchDecreaseUsedSpace(argThat(params -> {
-                Object[] first = params.get(0);
-                Object[] second = params.get(1);
-                return params.size() == 2
-                        && first[0].equals(100L) && first[1].equals(1L)
-                        && second[0].equals(200L) && second[1].equals(2L);
-            }));
+            verify(repository).batchDecreaseUsedSpace(releases);
         }
     }
 }
