@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.service.scheduler.quota;
 
 import com.waynehays.cloudfilestorage.config.properties.StorageQuotaProperties;
+import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +58,7 @@ public class StorageQuotaReconciliationService implements StorageQuotaReconcilia
                     .map(StorageQuotaDto::userId)
                     .toList();
             Map<Long, Long> actualUsage = getActualUsageByUsers(userIds);
-            List<UsedSpaceCorrectionDto> corrections = new ArrayList<>();
+            List<SpaceCorrectionDto> corrections = new ArrayList<>();
 
             collectMismatches(quotas, actualUsage, corrections);
 
@@ -72,13 +72,13 @@ public class StorageQuotaReconciliationService implements StorageQuotaReconcilia
 
     private void collectMismatches(Page<StorageQuotaDto> quotas,
                                    Map<Long, Long> actualUsage,
-                                   List<UsedSpaceCorrectionDto> corrections) {
+                                   List<SpaceCorrectionDto> corrections) {
         quotas.forEach(q -> {
             long actual = actualUsage.getOrDefault(q.userId(), 0L);
             if (q.usedSpace() != actual) {
                 log.warn("Quota mismatch for user: {}, stored={}, actual={}",
                         q.userId(), q.usedSpace(), actual);
-                corrections.add(new UsedSpaceCorrectionDto(q.userId(), actual));
+                corrections.add(new SpaceCorrectionDto(q.userId(), actual));
             }
         });
     }
