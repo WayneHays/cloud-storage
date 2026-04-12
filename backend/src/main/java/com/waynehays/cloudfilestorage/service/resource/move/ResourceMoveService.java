@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.service.resource.move;
 
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.exception.ApplicationException;
 import com.waynehays.cloudfilestorage.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
@@ -43,12 +44,13 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
     }
 
     private void validateMove(Long userId, String pathFrom, String pathTo) {
-        if (PathUtils.isDirectory(pathFrom) && PathUtils.isFile(pathTo)) {
-            throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
-        }
-
-        if (PathUtils.isDirectory(pathFrom) && pathTo.startsWith(pathFrom)) {
-            throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
+        if (PathUtils.isDirectory(pathFrom)) {
+            if (PathUtils.isFile(pathTo)) {
+                throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
+            }
+            if (pathTo.startsWith(pathFrom)) {
+                throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
+            }
         }
 
         Set<String> existing = metadataService.findExistingPaths(userId, Set.of(pathTo));
@@ -60,9 +62,16 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
 
     private void moveFile(Long userId, String pathFrom, String pathTo) {
         log.info("Start move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
+        MoveContext context = new MoveContext();
 
-        storageService.moveObject(userId, pathFrom, pathTo);
-        metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+        try {
+            storageService.moveObject(userId, pathFrom, pathTo);
+            context.addMovedObject(pathFrom, pathTo);
+            metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+        } catch (Exception e) {
+            rollback(userId, context);
+            throw e;
+        }
 
         log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
@@ -97,7 +106,11 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         try {
             CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         } catch (CompletionException e) {
-            throw new ResourceStorageOperationException("Failed to move some files in storage", e);
+            Throwable cause = e.getCause();
+            if (cause instanceof ApplicationException ae) {
+                throw ae;
+            }
+            throw new ResourceStorageOperationException("Failed to move some files in storage", cause);
         }
     }
 
@@ -106,10 +119,6 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
     }
 
     private void rollback(Long userId, MoveContext context) {
-        if (context.doesNotContainMovedObjects()) {
-            return;
-        }
-
         context.getMovedObjects().forEach(m -> {
             try {
                 storageService.moveObject(userId, m.pathTo(), m.pathFrom());

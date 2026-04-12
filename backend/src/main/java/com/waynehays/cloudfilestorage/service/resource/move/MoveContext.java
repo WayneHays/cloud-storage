@@ -14,8 +14,8 @@ class MoveContext {
         movedObjects.add(new MovedObject(pathFrom, pathTo));
     }
 
-    boolean doesNotContainMovedObjects() {
-        return movedObjects.isEmpty();
+    List<MovedObject> getMovedObjects() {
+        return List.copyOf(movedObjects);
     }
 
     record MovedObject(String pathFrom, String pathTo){
