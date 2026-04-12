@@ -4,16 +4,11 @@ spring:
     username: dev-user
     password: dev-password
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-  servlet:
-    multipart:
-      max-file-size: 100MB
-      max-request-size: 200MB
+
 minio:
   security:
     url: http://localhost:9000
@@ -26,13 +21,3 @@ minio:
     write-timeout: 10s
     call-timeout: 20s
     deletion-batch-size: 10
-
-server:
-  tomcat:
-    max-part-count: 1000
-    max-swallow-size: -1
-    connection-timeout: 300000
-
-logging:
-  level:
-    root: info

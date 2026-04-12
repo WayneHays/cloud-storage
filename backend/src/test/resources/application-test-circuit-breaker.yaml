@@ -1,0 +1,13 @@
+resilience4j:
+  retry:
+    instances:
+      minioStorage:
+        max-attempts: 1
+        wait-duration: 1ms
+  circuitbreaker:
+    instances:
+      minioStorage:
+        sliding-window-size: 4
+        minimum-number-of-calls: 4
+        wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: false

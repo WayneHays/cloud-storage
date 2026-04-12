@@ -1,0 +1,11 @@
+resilience4j:
+  retry:
+    instances:
+      minioStorage:
+        wait-duration: 1ms
+  circuitbreaker:
+    instances:
+      minioStorage:
+        sliding-window-size: 1000
+        minimum-number-of-calls: 1000
+        failure-rate-threshold: 100
