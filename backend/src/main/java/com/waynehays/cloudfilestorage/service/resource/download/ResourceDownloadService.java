@@ -2,10 +2,11 @@ package com.waynehays.cloudfilestorage.service.resource.download;
 
 import com.waynehays.cloudfilestorage.archiver.ArchiverApi;
 import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
-import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,13 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
         log.info("Start downloading file: userId={}, path={}", userId, path);
-        StorageItem item = storageService.getObject(userId, path);
+        StorageItem item;
+        try {
+            item = storageService.getObject(userId, path);
+        } catch (ResourceNotFoundException e) {
+            log.error("Data inconsistency: file exists in metadata but not in storage. userId={}, path={}", userId, path);
+            throw e;
+        }
 
         StreamingResponseBody body = outputStream -> {
             try (InputStream inputStream = item.inputStream()) {
