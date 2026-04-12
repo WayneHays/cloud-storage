@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.service.quota;
 
+import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
@@ -61,19 +61,13 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
 
     @Override
     @Transactional
-    public void batchUpdateUsedSpace(List<UsedSpaceCorrectionDto> corrections) {
-        List<Object[]> params = corrections.stream()
-                .map(c -> new Object[]{c.actualUsedSpace(), c.userId()})
-                .toList();
-        repository.batchUpdateUsedSpace(params);
+    public void batchUpdateUsedSpace(List<SpaceCorrectionDto> corrections) {
+        repository.batchUpdateUsedSpace(corrections);
     }
 
     @Override
     @Transactional
     public void batchDecreaseUsedSpace(List<SpaceReleaseDto> releases) {
-        List<Object[]> params = releases.stream()
-                .map(r -> new Object[]{r.bytes(), r.userId()})
-                .toList();
-        repository.batchDecreaseUsedSpace(params);
+        repository.batchDecreaseUsedSpace(releases);
     }
 }
