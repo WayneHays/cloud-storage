@@ -41,21 +41,19 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
     public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
         log.info("Upload started: userId={}, objects count={}", userId, objects.size());
 
-        validateUpload(userId, objects);
+        validate(userId, objects);
         long totalSize = calculateSize(objects);
         UploadContext context = new UploadContext();
 
         try {
             quotaService.reserveSpace(userId, totalSize);
             context.markQuotaReserved();
-            List<ResourceDto> uploadedFiles = uploadFilesAndSaveMetadata(userId, objects, context);
-            List<ResourceDto> createdDirectories = createMissingDirectories(userId, uploadedFiles, context);
-            List<ResourceDto> result = new ArrayList<>(createdDirectories);
-            result.addAll(uploadedFiles);
 
-            log.info("Upload completed: userId={}, objects count={}, created directories={}",
-                    userId, uploadedFiles.size(), createdDirectories.size());
-            return result;
+            List<ResourceDto> uploadedFiles = uploadToStorage(userId, objects, context);
+            saveFilesMetadata(userId, objects, context);
+            List<ResourceDto> createdDirectories = createMissingDirectories(userId, uploadedFiles, context);
+
+            return buildResult(uploadedFiles, createdDirectories, userId);
         } catch (Exception e) {
             log.warn("Upload failed for userId={}, initiating rollback", userId);
             rollback(userId, totalSize, context);
@@ -63,7 +61,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
         }
     }
 
-    private void validateUpload(Long userId, List<UploadObjectDto> objects) {
+    private void validate(Long userId, List<UploadObjectDto> objects) {
         List<String> paths = objects.stream()
                 .map(UploadObjectDto::fullPath)
                 .toList();
@@ -74,7 +72,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
                 .toList();
 
         if (!duplicates.isEmpty()) {
-            throw new ResourceAlreadyExistsException("Duplicate paths in upload request", duplicates.stream().toList());
+            throw new ResourceAlreadyExistsException("Duplicate paths in upload request", duplicates);
         }
 
         Set<String> existing = metadataService.findExistingPaths(userId, new HashSet<>(paths));
@@ -90,9 +88,13 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
                 .sum();
     }
 
-    private List<ResourceDto> uploadFilesAndSaveMetadata(Long userId, List<UploadObjectDto> objects, UploadContext context) {
-        List<ResourceDto> result = uploadToStorage(userId, objects, context);
-        saveFilesMetadata(userId, objects, context);
+    private List<ResourceDto> buildResult(List<ResourceDto> uploadedFiles,
+                                          List<ResourceDto> createdDirectories,
+                                          Long userId) {
+        List<ResourceDto> result = new ArrayList<>(createdDirectories);
+        result.addAll(uploadedFiles);
+        log.info("Upload completed: userId={}, files={}, created directories={}",
+                userId, uploadedFiles.size(), createdDirectories.size());
         return result;
     }
 
@@ -146,8 +148,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
 
     private Set<String> collectDirectoryPaths(List<ResourceDto> resources) {
         return resources.stream()
-                .flatMap(r -> PathUtils.getAllDirectories(r.path()).stream())
-                .map(PathUtils::ensureTrailingSlash)
+                .flatMap(r -> PathUtils.getAllAncestorDirectories(r.path()).stream())
                 .collect(Collectors.toSet());
     }
 
