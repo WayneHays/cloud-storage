@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 @ActiveProfiles({"test-retry"})
 @DisplayName("MinioResourceStorage retry tests")
-class MinioResourceStorageRetryTest extends AbstractResilence4jMinioTest {
+class RetryTest extends AbstractResilence4jTest {
 
     @Autowired
     private RetryRegistry retryRegistry;

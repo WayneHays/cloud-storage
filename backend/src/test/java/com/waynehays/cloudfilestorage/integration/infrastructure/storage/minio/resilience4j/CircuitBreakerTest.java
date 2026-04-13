@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 @ActiveProfiles("test-circuit-breaker")
 @DisplayName("MinioResourceStorage circuit breaker tests")
-class MinioResourceStorageCircuitBreakerTest extends AbstractResilence4jMinioTest {
+class CircuitBreakerTest extends AbstractResilence4jTest {
     private CircuitBreaker circuitBreaker;
 
     @BeforeEach

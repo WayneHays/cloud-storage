@@ -18,9 +18,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest(classes = AbstractResilence4jMinioTest.MinimalConfig.class,
-        properties = AbstractResilence4jMinioTest.EXCLUDE_INFRASTRUCTURE_AUTOCONFIG)
-public abstract class AbstractResilence4jMinioTest {
+@SpringBootTest(classes = AbstractResilence4jTest.MinimalConfig.class,
+        properties = AbstractResilence4jTest.EXCLUDE_INFRASTRUCTURE_AUTOCONFIG)
+public abstract class AbstractResilence4jTest {
     public static final String EXCLUDE_INFRASTRUCTURE_AUTOCONFIG = "spring.autoconfigure.exclude=" +
             "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration," +
             "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration," +
