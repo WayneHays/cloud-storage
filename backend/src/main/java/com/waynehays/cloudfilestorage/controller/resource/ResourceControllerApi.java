@@ -111,5 +111,5 @@ public interface ResourceControllerApi {
     })
     List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                      @Valid UploadRequest uploadRequest,
-                                     @RequestParam("object") List<MultipartFile> objects);
+                                     @RequestParam("files") List<MultipartFile> files);
 }

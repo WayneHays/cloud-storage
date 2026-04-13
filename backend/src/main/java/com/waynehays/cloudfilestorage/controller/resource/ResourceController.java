@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.controller.resource;
 
-import com.waynehays.cloudfilestorage.parser.MultipartFileDataParser;
+import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.request.resource.DeleteRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.DownloadRequest;
@@ -8,8 +8,8 @@ import com.waynehays.cloudfilestorage.dto.request.resource.GetInfoRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.MoveRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.SearchRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.UploadRequest;
-import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.parser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.resource.deletion.ResourceDeletionServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.download.ResourceDownloadServiceApi;
@@ -24,7 +24,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.InputStream;
 import java.util.List;
 
 @RestController
@@ -71,10 +71,16 @@ public class ResourceController implements ResourceControllerApi {
                                                                   @Valid DownloadRequest request) {
         DownloadResult result = downloadService.download(userDetails.id(), request.path());
 
+        StreamingResponseBody body = outputStream -> {
+            try (InputStream inputStream = result.content()) {
+                inputStream.transferTo(outputStream);
+            }
+        };
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(result.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.name() + "\"")
-                .body(result.body());
+                .body(body);
     }
 
     @Override
@@ -96,8 +102,8 @@ public class ResourceController implements ResourceControllerApi {
     @ResponseStatus(HttpStatus.CREATED)
     public List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                             @Valid UploadRequest request,
-                                            @RequestParam("object") List<MultipartFile> objects) {
-        List<UploadObjectDto> uploadObjects = objects.stream()
+                                            @RequestParam("files") List<MultipartFile> files) {
+        List<UploadObjectDto> uploadObjects = files.stream()
                 .map(file -> multipartFileDataParser.parse(file, request.path()))
                 .toList();
         return uploadService.upload(userDetails.id(), uploadObjects);
