@@ -4,15 +4,15 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @UtilityClass
 public class PathUtils {
     private static final String SLASH = "/";
 
     public static String ensureTrailingSlash(String path) {
-        return path.endsWith(SLASH) ? path : path + SLASH;
+        return isDirectory(path) ? path : path + SLASH;
     }
 
     public static boolean isDirectory(String path) {
@@ -23,24 +23,25 @@ public class PathUtils {
         return !isDirectory(path);
     }
 
-    public static List<String> getAllDirectories(String path) {
+    public static Set<String> getAllAncestorDirectories(String path) {
         if (StringUtils.isBlank(path)) {
-            return List.of();
+            return Set.of();
         }
 
         String cleanPath = removeTrailingSlash(path);
         String[] parts = cleanPath.split(SLASH);
-        List<String> directories = new ArrayList<>();
+        int limit = isFile(path) ? parts.length - 1 : parts.length;
+
+        Set<String> directories = new LinkedHashSet<>();
         StringBuilder sb = new StringBuilder();
 
-        for (String part : parts) {
+        for (int i = 0; i < limit; i++) {
             if (!sb.isEmpty()) {
                 sb.append(SLASH);
             }
-            sb.append(part);
-            directories.add(sb.toString());
+            sb.append(parts[i]);
+            directories.add(sb + SLASH);
         }
-
         return directories;
     }
 
@@ -53,13 +54,21 @@ public class PathUtils {
     }
 
     public static String extractParentPath(String path) {
-        String cleanPath = path.endsWith(SLASH)
+        String cleanPath = isDirectory(path)
                 ? path.substring(0, path.length() - 1)
                 : path;
         return FilenameUtils.getPath(cleanPath);
     }
 
     public static String extractFilename(String path) {
+        String cleanPath = removeTrailingSlash(path);
+        String name = FilenameUtils.getName(cleanPath);
+        return isDirectory(path)
+                ? name + SLASH
+                : name;
+    }
+
+    public static String extractDisplayName(String path) {
         String cleanPath = removeTrailingSlash(path);
         return FilenameUtils.getName(cleanPath);
     }
