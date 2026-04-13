@@ -3,7 +3,6 @@ package com.waynehays.cloudfilestorage.integration.repository;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryBaseTest;
 import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,7 +15,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("StorageQuotaRepository integration tests")
-class StorageQuotaRepositoryTest extends AbstractRepositoryBaseTest {
+class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
     private static final long TEST_STORAGE_LIMIT = 100000;
 
     @Autowired

@@ -4,6 +4,7 @@ import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -18,7 +19,8 @@ class ResourceRowMapperTest {
     private final ResourceRowMapper mapper = Mappers.getMapper(ResourceRowMapper.class);
 
     @Test
-    void toFile_Row_shouldMapPathParentPathNameAndSize() {
+    @DisplayName("Should map path, parent path, name and size")
+    void shouldMapPathParentPathNameAndSize() {
         // given
         UploadObjectDto uploadObject = new UploadObjectDto(
                 "report.pdf", "report.pdf", "docs/", "docs/report.pdf",
@@ -35,7 +37,8 @@ class ResourceRowMapperTest {
     }
 
     @Test
-    void toFile_shouldHandleRootLevelFileRow() {
+    @DisplayName("Should handle root level file")
+    void shouldHandleRootLevelFile() {
         // given
         UploadObjectDto uploadObject = new UploadObjectDto(
                 "file.txt", "file.txt", "", "file.txt",
@@ -51,7 +54,8 @@ class ResourceRowMapperTest {
     }
 
     @Test
-    void toFileRows_shouldMapList() {
+    @DisplayName("Should map list")
+    void shouldMapList() {
         // given
         UploadObjectDto first = new UploadObjectDto(
                 "a.txt", "a.txt", "docs/", "docs/a.txt",
@@ -70,7 +74,8 @@ class ResourceRowMapperTest {
     }
 
     @Test
-    void toDirectory_Row_shouldMapPathParentPathAndName() {
+    @DisplayName("Should map path, parent path, name")
+    void shouldMapPathParentPathAndName() {
         // given
         String path = "docs/reports/";
 
@@ -80,11 +85,12 @@ class ResourceRowMapperTest {
         // then
         assertThat(result.path()).isEqualTo("docs/reports/");
         assertThat(result.parentPath()).isEqualTo("docs/");
-        assertThat(result.name()).isEqualTo("reports");
+        assertThat(result.name()).isEqualTo("reports/");
     }
 
     @Test
-    void toDirectory_shouldHandleRootLevelDirectoryRow() {
+    @DisplayName("Should handle root level directory")
+    void shouldHandleRootLevelDirectory() {
         // given
         String path = "docs/";
 
@@ -94,11 +100,12 @@ class ResourceRowMapperTest {
         // then
         assertThat(result.path()).isEqualTo("docs/");
         assertThat(result.parentPath()).isEmpty();
-        assertThat(result.name()).isEqualTo("docs");
+        assertThat(result.name()).isEqualTo("docs/");
     }
 
     @Test
-    void toDirectoryRows_shouldMapSet() {
+    @DisplayName("Should map set")
+    void shouldMapSet() {
         // given
         Set<String> paths = Set.of("docs/", "images/");
 
@@ -108,6 +115,6 @@ class ResourceRowMapperTest {
         // then
         assertThat(result).hasSize(2);
         assertThat(result).extracting(DirectoryRow::name)
-                .containsExactlyInAnyOrder("docs", "images");
+                .containsExactlyInAnyOrder("docs/", "images/");
     }
 }

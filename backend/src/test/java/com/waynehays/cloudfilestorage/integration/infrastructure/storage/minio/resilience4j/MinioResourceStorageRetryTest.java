@@ -1,14 +1,11 @@
-package com.waynehays.cloudfilestorage.integration.storage.minio;
+package com.waynehays.cloudfilestorage.integration.infrastructure.storage.minio.resilience4j;
 
 import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.minio.MinioResourceStorage;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
-import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -30,24 +25,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ActiveProfiles("test-retry")
+@ActiveProfiles({"test-retry"})
 @DisplayName("MinioResourceStorage retry tests")
-class MinioResourceStorageRetryTest {
-    private static final String RETRY_NAME = "minioStorage";
-    private static final String CB_NAME = "minioStorage";
-
-    @Autowired
-    private MinioResourceStorage storage;
-
-    @MockitoBean
-    private MinioClient minioClient;
+class MinioResourceStorageRetryTest extends AbstractResilence4jMinioTest {
 
     @Autowired
     private RetryRegistry retryRegistry;
-
-    @Autowired
-    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     private int maxAttempts;
 
@@ -55,7 +38,6 @@ class MinioResourceStorageRetryTest {
     void setUp() {
         circuitBreakerRegistry.circuitBreaker(CB_NAME).reset();
         maxAttempts = retryRegistry.retry(RETRY_NAME).getRetryConfig().getMaxAttempts();
-        Mockito.reset(minioClient);
     }
 
     @Test

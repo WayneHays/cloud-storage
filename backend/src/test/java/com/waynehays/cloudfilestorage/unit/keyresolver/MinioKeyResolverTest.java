@@ -17,10 +17,10 @@ class MinioKeyResolverTest {
     private final MinioKeyResolver keyResolver = new MinioKeyResolver();
 
     @Nested
-    class GenerateKeyTest {
+    class GenerateKey {
 
         @Test
-        @DisplayName("Should generate key with parentPath")
+        @DisplayName("Should generate key by path")
         void shouldGenerateKeyWithDirectory() {
             String key = keyResolver.resolveKey(1L, "docs/file.txt");
 
@@ -28,7 +28,7 @@ class MinioKeyResolverTest {
         }
 
         @Test
-        @DisplayName("Should generate key for root file")
+        @DisplayName("Should generate key for file in root")
         void shouldGenerateKeyForRootFile() {
             String key = keyResolver.resolveKey(1L, "file.txt");
 
@@ -36,7 +36,7 @@ class MinioKeyResolverTest {
         }
 
         @Test
-        @DisplayName("Should generate key with nested parentPath")
+        @DisplayName("Should generate key by nested path structure")
         void shouldGenerateKeyWithNestedDirectory() {
             String key = keyResolver.resolveKey(1L, "docs/work/task/file.txt");
 
@@ -53,7 +53,7 @@ class MinioKeyResolverTest {
     }
 
     @Nested
-    class ExtractPathTest {
+    class ExtractPath {
 
         private static Stream<Arguments> storageKeyAndExpectedResult() {
             return Stream.of(
@@ -62,9 +62,10 @@ class MinioKeyResolverTest {
                     Arguments.of("user-1-files/docs/work/", "docs/work/"));
         }
 
+        @DisplayName("Should extract resource path from storage key")
         @ParameterizedTest
         @MethodSource("storageKeyAndExpectedResult")
-        void shouldExtractPathFromStorageKey(String objectKey, String expectedResult) {
+        void shouldExtractPath(String objectKey, String expectedResult) {
             // when
             assertThat(keyResolver.extractPath(1L, objectKey)).isEqualTo(expectedResult);
         }

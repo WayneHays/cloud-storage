@@ -1,31 +1,18 @@
-package com.waynehays.cloudfilestorage.integration.storage.minio;
+package com.waynehays.cloudfilestorage.integration.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.minio.MinioResourceStorage;
-import io.minio.BucketExistsArgs;
-import io.minio.ListObjectsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.RemoveBucketArgs;
-import io.minio.Result;
-import io.minio.messages.Item;
+import com.waynehays.cloudfilestorage.integration.container.MinioTestContainer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MinIOContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,72 +20,28 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Testcontainers
 @DisplayName("MinioResourceStorage integration tests")
 class MinioResourceStorageIntegrationTest {
-    private static final String BUCKET = "test-bucket";
-    private static final String CONTENT_TYPE = "applicaton/octet-stream";
+    private static final String TEST_CONTENT_TYPE = "text/plain";
 
-    @Container
-    static final MinIOContainer minioContainer = new MinIOContainer(
-            "minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1")
-            .withUserName("minioadmin")
-            .withPassword("minioadmin");
-
-    private static MinioClient minioClient;
-    private MinioResourceStorage storage;
-
-    @BeforeAll
-    static void setUpClient() throws Exception {
-        minioClient = MinioClient.builder()
-                .endpoint(minioContainer.getS3URL())
-                .credentials(minioContainer.getUserName(), minioContainer.getPassword())
-                .build();
-        boolean exists = minioClient.bucketExists(BucketExistsArgs.builder()
-                .bucket(BUCKET)
-                .build());
-        if (!exists) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(BUCKET).build());
-        }
-    }
-
-    @BeforeEach
-    void setUp() {
-        MinioStorageProperties properties = new MinioStorageProperties(
-                BUCKET,
-                2,
-                Duration.ofSeconds(20),
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(20)
-        );
-        storage = new MinioResourceStorage(minioClient, properties);
-    }
+    private final MinioResourceStorage storage = new MinioResourceStorage(
+            MinioTestContainer.getClient(),
+            MinioTestContainer.getProperties()
+    );
 
     @AfterEach
-    void cleanBucket() throws Exception {
-        Iterable<Result<Item>> items = minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(BUCKET)
-                        .build()
-        );
-        List<String> keys = new ArrayList<>();
-        for (Result<Item> r : items) {
-            keys.add(r.get().objectName());
-        }
-        if (!keys.isEmpty()) {
-            storage.deleteList(keys);
-        }
+    void cleanBucket() {
+        MinioTestContainer.cleanTestBucket();
     }
 
     @AfterAll
-    static void tearDown() throws Exception {
-        minioClient.removeBucket(RemoveBucketArgs.builder().bucket(BUCKET).build());
+    static void tearDown(){
+        MinioTestContainer.removeTestBucket();
     }
 
     private void put(String key, String content) {
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        storage.putObject(new ByteArrayInputStream(bytes), key, bytes.length, CONTENT_TYPE);
+        storage.putObject(new ByteArrayInputStream(bytes), key, bytes.length, TEST_CONTENT_TYPE);
     }
 
     private String read(InputStream inputStream) throws Exception {

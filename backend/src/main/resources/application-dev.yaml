@@ -3,11 +3,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/dev-db
     username: dev-user
     password: dev-password
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
 
 minio:
   security:

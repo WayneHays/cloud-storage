@@ -4,6 +4,7 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -16,7 +17,8 @@ class ResourceMetadataMapperTest {
     private final ResourceMetadataMapper mapper = Mappers.getMapper(ResourceMetadataMapper.class);
 
     @Test
-    void toResourceMetadataDto_shouldMapAllFields() {
+    @DisplayName("Should map all fields")
+    void shouldMapAllFields() {
         // given
         ResourceMetadata metadata = new ResourceMetadata();
         metadata.setId(1L);
@@ -41,7 +43,8 @@ class ResourceMetadataMapperTest {
     }
 
     @Test
-    void toResourceMetadataDto_shouldMapList() {
+    @DisplayName("Should map list")
+    void shouldMapList() {
         // given
         ResourceMetadata file = new ResourceMetadata();
         file.setId(1L);
@@ -70,7 +73,8 @@ class ResourceMetadataMapperTest {
     }
 
     @Test
-    void toDirectoryEntity_shouldMapPathAndSetDirectoryDefaults() {
+    @DisplayName("Should map path and set directory defaults")
+    void shouldMapPathAndSetDirectoryDefaults() {
         // given
         Long userId = 10L;
         String path = "docs/reports";
@@ -82,7 +86,7 @@ class ResourceMetadataMapperTest {
         assertThat(result.getUserId()).isEqualTo(10L);
         assertThat(result.getPath()).isEqualTo("docs/reports/");
         assertThat(result.getParentPath()).isEqualTo("docs/");
-        assertThat(result.getName()).isEqualTo("reports");
+        assertThat(result.getName()).isEqualTo("reports/");
         assertThat(result.getType()).isEqualTo(ResourceType.DIRECTORY);
         assertThat(result.isMarkedForDeletion()).isFalse();
         assertThat(result.getId()).isNull();
@@ -90,7 +94,8 @@ class ResourceMetadataMapperTest {
     }
 
     @Test
-    void toDirectoryEntity_shouldHandleTrailingSlash() {
+    @DisplayName("Should handle trailing slash")
+    void shouldHandleTrailingSlash() {
         // given
         Long userId = 10L;
         String path = "docs/reports/";
@@ -101,6 +106,6 @@ class ResourceMetadataMapperTest {
         // then
         assertThat(result.getPath()).isEqualTo("docs/reports/");
         assertThat(result.getParentPath()).isEqualTo("docs/");
-        assertThat(result.getName()).isEqualTo("reports");
+        assertThat(result.getName()).isEqualTo("reports/");
     }
 }

@@ -57,7 +57,7 @@ class UserServiceTest {
 
         when(mapper.toEntity(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-        when(repository.save(mappedUser)).thenReturn(savedUser);
+        when(repository.saveAndFlush(mappedUser)).thenReturn(savedUser);
         when(mapper.toDto(savedUser)).thenReturn(expectedDto);
 
         // when
@@ -82,7 +82,7 @@ class UserServiceTest {
 
         when(mapper.toEntity(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
-        when(repository.save(mappedUser))
+        when(repository.saveAndFlush(mappedUser))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         // when & then

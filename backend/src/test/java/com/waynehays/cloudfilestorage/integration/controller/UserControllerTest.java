@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
-import com.waynehays.cloudfilestorage.integration.base.AbstractRestControllerBaseTest;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,8 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class UserControllerTest extends AbstractRestControllerBaseTest {
-    private static final String PATH_ME = "/api/user/me";
+class UserControllerTest extends AbstractControllerTest {
 
     @Test
     @DisplayName("Should return user info when authenticated")

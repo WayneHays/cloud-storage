@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.unit.parser;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.parser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.validator.MultipartFileValidator;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +26,8 @@ class MultipartFileDataParserTest {
     private MultipartFileDataParser parser;
 
     @Test
-    void shouldParseBasicFile() {
+    @DisplayName("Should parse simple file")
+    void shouldParseSimpleFile() {
         // given
         MockMultipartFile file = new MockMultipartFile(
                 "file", "document.txt", "text/plain", "content".getBytes());
@@ -43,6 +45,7 @@ class MultipartFileDataParserTest {
     }
 
     @Test
+    @DisplayName("Should parse file with nested path in originalFilename")
     void shouldParseFileWithNestedPath() {
         // given
         MockMultipartFile file = new MockMultipartFile(
@@ -58,6 +61,7 @@ class MultipartFileDataParserTest {
     }
 
     @Test
+    @DisplayName("Should normalize back slashes")
     void shouldNormalizeBackslashes() {
         // given
         MockMultipartFile file = new MockMultipartFile(
@@ -72,6 +76,7 @@ class MultipartFileDataParserTest {
     }
 
     @Test
+    @DisplayName("Should preserve null content type")
     void shouldPreserveNullContentType() {
         // given
         MockMultipartFile file = new MockMultipartFile(
@@ -85,6 +90,7 @@ class MultipartFileDataParserTest {
     }
 
     @Test
+    @DisplayName("Should provide working with InputStreamSupplier")
     void shouldProvideWorkingInputStreamSupplier() throws IOException {
         // given
         byte[] content = "file content".getBytes();
@@ -101,6 +107,7 @@ class MultipartFileDataParserTest {
     }
 
     @Test
+    @DisplayName("Should parse file in root directory")
     void shouldParseFileInRootDirectory() {
         // given
         MockMultipartFile file = new MockMultipartFile(

@@ -1,6 +1,7 @@
-package com.waynehays.cloudfilestorage.integration.base;
+package com.waynehays.cloudfilestorage.integration.repository;
 
 import com.waynehays.cloudfilestorage.entity.User;
+import com.waynehays.cloudfilestorage.integration.container.PostgresTestContainer;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -15,13 +16,20 @@ import static org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTest
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = NONE)
 @ActiveProfiles("test")
-public class AbstractRepositoryBaseTest {
+public abstract class AbstractRepositoryTest {
 
     @Autowired
     protected TestEntityManager em;
 
     protected Long userId;
     protected Long otherUserId;
+
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", PostgresTestContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", PostgresTestContainer::getUsername);
+        registry.add("spring.datasource.password", PostgresTestContainer::getPassword);
+    }
 
     @BeforeEach
     void persistUsers() {
@@ -33,15 +41,7 @@ public class AbstractRepositoryBaseTest {
         User user = new User();
         user.setUsername(username);
         user.setPassword("password");
-        em.persist(user);
-        em.flush();
+        em.persistAndFlush(user);
         return user.getId();
-    }
-
-    @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", TestPostgres.INSTANCE::getJdbcUrl);
-        registry.add("spring.datasource.username", TestPostgres.INSTANCE::getUsername);
-        registry.add("spring.datasource.password", TestPostgres.INSTANCE::getPassword);
     }
 }

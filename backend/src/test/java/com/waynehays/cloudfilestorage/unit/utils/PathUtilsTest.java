@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,37 +56,39 @@ class PathUtilsTest {
     class GetAllDirectories {
 
         @Test
-        void shouldReturnAllParentDirectories() {
+        void shouldReturnAncestorsForFilePath() {
             // when
-            List<String> result = PathUtils.getAllDirectories("a/b/c/file.txt");
+            Set<String> result = PathUtils.getAllAncestorDirectories("a/b/c/file.txt");
 
             // then
-            assertThat(result).containsExactly("a", "a/b", "a/b/c", "a/b/c/file.txt");
+            assertThat(result).containsExactly("a/", "a/b/", "a/b/c/");
         }
 
         @Test
-        void shouldHandleDirectoryPath() {
+        void shouldReturnAncestorsForDirectoryPath() {
             // when
-            List<String> result = PathUtils.getAllDirectories("a/b/");
+            Set<String> result = PathUtils.getAllAncestorDirectories("a/b/c/");
 
             // then
-            assertThat(result).containsExactly("a", "a/b");
+            assertThat(result).containsExactly("a/", "a/b/", "a/b/c/");
         }
 
         @Test
-        void shouldHandleSingleSegment() {
+        void shouldReturnEmptySetForBlankPath() {
             // when
-            List<String> result = PathUtils.getAllDirectories("docs");
+            Set<String> result = PathUtils.getAllAncestorDirectories("");
 
             // then
-            assertThat(result).containsExactly("docs");
+            assertThat(result).isEmpty();
         }
 
         @Test
-        void shouldReturnEmptyForBlankPath() {
-            assertThat(PathUtils.getAllDirectories("")).isEmpty();
-            assertThat(PathUtils.getAllDirectories("  ")).isEmpty();
-            assertThat(PathUtils.getAllDirectories(null)).isEmpty();
+        void shouldReturnEmptySetForSingleFile() {
+            // when
+            Set<String> result = PathUtils.getAllAncestorDirectories("file.txt");
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 
@@ -164,7 +166,7 @@ class PathUtilsTest {
 
         @Test
         void shouldExtractDirectoryName() {
-            assertThat(PathUtils.extractFilename("docs/sub/")).isEqualTo("sub");
+            assertThat(PathUtils.extractFilename("docs/sub/")).isEqualTo("sub/");
         }
 
         @Test
@@ -174,7 +176,7 @@ class PathUtilsTest {
 
         @Test
         void shouldExtractRootLevelDirectoryName() {
-            assertThat(PathUtils.extractFilename("docs/")).isEqualTo("docs");
+            assertThat(PathUtils.extractFilename("docs/")).isEqualTo("docs/");
         }
     }
 

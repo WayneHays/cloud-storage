@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.unit.mapper;
 import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.mapper.StorageQuotaMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -13,7 +14,8 @@ class StorageQuotaMapperTest {
     private final StorageQuotaMapper mapper = Mappers.getMapper(StorageQuotaMapper.class);
 
     @Test
-    void toDto_shouldMapAllFields() {
+    @DisplayName("Should map all fields")
+    void shouldMapAllFields() {
         // given
         StorageQuota quota = new StorageQuota();
         quota.setUserId(1L);

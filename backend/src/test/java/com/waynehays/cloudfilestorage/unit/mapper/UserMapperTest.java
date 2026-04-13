@@ -5,6 +5,7 @@ import com.waynehays.cloudfilestorage.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -15,7 +16,8 @@ class UserMapperTest {
     private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
 
     @Test
-    void toDtoFromUser_shouldMapIdAndUsername() {
+    @DisplayName("Should map id and username from entity")
+    void shouldMapIdAndUsernameFromEntity() {
         // given
         User user = new User();
         user.setId(1L);
@@ -30,7 +32,8 @@ class UserMapperTest {
     }
 
     @Test
-    void toDtoFromUserDetails_shouldMapIdAndUsername() {
+    @DisplayName("Should map id and username from CustomUserDetails")
+    void shouldMapIdAndUsernameFromCustomUserDetails() {
         // given
         CustomUserDetails userDetails = new CustomUserDetails(42L, "jane_doe", "secret");
 
@@ -43,6 +46,7 @@ class UserMapperTest {
     }
 
     @Test
+    @DisplayName("Should map username from SignUpRequest and ignore other fields")
     void toEntity_shouldMapUsernameAndIgnoreOtherFields() {
         // given
         SignUpRequest request = new SignUpRequest("jane_doe", "secret123");

@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.unit.archiver;
 import com.waynehays.cloudfilestorage.archiver.ZipArchiver;
 import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.exception.ArchiveException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,12 +24,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ExtendWith(MockitoExtension.class)
 class ZipArchiverTest {
 
-    private ZipArchiver zipArchiver = new ZipArchiver();
+    private final ZipArchiver zipArchiver = new ZipArchiver();
 
     @Nested
     class ArchiveFiles {
 
         @Test
+        @DisplayName("Should create archive with single file")
         void shouldCreateArchiveWithSingleFile() throws IOException {
             // given
             byte[] content = "text".getBytes();
@@ -45,6 +47,7 @@ class ZipArchiverTest {
         }
 
         @Test
+        @DisplayName("Should create archive with multiple files")
         void shouldCreateArchiveWithMultipleFiles() throws IOException {
             // given
             byte[] content1 = "first file".getBytes();
@@ -66,6 +69,7 @@ class ZipArchiverTest {
         }
 
         @Test
+        @DisplayName("Should preserve directory structure in entry names")
         void shouldPreserveDirectoryStructureInEntryNames() throws IOException {
             // given
             byte[] content = "nested file".getBytes();
@@ -82,6 +86,7 @@ class ZipArchiverTest {
         }
 
         @Test
+        @DisplayName("Should create empty archive")
         void shouldCreateEmptyArchive() throws IOException {
             // given
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -95,6 +100,7 @@ class ZipArchiverTest {
         }
 
         @Test
+        @DisplayName("Should throw ArchiveException when IO error")
         void shouldThrowArchiveExceptionOnIOError() {
             // given
             ArchiveItem item = new ArchiveItem("file.txt", 5L,
@@ -110,14 +116,11 @@ class ZipArchiverTest {
         }
     }
 
-    @Nested
-    class GetExtension {
-
-        @Test
-        void shouldReturnZipExtension() {
-            // given & when & then
-            assertThat(zipArchiver.getExtension()).isEqualTo(".zip");
-        }
+    @Test
+    @DisplayName("getExtension should return ZIP extension")
+    void getExtension_shouldReturnZipExtension() {
+        // given & when & then
+        assertThat(zipArchiver.getExtension()).isEqualTo(".zip");
     }
 
     private Map<String, byte[]> extractZipEntries(byte[] zipBytes) throws IOException {

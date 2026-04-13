@@ -4,6 +4,7 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -17,7 +18,8 @@ class ResourceDtoMapperTest {
     private final ResourceDtoMapper mapper = Mappers.getMapper(ResourceDtoMapper.class);
 
     @Test
-    void fromResourceMetadataDto_shouldMapFileWithOriginalName() {
+    @DisplayName("Should map file with original name")
+    void shouldMapFileWithOriginalName() {
         // given
         ResourceMetadataDto dto = new ResourceMetadataDto(
                 1L, 10L, "docs/report.pdf", "docs/", "report.pdf",
@@ -34,10 +36,11 @@ class ResourceDtoMapperTest {
     }
 
     @Test
-    void fromResourceMetadataDto_shouldAppendSlashToDirectoryName() {
+    @DisplayName("Should append slash to directory name")
+    void shouldAppendSlashToDirectoryName() {
         // given
         ResourceMetadataDto dto = new ResourceMetadataDto(
-                2L, 10L, "docs/", "", "docs",
+                2L, 10L, "docs/", "", "docs/",
                 null, ResourceType.DIRECTORY);
 
         // when
@@ -50,7 +53,8 @@ class ResourceDtoMapperTest {
     }
 
     @Test
-    void fileFromPath_shouldExtractNameAndSetFileType() {
+    @DisplayName("Should extract name and set resource type")
+    void shouldExtractNameAndSetResourceType() {
         // given
         String path = "docs/report.pdf";
         Long size = 2048L;

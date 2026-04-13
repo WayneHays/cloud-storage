@@ -1,23 +1,17 @@
-package com.waynehays.cloudfilestorage.integration.storage.minio;
+package com.waynehays.cloudfilestorage.integration.infrastructure.storage.minio.resilience4j;
 
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.minio.MinioResourceStorage;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
-import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 
@@ -28,21 +22,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
 @ActiveProfiles("test-circuit-breaker")
-@DisplayName("MinioResourceStorage resilence4j tests")
-class MinioResourceStorageCircuitBreakerTest {
-    private static final String CB_NAME = "minioStorage";
-
-    @Autowired
-    private MinioResourceStorage storage;
-
-    @Autowired
-    private CircuitBreakerRegistry circuitBreakerRegistry;
-
-    @MockitoBean
-    private MinioClient minioClient;
-
+@DisplayName("MinioResourceStorage circuit breaker tests")
+class MinioResourceStorageCircuitBreakerTest extends AbstractResilence4jMinioTest {
     private CircuitBreaker circuitBreaker;
 
     @BeforeEach

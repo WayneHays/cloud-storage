@@ -5,7 +5,6 @@ import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
 import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryBaseTest;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +20,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ResourceMetadataRepository integration tests")
-class ResourceMetadataRepositoryTest extends AbstractRepositoryBaseTest {
+class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
 
     @Autowired
     private ResourceMetadataRepository repository;

@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
-import com.waynehays.cloudfilestorage.integration.base.AbstractRestControllerBaseTest;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,8 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class AuthControllerTest extends AbstractRestControllerBaseTest {
-    private static final String PATH_SIGN_IN = "/api/auth/sign-in";
+class AuthControllerTest extends AbstractControllerTest {
 
     private ResultActions signUp(String body) throws Exception {
         return mockMvc.perform(post(PATH_SIGN_UP)
@@ -58,7 +56,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 409 when username already exists")
         void shouldReturn409_whenUsernameAlreadyExists() throws Exception {
             registerAndLoginDefaultUser();
-            String duplicate = buildBody("user", "password");
+            String duplicate = buildRequestBody("user", "password");
 
             signUp(duplicate)
                     .andExpect(status().isConflict())
@@ -68,14 +66,14 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should return 400 when username is empty")
         void shouldReturn400_whenUsernameIsEmpty() throws Exception {
-            String requestBody = buildBody("", "password");
+            String requestBody = buildRequestBody("", "password");
             signUp(requestBody).andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("Should return 400 when username is empty")
         void shouldReturn400_whenPasswordIsEmpty() throws Exception {
-            String requestBody = buildBody("user", "");
+            String requestBody = buildRequestBody("user", "");
             signUp(requestBody).andExpect(status().isBadRequest());
         }
 
@@ -105,7 +103,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 200 when user exists")
         void shouldReturn200_whenUserExists() throws Exception {
             registerAndLoginDefaultUser();
-            String signInBody = buildBody("user", "password");
+            String signInBody = buildRequestBody("user", "password");
             signIn(signInBody)
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.username").value("user"));
@@ -116,7 +114,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when wrong password")
         void shouldReturn401_whenWrongPassword() throws Exception {
             registerAndLoginDefaultUser();
-            String signInBody = buildBody("user", "wrong_password");
+            String signInBody = buildRequestBody("user", "wrong_password");
             signIn(signInBody)
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message").value("Invalid credentials"));
@@ -125,7 +123,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should return 401 when user not exists")
         void shouldReturn401_whenUserNotExists() throws Exception {
-            String signInBody = buildBody("user", "password");
+            String signInBody = buildRequestBody("user", "password");
             signIn(signInBody)
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message").value("Invalid credentials"));
@@ -134,7 +132,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should return 400 when username is empty")
         void shouldReturn400_whenUsernameIsEmpty() throws Exception {
-            String signInBody = buildBody("", "password");
+            String signInBody = buildRequestBody("", "password");
             signIn(signInBody)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", containsString("username")));
@@ -143,7 +141,7 @@ class AuthControllerTest extends AbstractRestControllerBaseTest {
         @Test
         @DisplayName("Should return 400 when password is empty")
         void shouldReturn400_whenPasswordIsEmpty() throws Exception {
-            String signInBody = buildBody("user", "");
+            String signInBody = buildRequestBody("user", "");
             signIn(signInBody)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message", containsString("password")));

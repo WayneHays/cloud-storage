@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
 import com.waynehays.cloudfilestorage.entity.User;
-import com.waynehays.cloudfilestorage.integration.base.AbstractRepositoryBaseTest;
 import com.waynehays.cloudfilestorage.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("UserRepository integration tests")
-class UserRepositoryTest extends AbstractRepositoryBaseTest {
+class UserRepositoryTest extends AbstractRepositoryTest {
 
     @Autowired
     private UserRepository repository;

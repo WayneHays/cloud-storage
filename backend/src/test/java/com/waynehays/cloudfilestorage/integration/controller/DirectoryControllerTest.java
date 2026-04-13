@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
-import com.waynehays.cloudfilestorage.integration.base.AbstractRestControllerBaseTest;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class DirectoryControllerTest extends AbstractRestControllerBaseTest {
+class DirectoryControllerTest extends AbstractControllerTest {
 
     private ResultActions createDirectoryRequest(Cookie session, String path) throws Exception {
         return mockMvc.perform(post(PATH_DIRECTORY)
@@ -29,7 +28,7 @@ class DirectoryControllerTest extends AbstractRestControllerBaseTest {
 
     private void createDirectoryAndExpectSuccess(Cookie sessionCookie, String path) throws Exception {
         String parentPath = PathUtils.extractParentPath(path);
-        String name = PathUtils.extractFilename(path) + "/";
+        String name = PathUtils.extractFilename(path);
 
         mockMvc.perform(post(PATH_DIRECTORY)
                         .with(csrf())

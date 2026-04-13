@@ -84,7 +84,7 @@ class CleanupServiceTest {
             // then
             verify(storageService).deleteObjects(10L, List.of("a.txt", "b.txt"));
 
-            ArgumentCaptor<List<SpaceReleaseDto>> releasesCaptor = ArgumentCaptor.forClass(List.class);
+            ArgumentCaptor<List<SpaceReleaseDto>> releasesCaptor = ArgumentCaptor.captor();
             verify(quotaService).batchDecreaseUsedSpace(releasesCaptor.capture());
             assertThat(releasesCaptor.getValue())
                     .containsExactly(new SpaceReleaseDto(10L, 300L));
@@ -110,7 +110,7 @@ class CleanupServiceTest {
             verify(storageService).deleteObjects(10L, List.of("a.txt", "b.txt"));
             verify(storageService).deleteObjects(20L, List.of("c.txt"));
 
-            ArgumentCaptor<List<SpaceReleaseDto>> captor = ArgumentCaptor.forClass(List.class);
+            ArgumentCaptor<List<SpaceReleaseDto>> captor = ArgumentCaptor.captor();
             verify(quotaService).batchDecreaseUsedSpace(captor.capture());
             assertThat(captor.getValue())
                     .containsExactlyInAnyOrder(
@@ -118,7 +118,6 @@ class CleanupServiceTest {
                             new SpaceReleaseDto(20L, 500L)
                     );
         }
-
     }
 
     @Nested

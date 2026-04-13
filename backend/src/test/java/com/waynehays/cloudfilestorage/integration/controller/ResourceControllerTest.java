@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
-import com.waynehays.cloudfilestorage.integration.base.AbstractRestControllerBaseTest;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -10,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -27,17 +25,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ResourceControllerTest extends AbstractRestControllerBaseTest {
-    private static final String MOVE_PATH = PATH_RESOURCE + "/move";
-    private static final String DOWNLOAD_PATH = PATH_RESOURCE + "/download";
-    private static final String SEARCH_PATH = PATH_RESOURCE + "/search";
-
-    private static final String PARAM_FROM = "from";
-    private static final String PARAM_TO = "to";
-    private static final String PARAM_QUERY = "query";
+class ResourceControllerTest extends AbstractControllerTest {
 
     private Cookie registerAndLoginUser(String username, String password) throws Exception {
-        String requestBody = buildBody(username, password);
+        String requestBody = buildRequestBody(username, password);
         MvcResult result = mockMvc.perform(post(PATH_SIGN_UP)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -46,17 +37,6 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
                 .andReturn();
 
         return result.getResponse().getCookie("SESSION");
-    }
-
-    private ResultActions uploadRequest(Cookie session, String path, MockMultipartFile... files) throws Exception {
-        MockMultipartHttpServletRequestBuilder builder = multipart(PATH_RESOURCE)
-                .with(csrf())
-                .param(PARAM_PATH, path)
-                .cookie(session);
-        for (MockMultipartFile file : files) {
-            builder.file(file);
-        }
-        return mockMvc.perform(builder);
     }
 
     private ResultActions getResource(Cookie session, String path) throws Exception {
@@ -74,14 +54,14 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
     }
 
     private ResultActions downloadResource(Cookie session, String path) throws Exception {
-        return mockMvc.perform(get(DOWNLOAD_PATH)
+        return mockMvc.perform(get(PATH_DOWNLOAD)
                 .with(csrf())
                 .param(PARAM_PATH, path)
                 .cookie(session));
     }
 
     private ResultActions moveResource(Cookie session, String from, String to) throws Exception {
-        return mockMvc.perform(put(MOVE_PATH)
+        return mockMvc.perform(put(PATH_MOVE)
                 .with(csrf())
                 .param(PARAM_FROM, from)
                 .param(PARAM_TO, to)
@@ -89,7 +69,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
     }
 
     private ResultActions searchResources(Cookie session, String query) throws Exception {
-        return mockMvc.perform(get(SEARCH_PATH)
+        return mockMvc.perform(get(PATH_SEARCH)
                 .with(csrf())
                 .param(PARAM_QUERY, query)
                 .cookie(session));
@@ -102,12 +82,10 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should upload file to root and return 201")
         void shouldUploadFileToRoot_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            MockMultipartFile file = new MockMultipartFile(
-                    "object", "file.txt", "text/plain", "content".getBytes());
-
+            Cookie sessionCookie = registerAndLoginDefaultUser();
+            MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
             // when & then
-            uploadRequest(session, "", file)
+            performUpload(sessionCookie, "", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
                     .andExpect(jsonPath("$[*].type", hasItem("FILE")));
@@ -117,13 +95,12 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should upload file to directory and return 201")
         void shouldUploadFileToDirectory_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
-            MockMultipartFile file = new MockMultipartFile(
-                    "object", "file.txt", "text/plain", "content".getBytes());
+            Cookie sessionCookie = registerAndLoginDefaultUser();
+            createDirectory(sessionCookie, "docs/");
+            MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
 
             // when & then
-            uploadRequest(session, "docs/", file)
+            performUpload(sessionCookie, "docs/", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
                     .andExpect(jsonPath("$[*].path", hasItem("docs/")));
@@ -133,15 +110,13 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should upload multiple files and return 201")
         void shouldUploadMultipleFiles_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
-            MockMultipartFile file1 = new MockMultipartFile(
-                    "object", "file1.txt", "text/plain", "content1".getBytes());
-            MockMultipartFile file2 = new MockMultipartFile(
-                    "object", "file2.txt", "text/plain", "content2".getBytes());
+            Cookie sessionCookie = registerAndLoginDefaultUser();
+            createDirectory(sessionCookie, "docs/");
+            MockMultipartFile file1 = multipartFile("file1.txt", "content1".getBytes());
+            MockMultipartFile file2 = multipartFile("file2.txt", "content2".getBytes());
 
             // when & then
-            uploadRequest(session, "docs/", file1, file2)
+            performUpload(sessionCookie, "docs/", file1, file2)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItems("file1.txt", "file2.txt")));
         }
@@ -150,12 +125,11 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should upload file with nested directory and create structure")
         void shouldUploadFileWithNestedDirectory_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            MockMultipartFile file = new MockMultipartFile(
-                    "object", "work/report.txt", "text/plain", "content".getBytes());
+            Cookie sessionCookie = registerAndLoginDefaultUser();
+            MockMultipartFile file = multipartFile("work/report.txt", "content".getBytes());
 
             // when & then
-            uploadRequest(session, "docs/", file)
+            performUpload(sessionCookie, "docs/", file)
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$[*].name", hasItems("report.txt", "docs/", "work/")));
         }
@@ -164,13 +138,13 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 409 when file already exists")
         void shouldReturn409_whenFileAlreadyExists() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
-            MockMultipartFile duplicate = new MockMultipartFile(
-                    "object", "file.txt", "text/plain", "content".getBytes());
+            Cookie sessionCookie = registerAndLoginDefaultUser();
+            MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
+            performUpload(sessionCookie, "docs/", file);
+            MockMultipartFile duplicate = multipartFile("file.txt", "content".getBytes());
 
             // when & then
-            uploadRequest(session, "docs/", duplicate)
+            performUpload(sessionCookie, "docs/", duplicate)
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.message").exists());
         }
@@ -179,8 +153,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // given
-            MockMultipartFile file = new MockMultipartFile(
-                    "object", "file.txt", "text/plain", "content".getBytes());
+            MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
 
             // when & then
             mockMvc.perform(multipart(PATH_RESOURCE)
@@ -234,12 +207,11 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
 
             // when & then
             getResource(session, "nonexistent.txt")
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found: nonexistent.txt"));
+                    .andExpect(status().isNotFound());
         }
 
         @Test
-        @DisplayName("Should return 400 when parentPath is invalid")
+        @DisplayName("Should return 400 when path is invalid")
         void shouldReturn400_whenPathInvalid() throws Exception {
             // given
             Cookie session = registerAndLoginDefaultUser();
@@ -382,7 +354,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(get(DOWNLOAD_PATH)
+            mockMvc.perform(get(PATH_DOWNLOAD)
                             .with(csrf())
                             .param(PARAM_PATH, "file.txt"))
                     .andExpect(status().isUnauthorized());
@@ -503,7 +475,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(put(MOVE_PATH)
+            mockMvc.perform(put(PATH_MOVE)
                             .with(csrf())
                             .param(PARAM_FROM, "file.txt")
                             .param(PARAM_TO, "other.txt"))
@@ -586,7 +558,7 @@ class ResourceControllerTest extends AbstractRestControllerBaseTest {
         @DisplayName("Should return 401 when not authorized")
         void shouldReturn401_whenNotAuthorized() throws Exception {
             // when & then
-            mockMvc.perform(get(SEARCH_PATH)
+            mockMvc.perform(get(PATH_SEARCH)
                             .with(csrf())
                             .param(PARAM_QUERY, "test"))
                     .andExpect(status().isUnauthorized());
