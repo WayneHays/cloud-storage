@@ -28,7 +28,7 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
     @Override
     public DownloadResult download(Long userId, String path) {
         ResourceMetadataDto metadata = metadataService.findOrThrow(userId, path);
-        String resourceName = PathUtils.extractFilename(path);
+        String resourceName = PathUtils.extractDisplayName(path);
 
         if (metadata.isFile()) {
             return downloadFile(userId, path, resourceName);

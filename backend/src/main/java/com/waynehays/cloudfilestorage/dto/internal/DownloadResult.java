@@ -1,10 +1,24 @@
 package com.waynehays.cloudfilestorage.dto.internal;
 
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import com.waynehays.cloudfilestorage.service.storage.InputStreamSupplier;
 
-public record DownloadResult(
-        StreamingResponseBody body,
-        String name,
-        String contentType
-) {
+import java.io.IOException;
+import java.io.OutputStream;
+
+public sealed interface DownloadResult {
+
+    String name();
+
+    String contentType();
+
+    record File(InputStreamSupplier contentSupplier, String name, String contentType) implements DownloadResult {
+    }
+
+    record Archive(StreamWriter writer, String name, String contentType) implements DownloadResult {
+    }
+
+    @FunctionalInterface
+    interface StreamWriter {
+        void writeTo(OutputStream outputStream) throws IOException;
+    }
 }

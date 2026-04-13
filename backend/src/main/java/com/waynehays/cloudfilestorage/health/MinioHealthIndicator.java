@@ -17,8 +17,9 @@ public class MinioHealthIndicator implements HealthIndicator {
 
     @Override
     public @Nullable Health health() {
-        String bucketName = properties.bucketName();
         String key = "bucket";
+        String bucketName = properties.bucketName();
+
         try {
             minioClient.bucketExists(
                     BucketExistsArgs.builder()

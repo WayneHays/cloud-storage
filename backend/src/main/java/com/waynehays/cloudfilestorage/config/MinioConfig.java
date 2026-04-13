@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.config;
 
-import com.waynehays.cloudfilestorage.config.properties.MinioCredentialsProperties;
+import com.waynehays.cloudfilestorage.config.properties.MinioSecurityProperties;
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
 import io.minio.MinioClient;
 
@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class MinioConfig {
     private final MinioStorageProperties storageProperties;
-    private final MinioCredentialsProperties credentialsProperties;
+    private final MinioSecurityProperties credentialsProperties;
 
     @Bean
     public OkHttpClient okHttpClient() {
@@ -26,11 +26,11 @@ public class MinioConfig {
     }
 
     @Bean
-    public MinioClient minioClient() {
+    public MinioClient minioClient(OkHttpClient okHttpClient) {
         return MinioClient.builder()
                 .endpoint(credentialsProperties.url())
                 .credentials(credentialsProperties.accessKey(), credentialsProperties.secretKey())
-                .httpClient(okHttpClient())
+                .httpClient(okHttpClient)
                 .build();
     }
 }
