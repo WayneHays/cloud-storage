@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.mapper;
 
-import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.mapstruct.Mapper;
 
@@ -13,33 +13,19 @@ import java.util.Set;
 public interface ResourceDtoMapper {
 
     default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
-        String name = dto.isFile()
-                ? dto.name()
-                : PathUtils.ensureTrailingSlash(dto.name());
-
-        return createDto(dto.path(), name, dto.size(), dto.type()
-        );
+        return createDto(dto.path(), dto.name(), dto.size(), dto.type());
     }
 
     default ResourceDto fileFromPath(String path, Long size) {
-        return createDto(
-                path,
-                PathUtils.extractFilename(path),
-                size,
-                ResourceType.FILE
-        );
+        return createDto(path, PathUtils.extractFilename(path), size,ResourceType.FILE);
     }
 
     default ResourceDto directoryFromPath(String path) {
-        return createDto(
-                path,
-                PathUtils.ensureTrailingSlash(PathUtils.extractFilename(path)),
-                null,
-                ResourceType.DIRECTORY);
+        return createDto(path, PathUtils.extractFilename(path),null,ResourceType.DIRECTORY);
     }
 
-    default List<ResourceDto> directoriesFromPaths(Set<String> newDirectories) {
-        return newDirectories.stream()
+    default List<ResourceDto> directoriesFromPaths(Set<String> paths) {
+        return paths.stream()
                 .map(this::directoryFromPath)
                 .toList();
     }
