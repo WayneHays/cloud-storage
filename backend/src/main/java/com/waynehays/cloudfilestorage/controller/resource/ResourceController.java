@@ -71,15 +71,18 @@ public class ResourceController implements ResourceControllerApi {
                                                                   @Valid DownloadRequest request) {
         DownloadResult result = downloadService.download(userDetails.id(), request.path());
 
-        StreamingResponseBody body = outputStream -> {
-            try (InputStream inputStream = result.content()) {
-                inputStream.transferTo(outputStream);
-            }
+        StreamingResponseBody body = switch (result) {
+            case DownloadResult.File file -> out -> {
+                try (InputStream in = file.contentSupplier().get()) {
+                    in.transferTo(out);
+                }
+            };
+            case DownloadResult.Archive archive -> archive.writer()::writeTo;
         };
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(result.contentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.name() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition(result.name()))
                 .body(body);
     }
 
@@ -107,5 +110,9 @@ public class ResourceController implements ResourceControllerApi {
                 .map(file -> multipartFileDataParser.parse(file, request.path()))
                 .toList();
         return uploadService.upload(userDetails.id(), uploadObjects);
+    }
+
+    private static String contentDisposition(String filename) {
+        return "attachment; filename=\"" + filename + "\"";
     }
 }

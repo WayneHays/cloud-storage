@@ -3,18 +3,16 @@ package com.waynehays.cloudfilestorage.service.resource.download;
 import com.waynehays.cloudfilestorage.archiver.ArchiverApi;
 import com.waynehays.cloudfilestorage.dto.internal.ArchiveItem;
 import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.service.storage.InputStreamSupplier;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.InputStream;
 import java.util.List;
 
 @Slf4j
@@ -40,39 +38,38 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
     }
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
-        log.info("Start downloading file: userId={}, path={}", userId, path);
-        StorageItem item;
-        try {
-            item = storageService.getObject(userId, path);
-        } catch (ResourceNotFoundException e) {
-            log.error("Data inconsistency: file exists in metadata but not in storage. userId={}, path={}", userId, path);
-            throw e;
-        }
+        log.info("Prepared file download: userId={}, path={}", userId, path);
 
-        StreamingResponseBody body = outputStream -> {
-            try (InputStream inputStream = item.inputStream()) {
-                inputStream.transferTo(outputStream);
+        InputStreamSupplier contentSupplier = () -> {
+            try {
+                return storageService.getObject(userId, path).inputStream();
+            } catch (ResourceNotFoundException e) {
+                log.error("Data inconsistency: file exists in metadata but not in storage. userId={}, path={}", userId, path);
+                throw e;
             }
-            log.info("Successfully downloaded file: userId={}, path={}", userId, path);
         };
 
-        return new DownloadResult(body, filename, DEFAULT_CONTENT_TYPE);
+        return new DownloadResult.File(contentSupplier, filename, DEFAULT_CONTENT_TYPE);
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
-        log.info("Start downloading directory: userId={}, path={}", userId, path);
+        log.info("Prepared directory download: userId={}, path={}", userId, path);
 
         List<ArchiveItem> archiveItems = metadataService.findFilesByPathPrefix(userId, path)
                 .stream()
                 .map(metadata -> createArchiveItem(userId, metadata, path))
                 .toList();
 
-        StreamingResponseBody body = outputStream -> {
+        DownloadResult.StreamWriter writer = outputStream -> {
             archiver.archiveResources(archiveItems, outputStream);
             log.info("Successfully downloaded directory: userId={}, path={}", userId, path);
         };
 
-        return new DownloadResult(body, directoryName + archiver.getExtension(), archiver.getContentType());
+        return new DownloadResult.Archive(
+                writer,
+                directoryName + archiver.getExtension(),
+                archiver.getContentType()
+        );
     }
 
     private ArchiveItem createArchiveItem(Long userId, ResourceMetadataDto dto, String directoryPath) {
