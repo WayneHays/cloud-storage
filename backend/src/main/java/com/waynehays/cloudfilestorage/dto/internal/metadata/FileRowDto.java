@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.dto.internal.metadata;
 
-public record FileRow(
+public record FileRowDto(
         String path,
         String parentPath,
         String name,
