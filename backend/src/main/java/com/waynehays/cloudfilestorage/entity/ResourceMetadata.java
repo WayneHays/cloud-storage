@@ -37,6 +37,9 @@ public class ResourceMetadata {
     private String path;
 
     @Column(nullable = false, length = 500)
+    private String normalizedPath;
+
+    @Column(nullable = false, length = 500)
     private String parentPath;
 
     @Column(nullable = false, length = 200)
@@ -58,23 +61,6 @@ public class ResourceMetadata {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ResourceMetadata that = (ResourceMetadata) o;
-        return id != null && id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
 
     public boolean isFile() {
         return type.isFile();

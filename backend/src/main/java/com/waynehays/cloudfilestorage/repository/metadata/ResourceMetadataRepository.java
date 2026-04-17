@@ -1,8 +1,6 @@
 package com.waynehays.cloudfilestorage.repository.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.entity.ResourceType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,14 +15,24 @@ import java.util.Set;
 @Repository
 public interface ResourceMetadataRepository extends JpaRepository<ResourceMetadata, Long>, ResourceMetadataRepositoryCustom {
 
+
+    @Query("""
+            SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+            FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.normalizedPath = :normalizedPath
+            """)
+    boolean existsByNormalizedPath(@Param("userId") Long userId,
+                                   @Param("normalizedPath") String normalizedPath);
+
     @Query("""
             SELECT r FROM ResourceMetadata r
             WHERE r.userId = :userId
-            AND r.path = :path
+            AND r.normalizedPath = :normalizedPath
             AND r.markedForDeletion = false
             """)
-    Optional<ResourceMetadata> findByPath(@Param("userId") Long userId,
-                                          @Param("path") String path);
+    Optional<ResourceMetadata> findByNormalizedPath(@Param("userId") Long userId,
+                                                    @Param("normalizedPath") String normalizedPath);
 
     @Query("""
             SELECT r FROM ResourceMetadata r
@@ -55,80 +63,61 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
 
     @Query("""
             SELECT r FROM ResourceMetadata r
-            WHERE r.userId =:userId
-            AND r.path LIKE CONCAT(:prefix, '%')
+            WHERE r.userId = :userId
+            AND r.normalizedPath LIKE CONCAT(:normalizedPrefix, '%')
             AND r.type = 'FILE'
             AND r.markedForDeletion = false
             """)
     List<ResourceMetadata> findFilesByPathPrefix(@Param("userId") Long userId,
-                                                 @Param("prefix") String prefix);
+                                                 @Param("normalizedPrefix") String normalizedPrefix);
 
     @Query("""
             SELECT r.path
             FROM ResourceMetadata r
             WHERE r.userId = :userId
-            AND r.path IN :paths
+            AND r.normalizedPath IN :normalizedPaths
             AND r.markedForDeletion = false
             """)
-    Set<String> findExistingPaths(@Param("userId") Long userId, @Param("paths") Set<String> paths);
+    Set<String> findExistingPaths(@Param("userId") Long userId,
+                                  @Param("normalizedPaths") Set<String> normalizedPaths);
 
-    @Query("""
-            SELECT r.userId AS userId, COALESCE(SUM(r.size), 0) AS totalSize
-            FROM ResourceMetadata r
-            WHERE r.type = :type
-            AND userId IN :userIds
-            GROUP BY r.userId
-            """)
-    List<UsedSpace> sumFileSizesGroupByUserId(@Param("userIds") List<Long> userIds,
-                                              @Param("type") ResourceType type);
     @Modifying(clearAutomatically = true)
     @Query("""
             UPDATE ResourceMetadata r
             SET r.markedForDeletion = true
             WHERE r.userId = :userId
-            AND r.path = :path
+            AND r.normalizedPath = :normalizedPath
             """)
-    void markForDeletionByPath(@Param("userId") Long userId,
-                               @Param("path") String path);
-
-    @Modifying(clearAutomatically = true)
-    @Query("""
-            UPDATE ResourceMetadata r
-            SET r.path = CONCAT(:prefixTo, SUBSTRING(r.path, LENGTH(:prefixFrom) + 1)),
-                r.parentPath = CONCAT(:prefixTo, SUBSTRING(r.parentPath, LENGTH(:prefixFrom) + 1))
-            WHERE r.userId = :userId
-            AND r.path LIKE CONCAT(:prefixFrom, '%')
-            """)
-    void updatePathsByPathPrefix(@Param("userId") Long userId,
-                                 @Param("prefixFrom") String prefixFrom,
-                                 @Param("prefixTo") String prefixTo);
+    void markForDeletionByNormalizedPath(@Param("userId") Long userId,
+                                         @Param("normalizedPath") String normalizedPath);
 
     @Modifying(clearAutomatically = true)
     @Query("""
             DELETE FROM ResourceMetadata r
             WHERE r.userId = :userId
-            AND r.path = :path
+            AND r.normalizedPath = :normalizedPath
+            AND r.type = 'FILE'
             """)
-    void deleteByPath(@Param("userId") Long userId,
-                      @Param("path") String path);
-
-    @Modifying(clearAutomatically = true)
-    @Query("""
-             DELETE FROM ResourceMetadata r
-             WHERE r.userId = :userId
-             AND r.path LIKE CONCAT(:prefix, '%')
-            """)
-    void deleteByPathPrefix(@Param("userId") Long userId,
-                            @Param("prefix") String prefix);
+    void deleteFileByNormalizedPath(@Param("userId") Long userId,
+                                    @Param("normalizedPath") String normalizedPath);
 
     @Modifying(clearAutomatically = true)
     @Query("""
             DELETE FROM ResourceMetadata r
             WHERE r.userId = :userId
-            AND r.path IN :paths
+            AND r.normalizedPath LIKE CONCAT(:normalizedPrefix, '%')
             """)
-    void deleteByPaths(@Param("userId") Long userId,
-                       @Param("paths") List<String> paths);
+    void deleteByNormalizedPathPrefix(@Param("userId") Long userId,
+                                      @Param("normalizedPrefix") String normalizedPrefix);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            DELETE FROM ResourceMetadata r
+            WHERE r.userId = :userId
+            AND r.normalizedPath IN :normalizedPaths
+            """)
+    void deleteByNormalizedPaths(@Param("userId") Long userId,
+                                 @Param("normalizedPaths") List<String> normalizedPaths);
 
     @Modifying(clearAutomatically = true)
     @Query("""
@@ -136,4 +125,30 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
             WHERE r.id IN :ids
             """)
     void deleteByIds(@Param("ids") List<Long> ids);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE resource_metadata
+        SET
+            path = :pathTo || SUBSTRING(path FROM LENGTH(:normalizedPathFrom) + 1),
+            normalized_path = LOWER(:pathTo || SUBSTRING(path FROM LENGTH(:normalizedPathFrom) + 1)),
+            parent_path = CASE
+                WHEN normalized_path = :normalizedPathFrom THEN :targetParentPath
+                ELSE LOWER(:pathTo) || SUBSTRING(parent_path FROM LENGTH(:normalizedPathFrom) + 1)
+            END,
+            name = CASE
+                WHEN normalized_path = :normalizedPathFrom THEN :targetName
+                ELSE name
+            END
+        WHERE user_id = :userId
+          AND (normalized_path = :normalizedPathFrom
+               OR normalized_path LIKE :normalizedPathFrom || '%')
+        """, nativeQuery = true)
+    int moveMetadata(
+            @Param("userId") Long userId,
+            @Param("normalizedPathFrom") String normalizedPathFrom,
+            @Param("pathTo") String pathTo,
+            @Param("targetParentPath") String targetParentPath,
+            @Param("targetName") String targetName
+    );
 }

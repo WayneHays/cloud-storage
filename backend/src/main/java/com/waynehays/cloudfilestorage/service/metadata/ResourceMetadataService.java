@@ -1,16 +1,16 @@
 package com.waynehays.cloudfilestorage.service.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRowDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.mapper.ResourceMetadataMapper;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -28,8 +30,13 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     private final ResourceMetadataRepository repository;
 
     @Override
+    public boolean existsByPath(Long userId, String path) {
+        return repository.existsByNormalizedPath(userId, normalize(path));
+    }
+
+    @Override
     public ResourceMetadataDto findOrThrow(Long userId, String path) {
-        ResourceMetadata metadata = repository.findByPath(userId, path)
+        ResourceMetadata metadata = repository.findByNormalizedPath(userId, normalize(path))
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
         return mapper.toResourceMetadataDto(metadata);
     }
@@ -39,13 +46,13 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         if (StringUtils.isNotEmpty(path)) {
             findOrThrow(userId, path);
         }
-        List<ResourceMetadata> result = repository.findByParentPath(userId, path);
+        List<ResourceMetadata> result = repository.findByParentPath(userId, normalize(path));
         return mapper.toResourceMetadataDto(result);
     }
 
     @Override
     public List<ResourceMetadataDto> findFilesByPathPrefix(Long userId, String prefix) {
-        List<ResourceMetadata> files = repository.findFilesByPathPrefix(userId, prefix);
+        List<ResourceMetadata> files = repository.findFilesByPathPrefix(userId, normalize(prefix));
         return mapper.toResourceMetadataDto(files);
     }
 
@@ -64,7 +71,10 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     public Set<String> findExistingPaths(Long userId, Set<String> paths) {
-        return repository.findExistingPaths(userId, paths);
+        Set<String> normalizedPaths = paths.stream()
+                .map(PathUtils::normalizePath)
+                .collect(Collectors.toSet());
+        return repository.findExistingPaths(userId, normalizedPaths);
     }
 
     @Override
@@ -73,72 +83,104 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public List<UsedSpace> getUsedSpaceByUsers(List<Long> userIds) {
-        return repository.sumFileSizesGroupByUserId(userIds, ResourceType.FILE);
-    }
-
-    @Override
     @Transactional
     public long markForDeletionAndSumFileSize(Long userId, String path) {
-        return repository.markForDeletionAndSumSize(userId, path);
+        return repository.markForDeletionAndSumSize(userId, normalize(path));
     }
 
     @Override
     @Transactional
-    public void saveFiles(Long userId, List<FileRow> files) {
-        repository.saveFiles(userId, files);
+    public void saveFiles(Long userId, List<FileRowDto> files) {
+        int filesCount = files.size();
+        log.debug("Start save files metadata for userId={}, files={}", userId, filesCount);
+        repository.batchSaveFiles(userId, files);
+        log.debug("Finished save files metadata for userId={}, files={}", userId, filesCount);
     }
 
     @Override
     @Transactional
-    public void saveDirectories(Long userId, List<DirectoryRow> directories) {
-        repository.saveDirectories(userId, directories);
+    public void saveDirectories(Long userId, List<DirectoryRowDto> directories) {
+        int directoriesCount = directories.size();
+        log.debug("Start save created directories metadata for userId={}, directories={}", userId, directoriesCount);
+        repository.batchSaveDirectories(userId, directories);
+        log.debug("Finished save created directories metadata for userId={}, directories={}", userId, directoriesCount);
     }
 
     @Override
     @Transactional
     public void saveDirectory(Long userId, String path) {
+        log.debug("Start create directory: userId={}, path={}", userId, path);
         try {
             ResourceMetadata directory = mapper.toDirectoryEntity(userId, path);
             repository.saveAndFlush(directory);
         } catch (DataIntegrityViolationException e) {
             throw new ResourceAlreadyExistsException("Directory already exists", path);
         }
+        log.debug("Finished create directory: userId={}, path={}", userId, path);
     }
 
     @Override
     @Transactional
-    public void updatePathsByPrefix(Long userId, String prefixFrom, String prefixTo) {
-        repository.updatePathsByPathPrefix(userId, prefixFrom, prefixTo);
+    public void moveMetadata(Long userId, String pathFrom, String pathTo) {
+        log.debug("Start move metadata: userId={}, from={}, to={}", userId, pathFrom, pathTo);
+
+        String normalizedPathFrom = normalize(pathFrom);
+        String targetParentPath = normalize(PathUtils.extractParentPath(pathTo));
+        String targetName = PathUtils.extractDisplayName(pathTo);
+        log.debug("moveMetadata targetName={}, pathTo={}", targetName, pathTo);
+
+        int updated = repository.moveMetadata(
+                userId, normalizedPathFrom, pathTo, targetParentPath, targetName);
+
+        if (updated == 0) {
+            throw new ResourceNotFoundException("Resource not found", pathFrom);
+        }
+
+        log.debug("Finished move metadata: {} resources updated", updated);
     }
 
     @Override
     @Transactional
     public void markForDeletion(Long userId, String path) {
-        repository.markForDeletionByPath(userId, path);
+        repository.markForDeletionByNormalizedPath(userId, normalize(path));
     }
 
     @Override
     @Transactional
-    public void deleteByPath(Long userId, String path) {
-        repository.deleteByPath(userId, path);
+    public void deleteFileByPath(Long userId, String path) {
+        log.debug("Start delete metadata: userId={}, path={}", userId, path);
+        repository.deleteFileByNormalizedPath(userId, normalize(path));
+        log.debug("Finished delete metadata: userId={}, path={}", userId, path);
     }
 
     @Override
     @Transactional
-    public void deleteByPathPrefix(Long userId, String pathPrefix) {
-        repository.deleteByPathPrefix(userId, pathPrefix);
+    public void deleteDirectoryMetadata(Long userId, String pathPrefix) {
+        log.debug("Start delete directory metadata: userId={}, prefix={}", userId, pathPrefix);
+        repository.deleteByNormalizedPathPrefix(userId, normalize(pathPrefix));
+        log.debug("Finished delete directory metadata: userId={}, prefix={}", userId, pathPrefix);
     }
 
     @Override
     @Transactional
     public void deleteByPaths(Long userId, List<String> paths) {
-        repository.deleteByPaths(userId, paths);
+        log.debug("Start delete metadata by paths: userId={}, paths={}", userId, paths);
+        List<String> normalizedPaths = paths.stream()
+                .map(PathUtils::normalizePath)
+                .toList();
+        repository.deleteByNormalizedPaths(userId, normalizedPaths);
+        log.debug("Finished delete metadata by paths: userId={}, paths={}", userId, paths);
     }
 
     @Override
     @Transactional
     public void deleteByIds(List<Long> ids) {
+        log.debug("Start delete metadata by ids={}", ids);
         repository.deleteByIds(ids);
+        log.debug("Finished delete metadata by ids={}", ids);
+    }
+
+    private String normalize(String path) {
+        return PathUtils.normalizePath(path);
     }
 }

@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.repository.metadata;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRowDto;
 
 import java.util.List;
 import java.util.Set;
@@ -10,9 +10,9 @@ public interface ResourceMetadataRepositoryCustom {
 
     Set<String> findMissingPaths(Long userId, Set<String> paths);
 
-    void saveDirectories(Long userId, List<DirectoryRow> directories);
+    void batchSaveDirectories(Long userId, List<DirectoryRowDto> directories);
 
-    void saveFiles(Long userId, List<FileRow> files);
+    void batchSaveFiles(Long userId, List<FileRowDto> files);
 
     long markForDeletionAndSumSize(Long userId, String prefix);
 }
