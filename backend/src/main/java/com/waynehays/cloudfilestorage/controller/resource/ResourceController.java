@@ -19,6 +19,7 @@ import com.waynehays.cloudfilestorage.service.resource.search.ResourceSearchServ
 import com.waynehays.cloudfilestorage.service.resource.upload.ResourceUploadServiceApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,6 +39,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.InputStream;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
@@ -75,6 +77,7 @@ public class ResourceController implements ResourceControllerApi {
             case DownloadResult.File file -> out -> {
                 try (InputStream in = file.contentSupplier().get()) {
                     in.transferTo(out);
+                    log.info("Finished file download: userId={}, path={}", userDetails.id(), request.path());
                 }
             };
             case DownloadResult.Archive archive -> archive.writer()::writeTo;
