@@ -1,8 +1,9 @@
 package com.waynehays.cloudfilestorage.service.resource.upload;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRowDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UserPath;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ApplicationException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
@@ -39,7 +40,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
 
     @Override
     public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
-        log.info("Upload started: userId={}, objects count={}", userId, objects.size());
+        log.info("Upload started: userId={}, files={}", userId, objects.size());
 
         validate(userId, objects);
         long totalSize = calculateSize(objects);
@@ -53,7 +54,13 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
             saveFilesMetadata(userId, objects, context);
             List<ResourceDto> createdDirectories = createMissingDirectories(userId, uploadedFiles, context);
 
-            return buildResult(uploadedFiles, createdDirectories, userId);
+            List<ResourceDto> result = new ArrayList<>(createdDirectories);
+            result.addAll(uploadedFiles);
+
+            log.info("Upload completed: userId={}, files={}, created directories={}",
+                    userId, uploadedFiles.size(), createdDirectories.size());
+
+            return result;
         } catch (Exception e) {
             log.warn("Upload failed for userId={}, initiating rollback", userId);
             rollback(userId, totalSize, context);
@@ -88,16 +95,6 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
                 .sum();
     }
 
-    private List<ResourceDto> buildResult(List<ResourceDto> uploadedFiles,
-                                          List<ResourceDto> createdDirectories,
-                                          Long userId) {
-        List<ResourceDto> result = new ArrayList<>(createdDirectories);
-        result.addAll(uploadedFiles);
-        log.info("Upload completed: userId={}, files={}, created directories={}",
-                userId, uploadedFiles.size(), createdDirectories.size());
-        return result;
-    }
-
     private List<ResourceDto> uploadToStorage(Long userId, List<UploadObjectDto> objects, UploadContext context) {
         List<CompletableFuture<ResourceDto>> futures = objects.stream()
                 .map(o -> CompletableFuture.supplyAsync(() -> {
@@ -121,7 +118,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
     }
 
     private void saveFilesMetadata(Long userId, List<UploadObjectDto> objects, UploadContext context) {
-        List<FileRow> newFiles = resourceRowMapper.toFileRows(objects);
+        List<FileRowDto> newFiles = resourceRowMapper.toFileRows(objects);
         metadataService.saveFiles(userId, newFiles);
         objects.forEach(o -> context.addSavedToDatabasePath(o.fullPath()));
     }
@@ -139,9 +136,8 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
             return List.of();
         }
 
-        List<DirectoryRow> directoriesToSave = resourceRowMapper.toDirectoryRows(missingPaths);
+        List<DirectoryRowDto> directoriesToSave = resourceRowMapper.toDirectoryRows(missingPaths);
         metadataService.saveDirectories(userId, directoriesToSave);
-
         missingPaths.forEach(context::addSavedToDatabasePath);
         return resourceDtoMapper.directoriesFromPaths(missingPaths);
     }
@@ -165,7 +161,11 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
         safeExecuteRollback(
                 () -> {
                     if (context.hasAnyUploadedToStoragePaths()) {
-                        storageService.deleteObjects(userId, context.getUploadedToStoragePaths());
+                        List<UserPath> userPaths = context.getUploadedToStoragePaths()
+                                .stream()
+                                .map(p -> new UserPath(userId, p))
+                                .toList();
+                        storageService.deleteObjects(userPaths);
                     }
                 },
                 "Failed to rollback storage",
