@@ -19,20 +19,20 @@ public record StorageQuotaProperties(
         @NotNull(message = "Default storage limit must be set")
         DataSize defaultLimit,
 
-        @NotNull(message = "Reconciliation interval must be set")
-        @DurationMin(minutes = 1, message = "Reconciliation interval must be >= 1m")
-        @DurationMax(hours = 24, message = "Reconciliation interval must be <= 24h")
-        Duration interval,
+        @NotNull(message = "Reconciliation reconciliationInterval must be set")
+        @DurationMin(minutes = 1, message = "Reconciliation reconciliationInterval must be >= 1m")
+        @DurationMax(hours = 24, message = "Reconciliation reconciliationInterval must be <= 24h")
+        Duration reconciliationInterval,
 
         @NotNull(message = "Reconciliation batch size must be set")
         @Min(value = 10, message = "Batch size must be >= 10")
         @Max(value = 1000, message = "Batch size must be <= 1000")
-        Integer batchSize
+        Integer reconciliationBatchSize
 ) {
-    private static final DataSize MIN_LIMIT = DataSize.ofMegabytes(1);
-    private static final DataSize MAX_LIMIT = DataSize.ofGigabytes(100);
+    private static final DataSize MIN_LIMIT = DataSize.ofMegabytes(100);
+    private static final DataSize MAX_LIMIT = DataSize.ofGigabytes(10);
 
-    @AssertTrue(message = "Default storage limit must be between 1 MB and 100 GB")
+    @AssertTrue(message = "Default storage limit must be between 100 MB and 10 GB")
     boolean isDefaultLimitValid() {
         if (defaultLimit == null) {
             return true;

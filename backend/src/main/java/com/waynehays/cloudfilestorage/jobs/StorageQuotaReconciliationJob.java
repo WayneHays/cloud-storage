@@ -17,6 +17,6 @@ public class StorageQuotaReconciliationJob implements SchedulingConfigurer {
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.addFixedRateTask(
                 reconciliationService::reconcileStorageQuotas,
-                properties.interval());
+                properties.reconciliationInterval());
     }
 }

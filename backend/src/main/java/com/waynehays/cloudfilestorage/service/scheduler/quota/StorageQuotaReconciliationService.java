@@ -1,30 +1,18 @@
 package com.waynehays.cloudfilestorage.service.scheduler.quota;
 
 import com.waynehays.cloudfilestorage.config.properties.StorageQuotaProperties;
-import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
-import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class StorageQuotaReconciliationService implements StorageQuotaReconciliationServiceApi {
-    private final TransactionTemplate transactionTemplate;
     private final StorageQuotaProperties properties;
     private final StorageQuotaServiceApi quotaService;
-    private final ResourceMetadataServiceApi metadataService;
 
     @Override
     public void reconcileStorageQuotas() {
@@ -35,11 +23,16 @@ public class StorageQuotaReconciliationService implements StorageQuotaReconcilia
 
         while (true) {
             try {
-                Page<StorageQuotaDto> quotas = reconcileQuotas(currentPage);
-                totalUsersProcessed += quotas.getNumberOfElements();
+                Page<Long> userIds = quotaService.findAllUserIds(currentPage, properties.reconciliationBatchSize());
+
+                if (userIds.isEmpty()) {
+                    break;
+                }
+                quotaService.reconcileUsedSpace(userIds.getContent());
+                totalUsersProcessed += userIds.getNumberOfElements();
                 currentPage++;
 
-                if (!quotas.hasNext()) {
+                if (!userIds.hasNext()) {
                     break;
                 }
             } catch (Exception e) {
@@ -49,46 +42,5 @@ public class StorageQuotaReconciliationService implements StorageQuotaReconcilia
         }
 
         log.info("Quota reconciliation completed: {} quotas processed", totalUsersProcessed);
-    }
-
-    private Page<StorageQuotaDto> reconcileQuotas(int page) {
-        return transactionTemplate.execute(status -> {
-            Page<StorageQuotaDto> quotas = quotaService.findAllQuotas(page, properties.batchSize());
-            List<Long> userIds = quotas.stream()
-                    .map(StorageQuotaDto::userId)
-                    .toList();
-            Map<Long, Long> actualUsage = getActualUsageByUsers(userIds);
-            List<SpaceCorrectionDto> corrections = new ArrayList<>();
-
-            collectMismatches(quotas, actualUsage, corrections);
-
-            if (!corrections.isEmpty()) {
-                quotaService.batchUpdateUsedSpace(corrections);
-            }
-
-            return quotas;
-        });
-    }
-
-    private void collectMismatches(Page<StorageQuotaDto> quotas,
-                                   Map<Long, Long> actualUsage,
-                                   List<SpaceCorrectionDto> corrections) {
-        quotas.forEach(q -> {
-            long actual = actualUsage.getOrDefault(q.userId(), 0L);
-            if (q.usedSpace() != actual) {
-                log.warn("Quota mismatch for user: {}, stored={}, actual={}",
-                        q.userId(), q.usedSpace(), actual);
-                corrections.add(new SpaceCorrectionDto(q.userId(), actual));
-            }
-        });
-    }
-
-    private Map<Long, Long> getActualUsageByUsers(List<Long> userIds) {
-        return metadataService.getUsedSpaceByUsers(userIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        UsedSpace::getUserId,
-                        UsedSpace::getTotalSize
-                ));
     }
 }
