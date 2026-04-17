@@ -24,3 +24,15 @@ databaseChangeLog:
                   type: varchar(128)
                   constraints:
                     nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIMEZONE
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: now()
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIMEZONE
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: now()

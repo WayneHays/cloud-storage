@@ -12,6 +12,7 @@ databaseChangeLog:
                   autoIncrement: true
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_resource_metadata
                     nullable: false
               - column:
                   name: user_id
@@ -22,6 +23,16 @@ databaseChangeLog:
                     references: users(id)
               - column:
                   name: path
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: normalized_path
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: parent_path
                   type: varchar(500)
                   constraints:
                     nullable: false
@@ -46,68 +57,76 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: created_at
-                  type: TIMESTAMP WITH TIMEZONE
+                  type: TIMESTAMP WITH TIME ZONE
                   defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
                   constraints:
                     nullable: false
         - addUniqueConstraint:
             tableName: resource_metadata
-            columnNames: user_id, path
-            constraintName: uq_resource_metadata_user_path
+            columnNames: user_id, normalized_path
+            constraintName: uq_resource_metadata_user_id_normalized_path
         - createIndex:
             tableName: resource_metadata
-            indexName: idx_resource_metadata_user_name
+            indexName: idx_resource_metadata_user_id_parent_path
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: parent_path
+        - createIndex:
+            tableName: resource_metadata
+            indexName: idx_resource_metadata_user_id_name
             columns:
               - column:
                   name: user_id
               - column:
                   name: name
-
-  - changeSet:
-      id: create-resource_metadata-deletion-index
-      author: waynehays
-      changes:
-        - sql:
-            sql: CREATE INDEX idx_resource_metadata_marked_for_deletion ON resource_metadata(marked_for_deletion) WHERE marked_for_deletion = TRUE
-
-  - changeSet:
-      id: add-parent-path-to-resource-metadata
-      author: waynehays
-      changes:
-        - addColumn:
-            tableName: resource_metadata
-            columns:
-              - column:
-                  name: parent_path
-                  type: varchar(500)
-                  constraints:
-                    nullable: false
-                  defaultValue: ""
         - createIndex:
             tableName: resource_metadata
-            indexName: idx_resource_metadata_user_parent_path
+            indexName: idx_resource_metadata_marked_for_deletion
             columns:
               - column:
                   name: user_id
               - column:
-                  name: parent_path
-  - changeSet:
-      id: add-resource-metadata-check-constraints
-      author: waynehays
-      changes:
+                  name: marked_for_deletion
+        - createIndex:
+            tableName: resource_metadata
+            indexName: idx_resource_metadata_user_id_type_marked_for_deletion
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: type
+              - column:
+                  name: marked_for_deletion
         - sql:
+            comment: "Partial index for cleanup: only rows marked for deletion"
+            sql: >
+              CREATE INDEX idx_resource_metadata_marked_for_deletion_true
+              ON resource_metadata (marked_for_deletion)
+              WHERE marked_for_deletion = TRUE
+        - sql:
+            comment: "File size must be non-negative"
             sql: >
               ALTER TABLE resource_metadata
-              ADD CONSTRAINT chk_resource_metadata_size_non_negative CHECK (size >= 0);
+              ADD CONSTRAINT chk_resource_metadata_size_non_negative
+              CHECK (size >= 0)
         - sql:
+            comment: "Files must have a size"
             sql: >
               ALTER TABLE resource_metadata
-              ADD CONSTRAINT chk_resource_metadata_file_has_size CHECK (
-                type != 'FILE' OR size IS NOT NULL
-              );
+              ADD CONSTRAINT chk_resource_metadata_file_has_size
+              CHECK (type != 'FILE' OR size IS NOT NULL)
         - sql:
+            comment: "Type must be FILE or DIRECTORY"
             sql: >
               ALTER TABLE resource_metadata
-              ADD CONSTRAINT chk_resource_metadata_type CHECK (
-                type IN ('FILE', 'DIRECTORY')
-              );
+              ADD CONSTRAINT chk_resource_metadata_type
+              CHECK (type IN ('FILE', 'DIRECTORY'))
+

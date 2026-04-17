@@ -32,23 +32,30 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: created_at
-                  type: TIMESTAMP WITH TIMEZONE
+                  type: TIMESTAMP WITH TIME ZONE
                   defaultValueComputed: NOW()
                   constraints:
                     nullable: false
               - column:
                   name: updated_at
-                  type: TIMESTAMP WITH TIMEZONE
+                  type: TIMESTAMP WITH TIME ZONE
                   defaultValueComputed: NOW()
         - addUniqueConstraint:
             tableName: storage_quotas
             columnNames: user_id
             constraintName: uq_storage_quota_user_id
         - sql:
+            comment: "Used space must be non-negative"
             sql: >
               ALTER TABLE storage_quotas
               ADD CONSTRAINT chk_used_space_non_negative CHECK (used_space >= 0);
         - sql:
-           sql: >
+            comment: "Storage limit must be > 100MB"
+            sql: >
               ALTER TABLE storage_quotas
-              ADD CONSTRAINT chk_storage_limit_positive CHECK (storage_limit > 0);
+              ADD CONSTRAINT chk_storage_limit_min CHECK (storage_limit > 100 * 1024 * 1024);
+        - sql:
+            comment: "Storage limit must be < 10GB"
+            sql: >
+              ALTER TABLE storage_quotas
+              ADD CONSTRAINT chk_storage_limit_max CHECK (storage_limit < 100 * 1024 * 1024 * 1024)
