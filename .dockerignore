@@ -1,0 +1,15 @@
+.git
+.gradle
+.idea
+*.iml
+.DS_Store
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/build
+backend/build/classes
+backend/build/tmp
+backend/build/generated
+backend/build/reports
+logs
+*.log
