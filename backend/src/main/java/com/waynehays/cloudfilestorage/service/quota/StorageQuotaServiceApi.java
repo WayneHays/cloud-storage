@@ -1,13 +1,13 @@
 package com.waynehays.cloudfilestorage.service.quota;
 
-import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface StorageQuotaServiceApi {
+
+    Page<Long> findAllUserIds(int page, int limit);
 
     void createStorageQuota(Long userId, long storageLimit);
 
@@ -15,9 +15,7 @@ public interface StorageQuotaServiceApi {
 
     void releaseSpace(Long userId, long bytes);
 
-    Page<StorageQuotaDto> findAllQuotas(int page, int limit);
+    void reconcileUsedSpace(List<Long> userIds);
 
-    void batchUpdateUsedSpace(List<SpaceCorrectionDto> corrections);
-
-    void batchDecreaseUsedSpace(List<SpaceReleaseDto> releases);
+    void batchReleaseUsedSpace(List<SpaceReleaseDto> spaceRelease);
 }
