@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -53,9 +52,7 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
             }
         }
 
-        Set<String> existing = metadataService.findExistingPaths(userId, Set.of(pathTo));
-
-        if (!existing.isEmpty()) {
+        if (metadataService.existsByPath(userId, pathTo)) {
             throw new ResourceAlreadyExistsException("Resource already exists at target path", pathTo);
         }
     }
@@ -67,13 +64,13 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
         try {
             storageService.moveObject(userId, pathFrom, pathTo);
             context.addMovedObject(pathFrom, pathTo);
-            metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+            metadataService.moveMetadata(userId, pathFrom, pathTo);
         } catch (Exception e) {
             rollback(userId, context);
             throw e;
         }
 
-        log.info("Successfully moved file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
+        log.info("Finished move file: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
     private void moveDirectory(Long userId, String pathFrom, String pathTo) {
@@ -84,14 +81,14 @@ public class ResourceMoveService implements ResourceMoveServiceApi {
 
         try {
             moveContent(userId, files, pathFrom, pathTo, context);
-            metadataService.updatePathsByPrefix(userId, pathFrom, pathTo);
+            metadataService.moveMetadata(userId, pathFrom, pathTo);
         } catch (Exception e) {
             log.warn("Move failed for userId={}, initiating rollback", userId);
             rollback(userId, context);
             throw e;
         }
 
-        log.info("Successfully moved directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
+        log.info("Finished move directory: userId={}, from={}, to={}", userId, pathFrom, pathTo);
     }
 
     private void moveContent(Long userId, List<ResourceMetadataDto> files,

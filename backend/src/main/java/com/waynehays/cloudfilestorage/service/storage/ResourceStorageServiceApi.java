@@ -1,7 +1,8 @@
 package com.waynehays.cloudfilestorage.service.storage;
 
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UserPath;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public interface ResourceStorageServiceApi {
 
     void deleteObject(Long userId, String path);
 
-    void deleteObjects(Long userId, List<String> paths);
+    void deleteObjects(List<UserPath> paths);
 
     void deleteDirectory(Long userId, String path);
 

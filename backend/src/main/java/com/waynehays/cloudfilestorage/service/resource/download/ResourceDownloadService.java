@@ -38,7 +38,7 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
     }
 
     private DownloadResult downloadFile(Long userId, String path, String filename) {
-        log.info("Prepared file download: userId={}, path={}", userId, path);
+        log.info("Start prepare file for download: userId={}, path={}", userId, path);
 
         InputStreamSupplier contentSupplier = () -> {
             try {
@@ -53,7 +53,7 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {
-        log.info("Prepared directory download: userId={}, path={}", userId, path);
+        log.info("Start prepare directory for download: userId={}, path={}", userId, path);
 
         List<ArchiveItem> archiveItems = metadataService.findFilesByPathPrefix(userId, path)
                 .stream()
@@ -62,7 +62,7 @@ public class ResourceDownloadService implements ResourceDownloadServiceApi {
 
         DownloadResult.StreamWriter writer = outputStream -> {
             archiver.archiveResources(archiveItems, outputStream);
-            log.info("Successfully downloaded directory: userId={}, path={}", userId, path);
+            log.info("Finished directory download: userId={}, path={}", userId, path);
         };
 
         return new DownloadResult.Archive(
