@@ -15,8 +15,8 @@ import java.time.Duration;
 public record CleanupProperties(
 
         @NotNull(message = "Interval for cleanup orphans from storage must be set")
-        @DurationMin(minutes = 1, message = "Cleanup interval must be >= 1m")
-        @DurationMax(hours = 24, message = "Cleanup interval must be <= 24h")
+        @DurationMin(minutes = 1, message = "Cleanup reconciliationInterval must be >= 1m")
+        @DurationMax(hours = 24, message = "Cleanup reconciliationInterval must be <= 24h")
         Duration interval,
 
         @NotNull(message = "Cleanup limit must be set")
