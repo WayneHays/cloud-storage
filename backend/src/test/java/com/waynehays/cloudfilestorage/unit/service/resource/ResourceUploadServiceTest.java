@@ -1,8 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.service.resource;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
@@ -43,7 +42,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ResourceUploadServiceTest {
 
-
     @Mock
     private ResourceRowMapper resourceRowMapper;
 
@@ -81,13 +79,8 @@ class ResourceUploadServiceTest {
             UploadObjectDto object = new UploadObjectDto(
                     "file.txt", "file.txt", "docs/", "docs/file.txt",
                     100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-            FileRow newFile = new FileRow("docs/file.txt", "docs/", "file.txt", 100L);
+            ResourceDto fileDto = new ResourceDto("docs/file.txt", "file.txt", 100L, ResourceType.FILE);
 
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(List.of(object)))
-                    .thenReturn(List.of(newFile));
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
             when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
@@ -96,6 +89,8 @@ class ResourceUploadServiceTest {
                     .thenReturn(List.of());
             when(resourceRowMapper.toDirectoryRows(anySet()))
                     .thenReturn(List.of());
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
+                    .thenReturn(fileDto);
 
             // when
             List<ResourceDto> result = service.upload(USER_ID, List.of(object));
@@ -105,6 +100,65 @@ class ResourceUploadServiceTest {
             verify(storageService).putObject(USER_ID, object);
             verify(metadataService).saveFiles(eq(USER_ID), anyList());
             assertThat(result).contains(fileDto);
+        }
+
+        @Test
+        @DisplayName("Should upload multiple files and return all results")
+        void shouldUploadMultipleFiles() {
+            // given
+            UploadObjectDto object1 = new UploadObjectDto(
+                    "a.txt", "a.txt", "docs/", "docs/a.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            UploadObjectDto object2 = new UploadObjectDto(
+                    "b.txt", "b.txt", "work/", "work/b.txt",
+                    200L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
+            ResourceDto fileDto2 = new ResourceDto("work/", "b.txt", 200L, ResourceType.FILE);
+
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L))
+                    .thenReturn(fileDto1);
+            when(resourceDtoMapper.fileFromPath("work/b.txt", 200L))
+                    .thenReturn(fileDto2);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+
+            // when
+            List<ResourceDto> result = service.upload(USER_ID, List.of(object1, object2));
+
+            // then
+            verify(quotaService).reserveSpace(USER_ID, 300L);
+            verify(storageService).putObject(USER_ID, object1);
+            verify(storageService).putObject(USER_ID, object2);
+            assertThat(result).containsExactlyInAnyOrder(fileDto1, fileDto2);
+        }
+
+        @Test
+        @DisplayName("Should skip directory creation when uploading file to root")
+        void shouldSkipDirectoryCreationWhenUploadingToRoot() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "", "file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto = new ResourceDto("", "file.txt", 100L, ResourceType.FILE);
+
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("file.txt", 100L))
+                    .thenReturn(fileDto);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+
+            // when
+            List<ResourceDto> result = service.upload(USER_ID, List.of(object));
+
+            // then
+            verify(metadataService, never()).findMissingPaths(anyLong(), anySet());
+            verify(metadataService, never()).saveDirectories(anyLong(), anyList());
+            assertThat(result).containsExactly(fileDto);
         }
     }
 
@@ -210,9 +264,87 @@ class ResourceUploadServiceTest {
             // when & then
             assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
                     .isInstanceOf(RuntimeException.class);
-            verify(storageService).deleteObjects(eq(USER_ID), anyList());
+            verify(storageService).deleteObjects(anyList());
             verify(quotaService).releaseSpace(USER_ID, 100L);
         }
+
+        @Test
+        @DisplayName("Should rollback files, storage and quota when directory save fails")
+        void shouldRollbackWhenDirectorySaveFails() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "docs/", "docs/file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
+
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
+                    .thenReturn(fileDto);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of("docs/"));
+            when(resourceRowMapper.toDirectoryRows(anySet()))
+                    .thenReturn(List.of());
+            doThrow(new RuntimeException("DB error"))
+                    .when(metadataService).saveDirectories(eq(USER_ID), anyList());
+
+            // when & then
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
+                    .isInstanceOf(RuntimeException.class);
+            verify(metadataService).deleteByPaths(eq(USER_ID), anyList());
+            verify(storageService).deleteObjects(anyList());
+            verify(quotaService).releaseSpace(USER_ID, 100L);
+        }
+
+        @Test
+        @DisplayName("Should not release quota when reservation itself failed")
+        void shouldNotReleaseQuotaWhenReservationFailed() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "docs/", "docs/file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            doThrow(new ResourceStorageLimitException("Not enough space", 100L, 50L))
+                    .when(quotaService).reserveSpace(USER_ID, 100L);
+
+            // when & then
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
+                    .isInstanceOf(ResourceStorageLimitException.class);
+            verify(quotaService, never()).releaseSpace(anyLong(), anyLong());
+            verifyNoInteractions(storageService);
+        }
+
+        @Test
+        @DisplayName("Should continue rollback when storage cleanup fails")
+        void shouldContinueRollbackWhenStorageCleanupFails() {
+            // given
+            UploadObjectDto object = new UploadObjectDto(
+                    "file.txt", "file.txt", "docs/", "docs/file.txt",
+                    100L, "text/plain", InputStream::nullInputStream);
+            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
+
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
+                    .thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
+                    .thenReturn(fileDto);
+            when(resourceRowMapper.toFileRows(anyList()))
+                    .thenReturn(List.of());
+            doThrow(new RuntimeException("DB error"))
+                    .when(metadataService).saveFiles(eq(USER_ID), anyList());
+            doThrow(new RuntimeException("Storage cleanup also failed"))
+                    .when(storageService).deleteObjects(anyList());
+
+            // when & then
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("DB error");
+            verify(quotaService).releaseSpace(USER_ID, 100L);
+        }
+
     }
 
     @Nested
@@ -226,8 +358,8 @@ class ResourceUploadServiceTest {
                     "file.txt", "file.txt", "docs/sub/", "docs/sub/file.txt",
                     100L, "text/plain", InputStream::nullInputStream);
             ResourceDto fileDto = new ResourceDto("docs/sub/", "file.txt", 100L, ResourceType.FILE);
-            List<DirectoryRow> missingRows = List.of(
-                    new DirectoryRow("docs/sub/", "docs/", "sub")
+            List<DirectoryRowDto> missingRows = List.of(
+                    new DirectoryRowDto("docs/sub/", "docs/", "sub")
             );
 
             when(resourceDtoMapper.fileFromPath("docs/sub/file.txt", 100L))

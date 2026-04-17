@@ -1,5 +1,7 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
+import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.entity.User;
 import com.waynehays.cloudfilestorage.integration.container.PostgresTestContainer;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,5 +45,31 @@ public abstract class AbstractRepositoryTest {
         user.setPassword("password");
         em.persistAndFlush(user);
         return user.getId();
+    }
+
+    protected ResourceMetadata file(Long userId, String path, String parentPath, String name, long size) {
+        ResourceMetadata r = new ResourceMetadata();
+        r.setUserId(userId);
+        r.setPath(path);
+        r.setNormalizedPath(path.toLowerCase());
+        r.setParentPath(parentPath.toLowerCase());
+        r.setName(name);
+        r.setType(ResourceType.FILE);
+        r.setSize(size);
+        r.setMarkedForDeletion(false);
+        return r;
+    }
+
+    protected ResourceMetadata directory(Long userId, String path, String parentPath, String name) {
+        ResourceMetadata r = new ResourceMetadata();
+        r.setUserId(userId);
+        r.setPath(path);
+        r.setNormalizedPath(path.toLowerCase());
+        r.setParentPath(parentPath.toLowerCase());
+        r.setName(name);
+        r.setType(ResourceType.DIRECTORY);
+        r.setSize(0L);
+        r.setMarkedForDeletion(false);
+        return r;
     }
 }

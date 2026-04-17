@@ -1,17 +1,11 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
-import com.waynehays.cloudfilestorage.dto.internal.quota.UsedSpace;
 import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
-import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,78 +19,89 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     @Autowired
     private ResourceMetadataRepository repository;
 
-    private ResourceMetadata file(Long userId, String path, String parentPath, String name, long size) {
-        ResourceMetadata r = new ResourceMetadata();
-        r.setUserId(userId);
-        r.setPath(path);
-        r.setParentPath(parentPath);
-        r.setName(name);
-        r.setType(ResourceType.FILE);
-        r.setSize(size);
-        r.setMarkedForDeletion(false);
-        return r;
-    }
+    @Nested
+    @DisplayName("existsByNormalizedPath")
+    class ExistsByNormalizedPath {
 
-    private ResourceMetadata directory(Long userId, String path, String parentPath, String name) {
-        ResourceMetadata r = new ResourceMetadata();
-        r.setUserId(userId);
-        r.setPath(path);
-        r.setParentPath(parentPath);
-        r.setName(name);
-        r.setType(ResourceType.DIRECTORY);
-        r.setSize(0L);
-        r.setMarkedForDeletion(false);
-        return r;
+        @Test
+        @DisplayName("Should return true when resource exists")
+        void shouldReturnTrueWhenExists() {
+            // given
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when & then
+            assertThat(repository.existsByNormalizedPath(userId, "docs/file.txt")).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return false when resource does not exist")
+        void shouldReturnFalseWhenNotExists() {
+            // when & then
+            assertThat(repository.existsByNormalizedPath(userId, "nonexistent.txt")).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should return false for other user's resource")
+        void shouldReturnFalseForOtherUser() {
+            // given
+            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when & then
+            assertThat(repository.existsByNormalizedPath(userId, "docs/file.txt")).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should find resource regardless of original path case")
+        void shouldFindCaseInsensitive() {
+            // given
+            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
+            em.flush();
+
+            // when & then
+            assertThat(repository.existsByNormalizedPath(userId, "docs/file.txt")).isTrue();
+        }
     }
 
     @Nested
-    @DisplayName("findByPath")
-    class FindByPath {
+    @DisplayName("findByNormalizedPath")
+    class FindByNormalizedPath {
 
         @Test
-        @DisplayName("should return resource by exact path")
-        void shouldReturnByPath() {
+        @DisplayName("Should return resource when found")
+        void shouldReturnWhenFound() {
             // given
-            String path = "docs/a.txt";
-            String name = "a.txt";
-            em.persistAndFlush(file(userId, path, "docs/", name, 100));
+            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
+            em.flush();
 
             // when
-            Optional<ResourceMetadata> result = repository.findByPath(userId, path);
+            Optional<ResourceMetadata> result = repository.findByNormalizedPath(userId, "docs/file.txt");
 
             // then
             assertThat(result).isPresent();
-            assertThat(result.get().getName()).isEqualTo(name);
+            assertThat(result.get().getPath()).isEqualTo("Docs/File.txt");
+            assertThat(result.get().getName()).isEqualTo("File.txt");
         }
 
         @Test
-        @DisplayName("should return empty when marked for deletion")
-        void shouldIgnoreMarkedForDeletion() {
-            // given
-            String path = "docs/a.txt";
-            ResourceMetadata r = file(userId, path, "docs/", "a.txt", 100);
-            r.setMarkedForDeletion(true);
-            em.persistAndFlush(r);
-
-            // when
-            Optional<ResourceMetadata> result = repository.findByPath(userId, path);
-
-            // then
-            assertThat(result).isEmpty();
+        @DisplayName("Should return empty when not found")
+        void shouldReturnEmptyWhenNotFound() {
+            // when & then
+            assertThat(repository.findByNormalizedPath(userId, "missing.txt")).isEmpty();
         }
 
         @Test
-        @DisplayName("should not return other user's resource")
-        void shouldRespectUserIsolation() {
+        @DisplayName("Should exclude resources marked for deletion")
+        void shouldExcludeMarkedForDeletion() {
             // given
-            String path = "docs/a.txt";
-            em.persistAndFlush(file(otherUserId, path, "docs/", "a.txt", 100));
+            ResourceMetadata deleted = file(userId, "docs/file.txt", "docs/", "file.txt", 10);
+            deleted.setMarkedForDeletion(true);
+            em.persist(deleted);
+            em.flush();
 
-            // when
-            Optional<ResourceMetadata> result = repository.findByPath(userId, path);
-
-            // then
-            assertThat(result).isEmpty();
+            // when & then
+            assertThat(repository.findByNormalizedPath(userId, "docs/file.txt")).isEmpty();
         }
     }
 
@@ -105,128 +110,57 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     class FindByParentPath {
 
         @Test
-        @DisplayName("should return only direct children")
+        @DisplayName("Should return direct children of directory")
         void shouldReturnDirectChildren() {
             // given
+            em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
             em.persist(file(userId, "docs/b.txt", "docs/", "b.txt", 20));
-            em.persist(file(userId, "docs/sub/c.txt", "docs/sub/", "c.txt", 30));
-            em.flush();
-
-            // when
-            List<ResourceMetadata> result = repository.findByParentPath(userId, "docs/");
-
-            // then
-            assertThat(result).extracting(ResourceMetadata::getName)
-                    .containsExactlyInAnyOrder("a.txt", "b.txt");
-        }
-
-        @Test
-        @DisplayName("should exclude marked for deletion")
-        void shouldExcludeMarked() {
-            // given
-            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
-            ResourceMetadata marked = file(userId, "docs/b.txt", "docs/", "b.txt", 20);
-            marked.setMarkedForDeletion(true);
-            em.persist(marked);
-            em.flush();
-
-            // when
-            List<ResourceMetadata> result = repository.findByParentPath(userId, "docs/");
-
-            // then
-            assertThat(result).extracting(ResourceMetadata::getName).containsExactly("a.txt");
-        }
-    }
-
-    @Nested
-    @DisplayName("findByNameContaining")
-    class FindByNameContaining {
-
-        @Test
-        @DisplayName("should match case-insensitively")
-        void shouldMatchCaseInsensitive() {
-            // given
-            em.persist(file(userId, "Report.PDF", "", "Report.PDF", 10));
-            em.persist(file(userId, "notes.txt", "", "notes.txt", 10));
-            em.flush();
-
-            // when
-            List<ResourceMetadata> result = repository.findByNameContaining(userId, "report", PageRequest.of(0, 10));
-
-            // then
-            assertThat(result).extracting(ResourceMetadata::getName).containsExactly("Report.PDF");
-        }
-
-        @Test
-        @DisplayName("should use pageable limit")
-        void shouldUsePageable() {
-            // given
-            for (int i = 0; i < 5; i++) {
-                em.persist(file(userId, "file" + i + ".txt", "", "file" + i + ".txt", 10));
-            }
-            em.flush();
-
-            // when
-            List<ResourceMetadata> result = repository.findByNameContaining(userId, "file", PageRequest.of(0, 2));
-
-            // then
-            assertThat(result).hasSize(2);
-        }
-    }
-
-    @Nested
-    @DisplayName("findFilesMarkedForDeletion")
-    class FindFilesMarkedForDeletion {
-
-        @Test
-        @DisplayName("Should return only files marked for deletion")
-        void shouldFindFilesMarkedForDeletion() {
-            // given
-            ResourceMetadata file1 = file(userId, "docs/a.txt", "docs/", "a.txt", 10);
-            ResourceMetadata file2 = file(userId, "docs/sub/b.txt", "docs/sub/", "b.txt", 20);
-            ResourceMetadata file3 = file(userId, "other/c.txt", "other/", "c.txt", 30);
-            ResourceMetadata directory = directory(userId, "docs/sub/", "docs/", "sub");
-
-            file1.setMarkedForDeletion(true);
-            file2.setMarkedForDeletion(true);
-            directory.setMarkedForDeletion(true);
-
-            em.persist(file1);
-            em.persist(file2);
-            em.persist(directory);
-            em.persist(file3);
-            em.flush();
-
-            // when
-            List<ResourceMetadata> result = repository.findFilesMarkedForDeletion(Pageable.ofSize(5));
-
-            // then
-            assertThat(result).hasSize(2);
-            assertThat(result).contains(file1).contains(file2);
-        }
-    }
-
-    @Nested
-    @DisplayName("findFilesByPathPrefix")
-    class FindFilesByPathPrefix {
-
-        @Test
-        @DisplayName("should return only files under prefix")
-        void shouldReturnFilesUnderPrefix() {
-            // given
-            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
-            em.persist(file(userId, "docs/sub/b.txt", "docs/sub/", "b.txt", 20));
             em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
-            em.persist(file(userId, "other/c.txt", "other/", "c.txt", 30));
+            em.persist(file(userId, "docs/sub/deep.txt", "docs/sub/", "deep.txt", 30));
             em.flush();
 
             // when
-            List<ResourceMetadata> result = repository.findFilesByPathPrefix(userId, "docs/");
+            List<ResourceMetadata> result = repository.findByParentPath(userId, "docs/");
 
             // then
+            assertThat(result).hasSize(3);
             assertThat(result).extracting(ResourceMetadata::getName)
-                    .containsExactlyInAnyOrder("a.txt", "b.txt");
+                    .containsExactlyInAnyOrder("a.txt", "b.txt", "sub");
+        }
+
+        @Test
+        @DisplayName("Should return root-level resources for empty parent path")
+        void shouldReturnRootResources() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(file(userId, "root.txt", "", "root.txt", 10));
+            em.flush();
+
+            // when
+            List<ResourceMetadata> result = repository.findByParentPath(userId, "");
+
+            // then
+            assertThat(result).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("Should exclude resources marked for deletion")
+        void shouldExcludeMarkedForDeletion() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            ResourceMetadata deleted = file(userId, "docs/deleted.txt", "docs/", "deleted.txt", 10);
+            deleted.setMarkedForDeletion(true);
+            em.persist(deleted);
+            em.persist(file(userId, "docs/active.txt", "docs/", "active.txt", 20));
+            em.flush();
+
+            // when
+            List<ResourceMetadata> result = repository.findByParentPath(userId, "docs/");
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().getName()).isEqualTo("active.txt");
         }
     }
 
@@ -235,261 +169,415 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     class FindExistingPaths {
 
         @Test
-        @DisplayName("should return only existing paths")
-        void shouldReturnExisting() {
+        @DisplayName("Should return paths that exist in database")
+        void shouldReturnExistingPaths() {
             // given
-            em.persist(file(userId, "a.txt", "", "a.txt", 10));
-            em.persist(file(userId, "b.txt", "", "b.txt", 10));
+            em.persist(file(userId, "Docs/A.txt", "docs/", "A.txt", 10));
+            em.persist(file(userId, "Docs/B.txt", "docs/", "B.txt", 20));
             em.flush();
 
             // when
-            Set<String> result = repository.findExistingPaths(userId, Set.of("a.txt", "b.txt", "c.txt"));
-
-            // then
-            assertThat(result).containsExactlyInAnyOrder("a.txt", "b.txt");
-        }
-    }
-
-    @Nested
-    @DisplayName("findMissingPaths")
-    class FindMissingPaths {
-
-        @Test
-        @DisplayName("should return paths that do not exist for user")
-        void shouldReturnMissing() {
-            // given
-            repository.saveDirectories(userId, List.of(
-                    new DirectoryRow("docs/", "", "docs"),
-                    new DirectoryRow("docs/sub/", "docs/", "sub")
-            ));
-
-            // when
-            Set<String> missing = repository.findMissingPaths(
-                    userId,
-                    Set.of("docs/", "docs/sub/", "docs/new/", "other/")
-            );
-
-            // then
-            assertThat(missing).containsExactlyInAnyOrder("docs/new/", "other/");
-        }
-
-        @Test
-        @DisplayName("should return all paths when nothing exists")
-        void shouldReturnAllWhenEmpty() {
-            // given
-            Set<String> candidates = Set.of("a/", "b/", "c/");
-
-            // when
-            Set<String> missing = repository.findMissingPaths(userId, candidates);
-
-            // then
-            assertThat(missing).containsExactlyInAnyOrderElementsOf(candidates);
-        }
-
-        @Test
-        @DisplayName("should return empty when all paths exist")
-        void shouldReturnEmptyWhenAllExist() {
-            // given
-            repository.saveDirectories(userId, List.of(
-                    new DirectoryRow("docs/", "", "docs")
-            ));
-
-            // when
-            Set<String> missing = repository.findMissingPaths(userId, Set.of("docs/"));
-
-            // then
-            assertThat(missing).isEmpty();
-        }
-
-        @Test
-        @DisplayName("should not consider other user's paths as existing")
-        void shouldRespectUserIsolation() {
-            // given
-            repository.saveDirectories(otherUserId, List.of(
-                    new DirectoryRow("docs/", "", "docs")
-            ));
-
-            // when
-            Set<String> missing = repository.findMissingPaths(userId, Set.of("docs/"));
-
-            // then
-            assertThat(missing).containsExactly("docs/");
-        }
-
-        @Test
-        @DisplayName("should ignore marked for deletion paths")
-        void shouldIgnoreMarkedForDeletion() {
-            // given
-            repository.saveDirectories(userId, List.of(
-                    new DirectoryRow("docs/", "", "docs")
-            ));
-            repository.markForDeletionByPath(userId, "docs/");
-            em.clear();
-
-            // when
-            Set<String> missing = repository.findMissingPaths(userId, Set.of("docs/"));
-
-            // then
-            assertThat(missing).containsExactly("docs/");
-        }
-
-        @Test
-        @DisplayName("should return empty set on empty input")
-        void shouldReturnEmptyOnEmptyInput() {
-            // given
-
-            // when
-            Set<String> missing = repository.findMissingPaths(userId, Set.of());
-
-            // then
-            assertThat(missing).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("sumFileSizesGroupByUserId")
-    class SumFileSizes {
-
-        @Test
-        @DisplayName("should sum file sizes per user")
-        void shouldSumPerUser() {
-            // given
-            em.persist(file(userId, "a.txt", "", "a.txt", 100));
-            em.persist(file(userId, "b.txt", "", "b.txt", 200));
-            em.persist(file(otherUserId, "c.txt", "", "c.txt", 50));
-            em.persist(directory(userId, "dir/", "", "dir"));
-            em.flush();
-
-            // when
-            List<UsedSpace> result = repository.sumFileSizesGroupByUserId(
-                    List.of(userId, otherUserId), ResourceType.FILE);
+            Set<String> result = repository.findExistingPaths(userId,
+                    Set.of("docs/a.txt", "docs/b.txt", "docs/c.txt"));
 
             // then
             assertThat(result).hasSize(2);
-            assertThat(result).anySatisfy(u -> {
-                assertThat(u.getUserId()).isEqualTo(userId);
-                assertThat(u.getTotalSize()).isEqualTo(300);
-            });
-            assertThat(result).anySatisfy(u -> {
-                assertThat(u.getUserId()).isEqualTo(otherUserId);
-                assertThat(u.getTotalSize()).isEqualTo(50);
-            });
+        }
+
+        @Test
+        @DisplayName("Should return original path case, not normalized")
+        void shouldReturnOriginalCase() {
+            // given
+            em.persist(file(userId, "Docs/MyFile.txt", "docs/", "MyFile.txt", 10));
+            em.flush();
+
+            // when
+            Set<String> result = repository.findExistingPaths(userId, Set.of("docs/myfile.txt"));
+
+            // then
+            assertThat(result).containsExactly("Docs/MyFile.txt");
+        }
+
+        @Test
+        @DisplayName("Should exclude resources marked for deletion")
+        void shouldExcludeMarkedForDeletion() {
+            // given
+            ResourceMetadata deleted = file(userId, "docs/deleted.txt", "docs/", "deleted.txt", 10);
+            deleted.setMarkedForDeletion(true);
+            em.persist(deleted);
+            em.flush();
+
+            // when
+            Set<String> result = repository.findExistingPaths(userId, Set.of("docs/deleted.txt"));
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("markForDeletionByPath")
-    class MarkForDeletion {
+    @DisplayName("deleteFileByNormalizedPath")
+    class DeleteFileByNormalizedPath {
 
         @Test
-        @DisplayName("should mark resource for deletion")
-        void shouldMark() {
+        @DisplayName("Should delete existing file")
+        void shouldDeleteExistingFile() {
             // given
-            em.persist(file(userId, "a.txt", "", "a.txt", 100));
+            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
             em.flush();
 
             // when
-            repository.markForDeletionByPath(userId, "a.txt");
-            em.clear();
+            repository.deleteFileByNormalizedPath(userId, "docs/file.txt");
 
             // then
-            assertThat(repository.findByPath(userId, "a.txt")).isEmpty();
+            assertThat(repository.findByNormalizedPath(userId, "docs/file.txt")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should not delete directory with same path")
+        void shouldNotDeleteDirectory() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.flush();
+
+            // when
+            repository.deleteFileByNormalizedPath(userId, "docs/");
+
+            // then
+            assertThat(repository.existsByNormalizedPath(userId, "docs/")).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should not delete other user's file")
+        void shouldNotDeleteOtherUsersFile() {
+            // given
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            repository.deleteFileByNormalizedPath(userId, "docs/file.txt");
+
+            // then
+            assertThat(repository.existsByNormalizedPath(otherUserId, "docs/file.txt")).isTrue();
         }
     }
 
     @Nested
-    @DisplayName("updatePathsByPathPrefix")
-    class UpdatePaths {
+    @DisplayName("deleteByNormalizedPathPrefix")
+    class DeleteByNormalizedPathPrefix {
 
         @Test
-        @DisplayName("should rewrite path and parentPath for all matching resources")
-        void shouldRewritePaths() {
+        @DisplayName("Should delete directory and all nested resources")
+        void shouldDeleteDirectoryAndContents() {
             // given
-            em.persist(directory(userId, "old/", "", "old"));
-            em.persist(file(userId, "old/a.txt", "old/", "a.txt", 10));
-            em.persist(file(userId, "old/sub/b.txt", "old/sub/", "b.txt", 20));
-            em.persist(directory(userId, "old/sub/", "old/", "sub"));
-            em.flush();
-
-            // when
-            repository.updatePathsByPathPrefix(userId, "old/", "new/");
-            em.clear();
-
-            // then
-            assertThat(repository.findByPath(userId, "new/a.txt")).isPresent();
-            assertThat(repository.findByPath(userId, "new/sub/b.txt")).isPresent();
-            assertThat(repository.findByPath(userId, "old/a.txt")).isEmpty();
-
-            ResourceMetadata movedFile = repository.findByPath(userId, "new/sub/b.txt").orElseThrow();
-            assertThat(movedFile.getParentPath()).isEqualTo("new/sub/");
-        }
-
-        @Test
-        @DisplayName("should not affect other user's resources")
-        void shouldNotAffectOtherUsers() {
-            // given
-            em.persist(file(userId, "old/a.txt", "old/", "a.txt", 10));
-            em.persist(file(otherUserId, "old/a.txt", "old/", "a.txt", 10));
-            em.flush();
-
-            // when
-            repository.updatePathsByPathPrefix(userId, "old/", "new/");
-            em.clear();
-
-            // then
-            assertThat(repository.findByPath(otherUserId, "old/a.txt")).isPresent();
-            assertThat(repository.findByPath(otherUserId, "new/a.txt")).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("deleteByPathPrefix")
-    class DeleteByPathPrefix {
-
-        @Test
-        @DisplayName("should delete all resources under prefix")
-        void shouldDeleteByPrefix() {
-            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
+            em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
             em.persist(file(userId, "docs/sub/b.txt", "docs/sub/", "b.txt", 20));
-            em.persist(file(userId, "other/c.txt", "other/", "c.txt", 30));
             em.flush();
 
             // when
-            repository.deleteByPathPrefix(userId, "docs/");
-            em.clear();
+            repository.deleteByNormalizedPathPrefix(userId, "docs/");
 
             // then
-            assertThat(repository.findByPath(userId, "docs/a.txt")).isEmpty();
-            assertThat(repository.findByPath(userId, "docs/sub/b.txt")).isEmpty();
-            assertThat(repository.findByPath(userId, "other/c.txt")).isPresent();
+            assertThat(repository.existsByNormalizedPath(userId, "docs/")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "docs/a.txt")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "docs/sub/")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "docs/sub/b.txt")).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should not delete resources with similar path prefix")
+        void shouldNotDeleteSimilarPrefix() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "docs-backup/", "", "docs-backup"));
+            em.flush();
+
+            // when
+            repository.deleteByNormalizedPathPrefix(userId, "docs/");
+
+            // then
+            assertThat(repository.existsByNormalizedPath(userId, "docs-backup/")).isTrue();
         }
     }
 
     @Nested
-    @DisplayName("deleteByPaths")
-    class DeleteByPaths {
+    @DisplayName("moveMetadata")
+    class MoveMetadata {
 
         @Test
-        @DisplayName("Should delete all resources by paths")
-        void shouldDeleteAllResourcesByPaths() {
+        @DisplayName("Should correctly move file to another directory")
+        void shouldMoveFileToAnotherDirectory() {
             // given
-            String path1 = "docs/a.txt";
-            String path2 = "docs/sub/b.txt";
-            String path3 = "other/c.txt";
-            em.persist(file(userId, path1, "docs/", "a.txt", 10));
-            em.persist(file(userId, path2, "docs/sub/", "b.txt", 20));
-            em.persist(file(userId, path3, "other/", "c.txt", 30));
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "work/", "", "work"));
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
-            repository.deleteByPaths(userId, List.of(path1, path2, path3));
-            em.clear();
+            int moved = repository.moveMetadata(userId, "docs/file.txt",
+                    "work/file.txt", "work/", "file.txt");
 
             // then
-            assertThat(repository.findByPath(userId, path1)).isEmpty();
-            assertThat(repository.findByPath(userId, path2)).isEmpty();
-            assertThat(repository.findByPath(userId, path3)).isEmpty();
+            assertThat(moved).isEqualTo(1);
+            Optional<ResourceMetadata> result = repository.findByNormalizedPath(userId, "work/file.txt");
+            assertThat(result).isPresent();
+            assertThat(result.get().getPath()).isEqualTo("work/file.txt");
+            assertThat(result.get().getParentPath()).isEqualTo("work/");
+            assertThat(result.get().getNormalizedPath()).isEqualTo("work/file.txt");
+        }
+
+        @Test
+        @DisplayName("Should correctly move file to root")
+        void shouldMoveFileToRoot() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            int moved = repository.moveMetadata(userId, "docs/file.txt",
+                    "file.txt", "", "file.txt");
+
+            // then
+            assertThat(moved).isEqualTo(1);
+            Optional<ResourceMetadata> result = repository.findByNormalizedPath(userId, "file.txt");
+            assertThat(result).isPresent();
+            assertThat(result.get().getParentPath()).isEqualTo("");
+        }
+
+        @Test
+        @DisplayName("Should correctly set parent_path when moving empty directory")
+        void shouldSetParentPathForEmptyDirectory() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "archive/", "", "archive"));
+            em.flush();
+
+            // when
+            int moved = repository.moveMetadata(userId, "docs/",
+                    "archive/docs/", "archive/", "docs");
+
+            // then
+            assertThat(moved).isEqualTo(1);
+            Optional<ResourceMetadata> result = repository.findByNormalizedPath(userId, "archive/docs/");
+            assertThat(result).isPresent();
+            assertThat(result.get().getParentPath()).isEqualTo("archive/");
+        }
+
+        @Test
+        @DisplayName("Should correctly update paths for directory with nested files")
+        void shouldMoveDirectoryWithNestedFiles() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "archive/", "", "archive"));
+            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
+            em.persist(file(userId, "docs/b.txt", "docs/", "b.txt", 20));
+            em.flush();
+
+            // when
+            int moved = repository.moveMetadata(userId, "docs/",
+                    "archive/docs/", "archive/", "docs");
+
+            // then
+            assertThat(moved).isEqualTo(3);
+
+            Optional<ResourceMetadata> dir = repository.findByNormalizedPath(userId, "archive/docs/");
+            assertThat(dir).isPresent();
+            assertThat(dir.get().getParentPath()).isEqualTo("archive/");
+
+            Optional<ResourceMetadata> fileA = repository.findByNormalizedPath(userId, "archive/docs/a.txt");
+            assertThat(fileA).isPresent();
+            assertThat(fileA.get().getParentPath()).isEqualTo("archive/docs/");
+
+            Optional<ResourceMetadata> fileB = repository.findByNormalizedPath(userId, "archive/docs/b.txt");
+            assertThat(fileB).isPresent();
+            assertThat(fileB.get().getParentPath()).isEqualTo("archive/docs/");
+        }
+
+        @Test
+        @DisplayName("Should correctly update paths for directory with nested subdirectory")
+        void shouldMoveDirectoryWithNestedSubdirectory() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
+            em.persist(file(userId, "docs/sub/deep.txt", "docs/sub/", "deep.txt", 10));
+            em.persist(directory(userId, "archive/", "", "archive"));
+            em.flush();
+
+            // when
+            int moved = repository.moveMetadata(userId, "docs/",
+                    "archive/docs/", "archive/", "docs");
+
+            // then
+            assertThat(moved).isEqualTo(3);
+
+            Optional<ResourceMetadata> sub = repository.findByNormalizedPath(userId, "archive/docs/sub/");
+            assertThat(sub).isPresent();
+            assertThat(sub.get().getParentPath()).isEqualTo("archive/docs/");
+
+            Optional<ResourceMetadata> deep = repository.findByNormalizedPath(userId, "archive/docs/sub/deep.txt");
+            assertThat(deep).isPresent();
+            assertThat(deep.get().getParentPath()).isEqualTo("archive/docs/sub/");
+        }
+
+        @Test
+        @DisplayName("Should update name when renaming resource")
+        void shouldUpdateNameWhenRenaming() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.flush();
+
+            // when
+            repository.moveMetadata(userId, "docs/", "Reports/", "", "Reports");
+
+            // then
+            Optional<ResourceMetadata> result = repository.findByNormalizedPath(userId, "reports/");
+            assertThat(result).isPresent();
+            assertThat(result.get().getName()).isEqualTo("Reports");
+            assertThat(result.get().getPath()).isEqualTo("Reports/");
+        }
+
+        @Test
+        @DisplayName("Should correctly move directory to root")
+        void shouldMoveDirectoryToRoot() {
+            // given
+            em.persist(directory(userId, "archive/", "", "archive"));
+            em.persist(directory(userId, "archive/docs/", "archive/", "docs"));
+            em.persist(file(userId, "archive/docs/file.txt", "archive/docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            int moved = repository.moveMetadata(userId, "archive/docs/",
+                    "docs/", "", "docs");
+
+            // then
+            assertThat(moved).isEqualTo(2);
+
+            Optional<ResourceMetadata> dir = repository.findByNormalizedPath(userId, "docs/");
+            assertThat(dir).isPresent();
+            assertThat(dir.get().getParentPath()).isEqualTo("");
+
+            Optional<ResourceMetadata> f = repository.findByNormalizedPath(userId, "docs/file.txt");
+            assertThat(f).isPresent();
+            assertThat(f.get().getParentPath()).isEqualTo("docs/");
+        }
+
+        @Test
+        @DisplayName("Should return zero when moving non-existent resource")
+        void shouldReturnZeroWhenNotFound() {
+            // when
+            int moved = repository.moveMetadata(userId, "nonexistent/",
+                    "somewhere/", "", "somewhere");
+
+            // then
+            assertThat(moved).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should not move resources of other user")
+        void shouldNotMoveOtherUsersResources() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(otherUserId, "docs/", "", "docs"));
+            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            repository.moveMetadata(userId, "docs/", "archive/docs/", "archive/", "docs");
+
+            // then
+            Optional<ResourceMetadata> otherFile = repository.findByNormalizedPath(otherUserId, "docs/file.txt");
+            assertThat(otherFile).isPresent();
+            assertThat(otherFile.get().getParentPath()).isEqualTo("docs/");
+        }
+
+        @Test
+        @DisplayName("Should not move resources with similar path prefix")
+        void shouldNotMoveSimilarPrefix() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(directory(userId, "docs-backup/", "", "docs-backup"));
+            em.persist(file(userId, "docs-backup/file.txt", "docs-backup/", "file.txt", 10));
+            em.flush();
+
+            // when
+            repository.moveMetadata(userId, "docs/", "archive/docs/", "archive/", "docs");
+
+            // then
+            Optional<ResourceMetadata> backup = repository.findByNormalizedPath(userId, "docs-backup/file.txt");
+            assertThat(backup).isPresent();
+            assertThat(backup.get().getParentPath()).isEqualTo("docs-backup/");
+        }
+
+        @Test
+        @DisplayName("Should update normalized_path for all moved resources")
+        void shouldUpdateNormalizedPath() {
+            // given
+            em.persist(directory(userId, "docs/", "", "docs"));
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            repository.moveMetadata(userId, "docs/", "Archive/Docs/", "archive/", "Docs");
+
+            // then
+            Optional<ResourceMetadata> dir = repository.findByNormalizedPath(userId, "archive/docs/");
+            assertThat(dir).isPresent();
+            assertThat(dir.get().getPath()).isEqualTo("Archive/Docs/");
+            assertThat(dir.get().getNormalizedPath()).isEqualTo("archive/docs/");
+
+            Optional<ResourceMetadata> f = repository.findByNormalizedPath(userId, "archive/docs/file.txt");
+            assertThat(f).isPresent();
+            assertThat(f.get().getPath()).isEqualTo("Archive/Docs/file.txt");
+            assertThat(f.get().getNormalizedPath()).isEqualTo("archive/docs/file.txt");
+        }
+    }
+
+    @Nested
+    @DisplayName("markForDeletionByNormalizedPath")
+    class MarkForDeletionByNormalizedPath {
+
+        @Test
+        @DisplayName("Should mark resource for deletion")
+        void shouldMarkForDeletion() {
+            // given
+            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.flush();
+
+            // when
+            repository.markForDeletionByNormalizedPath(userId, "docs/file.txt");
+
+            // then
+            assertThat(repository.findByNormalizedPath(userId, "docs/file.txt")).isEmpty();
+            assertThat(repository.existsByNormalizedPath(userId, "docs/file.txt")).isTrue();
+        }
+    }
+
+    // === deleteByNormalizedPaths ===
+
+    @Nested
+    @DisplayName("deleteByNormalizedPaths")
+    class DeleteByNormalizedPaths {
+
+        @Test
+        @DisplayName("Should delete multiple resources by normalized paths")
+        void shouldDeleteMultiplePaths() {
+            // given
+            em.persist(file(userId, "a.txt", "", "a.txt", 10));
+            em.persist(file(userId, "b.txt", "", "b.txt", 20));
+            em.persist(file(userId, "c.txt", "", "c.txt", 30));
+            em.flush();
+
+            // when
+            repository.deleteByNormalizedPaths(userId, List.of("a.txt", "b.txt"));
+
+            // then
+            assertThat(repository.existsByNormalizedPath(userId, "a.txt")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "b.txt")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "c.txt")).isTrue();
         }
     }
 
@@ -498,186 +586,22 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     class DeleteByIds {
 
         @Test
-        @DisplayName("Should delete all resources by ids")
-        void shouldDeleteAllResourcesByIds() {
+        @DisplayName("Should delete resources by ids")
+        void shouldDeleteByIds() {
             // given
-            String path1 = "docs/a.txt";
-            String path2 = "docs/sub/b.txt";
-            String path3 = "other/c.txt";
-            ResourceMetadata file1 = file(userId, path1, "docs/", "a.txt", 10);
-            ResourceMetadata file2 = file(otherUserId, path2, "docs/sub/", "b.txt", 20);
-            ResourceMetadata file3 = file(userId, path3, "other/", "c.txt", 30);
-            em.persist(file1);
-            em.persist(file2);
-            em.persist(file3);
+            ResourceMetadata f1 = file(userId, "a.txt", "", "a.txt", 10);
+            ResourceMetadata f2 = file(userId, "b.txt", "", "b.txt", 20);
+            em.persist(f1);
+            em.persist(f2);
             em.flush();
 
             // when
-            repository.deleteByIds(List.of(file1.getId(), file2.getId(), file3.getId()));
-            em.clear();
+            repository.deleteByIds(List.of(f1.getId(), f2.getId()));
 
             // then
-            assertThat(repository.findByPath(userId, path1)).isEmpty();
-            assertThat(repository.findByPath(userId, path2)).isEmpty();
-            assertThat(repository.findByPath(userId, path3)).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("saveDirectories")
-    class SaveDirectories {
-
-        @Test
-        @DisplayName("should batch insert directories")
-        void shouldBatchInsert() {
-            // given
-            List<DirectoryRow> directories = List.of(
-                    new DirectoryRow("docs/", "", "docs"),
-                    new DirectoryRow("docs/sub/", "docs/", "sub")
-            );
-
-            // when
-            repository.saveDirectories(userId, directories);
-            em.clear();
-
-            // then
-            assertThat(repository.findByPath(userId, "docs/")).isPresent();
-            assertThat(repository.findByPath(userId, "docs/sub/")).isPresent();
-        }
-
-        @Test
-        @DisplayName("should not overwrite existing row on duplicate path")
-        void shouldIgnoreConflicts() {
-            // given
-            repository.saveDirectories(userId, List.of(new DirectoryRow("docs/", "", "original-name")));
-
-            // when
-            repository.saveDirectories(userId, List.of(
-                    new DirectoryRow("docs/", "", "overwritten-name"),
-                    new DirectoryRow("other/", "", "other")));
-            em.clear();
-
-            // then
-            ResourceMetadata existing = repository.findByPath(userId, "docs/").orElseThrow();
-            assertThat(existing.getName()).isEqualTo("original-name");
-            assertThat(repository.findByPath(userId, "other/")).isPresent();
-        }
-
-        @Test
-        @DisplayName("should allow same path for different users")
-        void shouldAllowSamePathDifferentUsers() {
-            // given
-            repository.saveDirectories(userId, List.of(new DirectoryRow("docs/", "", "docs")));
-
-            // when
-            repository.saveDirectories(otherUserId, List.of(new DirectoryRow("docs/", "", "docs")));
-            em.clear();
-
-            // then
-            assertThat(repository.findByPath(userId, "docs/")).isPresent();
-            assertThat(repository.findByPath(otherUserId, "docs/")).isPresent();
-        }
-    }
-
-    @Nested
-    @DisplayName("saveFiles")
-    class SaveFiles {
-
-        @Test
-        @DisplayName("should batch insert files")
-        void shouldBatchInsert() {
-            // given
-            List<FileRow> files = List.of(
-                    new FileRow("a.txt", "", "a.txt", 100L),
-                    new FileRow("docs/b.txt", "docs/", "b.txt", 200L)
-            );
-
-            // when
-            repository.saveFiles(userId, files);
-            em.clear();
-
-            // then
-            ResourceMetadata a = repository.findByPath(userId, "a.txt").orElseThrow();
-            assertThat(a.getSize()).isEqualTo(100);
-            assertThat(a.getType()).isEqualTo(ResourceType.FILE);
-
-            ResourceMetadata b = repository.findByPath(userId, "docs/b.txt").orElseThrow();
-            assertThat(b.getSize()).isEqualTo(200);
-        }
-    }
-
-    @Nested
-    @DisplayName("markForDeletionAndSumSize")
-    class MarkAndSum {
-
-        @Test
-        @DisplayName("should mark files under prefix and return total size")
-        void shouldMarkAndSum() {
-            // given
-            repository.saveFiles(userId, List.of(
-                    new FileRow("docs/a.txt", "docs/", "a.txt", 100L),
-                    new FileRow("docs/b.txt", "docs/", "b.txt", 200L),
-                    new FileRow("docs/sub/c.txt", "docs/sub/", "c.txt", 50L),
-                    new FileRow("other/d.txt", "other/", "d.txt", 999L)
-            ));
-
-            // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
-            em.clear();
-
-            // then
-            assertThat(totalSize).isEqualTo(350L);
-            assertThat(repository.findByPath(userId, "docs/a.txt")).isEmpty();
-            assertThat(repository.findByPath(userId, "docs/b.txt")).isEmpty();
-            assertThat(repository.findByPath(userId, "docs/sub/c.txt")).isEmpty();
-            assertThat(repository.findByPath(userId, "other/d.txt")).isPresent();
-        }
-
-        @Test
-        @DisplayName("should return zero when nothing matches")
-        void shouldReturnZeroWhenEmpty() {
-            // given
-            repository.saveFiles(userId, List.of(new FileRow("other/a.txt", "other/", "a.txt", 100L)
-            ));
-
-            // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
-
-            // then
-            assertThat(totalSize).isZero();
-            assertThat(repository.findByPath(userId, "other/a.txt")).isPresent();
-        }
-
-        @Test
-        @DisplayName("should not affect other users")
-        void shouldNotAffectOtherUsers() {
-            // given
-            repository.saveFiles(userId, List.of(new FileRow("docs/a.txt", "docs/", "a.txt", 100L)));
-            repository.saveFiles(otherUserId, List.of(new FileRow("docs/a.txt", "docs/", "a.txt", 100L)));
-
-            // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
-            em.clear();
-
-            // then
-            assertThat(totalSize).isEqualTo(100L);
-            assertThat(repository.findByPath(otherUserId, "docs/a.txt")).isPresent();
-        }
-
-        @Test
-        @DisplayName("should ignore directories")
-        void shouldIgnoreDirectories() {
-            // given
-            repository.saveDirectories(userId, List.of(new DirectoryRow("docs/", "", "docs")));
-            repository.saveFiles(userId, List.of(new FileRow("docs/a.txt", "docs/", "a.txt", 100L)));
-
-            // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
-            em.clear();
-
-            // then
-            assertThat(totalSize).isEqualTo(100L);
-            assertThat(repository.findByPath(userId, "docs/")).isPresent();
+            assertThat(repository.existsByNormalizedPath(userId, "a.txt")).isFalse();
+            assertThat(repository.existsByNormalizedPath(userId, "b.txt")).isFalse();
         }
     }
 }
+

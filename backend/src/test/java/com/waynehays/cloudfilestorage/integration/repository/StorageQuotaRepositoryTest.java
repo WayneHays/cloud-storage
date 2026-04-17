@@ -1,13 +1,16 @@
 package com.waynehays.cloudfilestorage.integration.repository;
 
-import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
+import com.waynehays.cloudfilestorage.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +30,83 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
         quota.setUsedSpace(usedSpace);
         quota.setStorageLimit(TEST_STORAGE_LIMIT);
         return quota;
+    }
+
+    private long findUsedSpace(Long userId) {
+        String sql = """
+                SELECT q.usedSpace
+                FROM StorageQuota q
+                WHERE q.userId = :userId
+                """;
+        return em.getEntityManager()
+                .createQuery(sql, Long.class)
+                .setParameter("userId", userId)
+                .getSingleResult();
+    }
+
+    private void persistFile(Long userId, String path, long size) {
+        em.persist(file(
+                userId,
+                path,
+                PathUtils.extractParentPath(path),
+                PathUtils.extractDisplayName(path),
+                size));
+        em.flush();
+    }
+
+    private void persistMarkedFile(Long userId, String path, long size) {
+        ResourceMetadata metadata = file(userId, path, PathUtils.extractParentPath(path),
+                PathUtils.extractDisplayName(path), size);
+        metadata.setMarkedForDeletion(true);
+        em.persist(metadata);
+        em.flush();
+    }
+
+    @Nested
+    @DisplayName("findAllUserIds")
+    class FindAllUserIds {
+
+        @Test
+        @DisplayName("Should return page of user ids")
+        void shouldReturnPageOfUserIds() {
+            // given
+            em.persist(quota(userId, 100));
+            em.persist(quota(otherUserId, 200));
+            em.flush();
+
+            // when
+            Page<Long> result = repository.findAllUserIds(PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).containsExactlyInAnyOrder(userId, otherUserId);
+        }
+
+        @Test
+        @DisplayName("Should return correct page size")
+        void shouldReturnCorrectPageSize() {
+            // given
+            em.persist(quota(userId, 100));
+            em.persist(quota(otherUserId, 200));
+            em.flush();
+
+            // when
+            Page<Long> firstPage = repository.findAllUserIds(PageRequest.of(0, 1));
+
+            // then
+            assertThat(firstPage.getContent()).hasSize(1);
+            assertThat(firstPage.hasNext()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should return empty page when no quotas exist")
+        void shouldReturnEmptyPageWhenNoQuotasExist() {
+            // when
+            Page<Long> result = repository.findAllUserIds(PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.hasNext()).isFalse();
+        }
     }
 
     @Nested
@@ -74,113 +154,12 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
     }
 
     @Nested
-    @DisplayName("decreaseUsedSpace")
-    class DecreaseUsedSpace {
-
-        @Test
-        @DisplayName("should decrease used space by given amount")
-        void shouldDecrease() {
-            // given
-            em.persistAndFlush(quota(userId, 1000L));
-
-            // when
-            repository.decreaseUsedSpace(userId, 300L);
-            em.clear();
-
-            // then
-            StorageQuota updated = repository.findByUserIdWithLock(userId).orElseThrow();
-            assertThat(updated.getUsedSpace()).isEqualTo(700L);
-        }
-
-        @Test
-        @DisplayName("should clamp used space at zero")
-        void shouldClampAtZero() {
-            // given
-            em.persistAndFlush(quota(userId, 100L));
-
-            // when
-            repository.decreaseUsedSpace(userId, 500L);
-            em.clear();
-
-            // then
-            StorageQuota updated = repository.findByUserIdWithLock(userId).orElseThrow();
-            assertThat(updated.getUsedSpace()).isZero();
-        }
-
-        @Test
-        @DisplayName("should not affect other user's quota")
-        void shouldNotAffectOtherUsers() {
-            // given
-            em.persist(quota(userId, 1000L));
-            em.persist(quota(otherUserId, 2000L));
-            em.flush();
-
-            // when
-            repository.decreaseUsedSpace(userId, 300L);
-            em.clear();
-
-            // then
-            StorageQuota other = repository.findByUserIdWithLock(otherUserId).orElseThrow();
-            assertThat(other.getUsedSpace()).isEqualTo(2000L);
-        }
-    }
-
-    @Nested
-    @DisplayName("batchUpdateUsedSpace")
-    class BatchUpdateUsedSpace {
-
-        @Test
-        @DisplayName("should update used space for multiple users")
-        void shouldUpdateMultiple() {
-            // given
-            em.persist(quota(userId, 100L));
-            em.persist(quota(otherUserId, 200L));
-            em.flush();
-            em.clear();
-
-            // when
-            repository.batchUpdateUsedSpace(List.of(
-                    new SpaceCorrectionDto(userId, 500L),
-                    new SpaceCorrectionDto(otherUserId, 800L)
-            ));
-
-            // then
-            assertThat(repository.findByUserIdWithLock(userId).orElseThrow().getUsedSpace())
-                    .isEqualTo(500L);
-            assertThat(repository.findByUserIdWithLock(otherUserId).orElseThrow().getUsedSpace())
-                    .isEqualTo(800L);
-        }
-
-        @Test
-        @DisplayName("should update single user's quota")
-        void shouldUpdateSingle() {
-            // given
-            em.persist(quota(userId, 100L));
-            em.persist(quota(otherUserId, 200L));
-            em.flush();
-            em.clear();
-
-            // when
-            repository.batchUpdateUsedSpace(List.of(
-                    new SpaceCorrectionDto(userId, 999L)
-            ));
-
-            // then
-            assertThat(repository.findByUserIdWithLock(userId).orElseThrow().getUsedSpace())
-                    .isEqualTo(999L);
-            assertThat(repository.findByUserIdWithLock(otherUserId).orElseThrow().getUsedSpace())
-                    .isEqualTo(200L);
-        }
-    }
-
-
-    @Nested
-    @DisplayName("batchDecreaseUsedSpace")
-    class BatchDecreaseUsedSpace {
+    @DisplayName("batchReleaseUsedSpace")
+    class BatchReleaseUsedSpace {
 
         @Test
         @DisplayName("should decrease used space for multiple users")
-        void shouldDecreaseMultiple() {
+        void shouldReleaseSpaceForMultipleUsers() {
             // given
             em.persist(quota(userId, 1000L));
             em.persist(quota(otherUserId, 2000L));
@@ -188,7 +167,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             em.clear();
 
             // when
-            repository.batchDecreaseUsedSpace(List.of(
+            repository.batchReleaseUsedSpace(List.of(
                     new SpaceReleaseDto(userId, 300L),
                     new SpaceReleaseDto(otherUserId, 500L)
             ));
@@ -209,7 +188,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             em.clear();
 
             // when
-            repository.batchDecreaseUsedSpace(List.of(
+            repository.batchReleaseUsedSpace(List.of(
                     new SpaceReleaseDto(userId, 500L)
             ));
 
@@ -228,7 +207,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             em.clear();
 
             // when
-            repository.batchDecreaseUsedSpace(List.of(
+            repository.batchReleaseUsedSpace(List.of(
                     new SpaceReleaseDto(userId, 300L)
             ));
 
@@ -237,6 +216,131 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
                     .isEqualTo(700L);
             assertThat(repository.findByUserIdWithLock(otherUserId).orElseThrow().getUsedSpace())
                     .isEqualTo(2000L);
+        }
+    }
+
+    @Nested
+    @DisplayName("reconcileStorageQuotas")
+    class ReconcileStorageQuotas {
+
+        @Test
+        @DisplayName("Should set used_space to sum of file sizes")
+        void shouldSetUsedSpaceToSumOfFileSizes() {
+            // given
+            em.persist(quota(userId, 0));
+            persistFile(userId, "docs/a.txt", 100);
+            persistFile(userId, "docs/b.txt", 250);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(350);
+        }
+
+        @Test
+        @DisplayName("Should correct overestimated used_space")
+        void shouldCorrectOverestimatedUsedSpace() {
+            // given
+            em.persist(quota(userId, 500));
+            persistFile(userId, "file.txt", 100);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("Should correct underestimated used_space")
+        void shouldCorrectUnderestimatedUsedSpace() {
+            // given
+            em.persist(quota(userId, 50));
+            persistFile(userId, "a.txt", 100);
+            persistFile(userId, "b.txt", 200);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(300);
+        }
+
+        @Test
+        @DisplayName("Should set used_space to zero when user has no files")
+        void shouldSetUsedSpaceToZeroWhenNoFiles() {
+            // given
+            em.persist(quota(userId, 500));
+            em.flush();
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should exclude files marked for deletion from sum")
+        void shouldExcludeFilesMarkedForDeletion() {
+            // given
+            em.persist(quota(userId, 0));
+            persistFile(userId, "active.txt", 100);
+            persistMarkedFile(userId, "deleted.txt", 500);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("Should exclude directories from sum")
+        void shouldExcludeDirectoriesFromSum() {
+            // given
+            em.persist(quota(userId, 0));
+            em.persist(directory(userId, "docs/", "", "docs"));
+            persistFile(userId, "docs/file.txt", 100);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("Should reconcile multiple users in one call")
+        void shouldReconcileMultipleUsers() {
+            // given
+            em.persist(quota(userId, 0));
+            em.persist(quota(otherUserId, 999));
+            persistFile(userId, "a.txt", 100);
+            persistFile(otherUserId, "b.txt", 200);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId, otherUserId));
+
+            // then
+            assertThat(findUsedSpace(userId)).isEqualTo(100);
+            assertThat(findUsedSpace(otherUserId)).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("Should not affect users not in the list")
+        void shouldNotAffectUsersNotInList() {
+            // given
+            em.persist(quota(userId, 0));
+            em.persist(quota(otherUserId, 999));
+            persistFile(userId, "a.txt", 100);
+
+            // when
+            repository.reconcileUsedSpace(List.of(userId));
+
+            // then
+            assertThat(findUsedSpace(otherUserId)).isEqualTo(999);
         }
     }
 }

@@ -17,14 +17,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -63,8 +60,8 @@ class DirectoryServiceTest {
 
             when(metadataService.findDirectoryContent(USER_ID, "docs/"))
                     .thenReturn(List.of(file, dir));
-            when(mapper.fromResourceMetadataDto(file)).thenReturn(fileDto);
-            when(mapper.fromResourceMetadataDto(dir)).thenReturn(dirDto);
+            when(mapper.fromResourceMetadataDto(List.of(file, dir)))
+                    .thenReturn(List.of(fileDto, dirDto));
 
             // when
             List<ResourceDto> result = directoryService.getContent(USER_ID, "docs/");
@@ -103,8 +100,7 @@ class DirectoryServiceTest {
             String path = "docs/reports/";
             ResourceDto expected = new ResourceDto("docs/", "reports/", null, ResourceType.DIRECTORY);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of("docs/"));
+            when(metadataService.existsByPath(USER_ID, "docs/")).thenReturn(true);
             when(mapper.directoryFromPath(path)).thenReturn(expected);
 
             // when
@@ -133,8 +129,6 @@ class DirectoryServiceTest {
         void shouldThrowWhenParentDirectoryNotFound() {
             // given
             String path = "docs/reports/";
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
 
             // when & then
             assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))

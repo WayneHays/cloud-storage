@@ -53,7 +53,7 @@ class UserServiceTest {
         User savedUser = new User();
         savedUser.setId(1L);
         savedUser.setUsername("john_doe");
-        UserDto expectedDto = new UserDto(1L, "john_doe");
+        UserDto expectedDto = new UserDto("john_doe");
 
         when(mapper.toEntity(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode("password123")).thenReturn("encoded_password");

@@ -62,7 +62,7 @@ class ResourceDeletionServiceTest {
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
             inOrder.verify(metadataService).markForDeletion(USER_ID, "docs/file.txt");
             inOrder.verify(storageService).deleteObject(USER_ID, "docs/file.txt");
-            inOrder.verify(metadataService).deleteByPath(USER_ID, "docs/file.txt");
+            inOrder.verify(metadataService).deleteFileByPath(USER_ID, "docs/file.txt");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 500L);
         }
     }
@@ -91,7 +91,7 @@ class ResourceDeletionServiceTest {
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
             inOrder.verify(metadataService).markForDeletionAndSumFileSize(USER_ID, "docs/");
             inOrder.verify(storageService).deleteDirectory(USER_ID, "docs/");
-            inOrder.verify(metadataService).deleteByPathPrefix(USER_ID, "docs/");
+            inOrder.verify(metadataService).deleteDirectoryMetadata(USER_ID, "docs/");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 1500L);
         }
 
@@ -111,7 +111,7 @@ class ResourceDeletionServiceTest {
 
             // then
             verify(storageService).deleteDirectory(USER_ID, "empty/");
-            verify(metadataService).deleteByPathPrefix(USER_ID, "empty/");
+            verify(metadataService).deleteDirectoryMetadata(USER_ID, "empty/");
             verifyNoInteractions(quotaService);
         }
 

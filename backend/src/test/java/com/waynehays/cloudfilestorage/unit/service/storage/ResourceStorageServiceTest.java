@@ -1,7 +1,8 @@
 package com.waynehays.cloudfilestorage.unit.service.storage;
 
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UserPath;
 import com.waynehays.cloudfilestorage.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.KeyResolverApi;
@@ -110,10 +111,12 @@ class ResourceStorageServiceTest {
     @Test
     void deleteObjects_shouldResolveKeysAndDeleteAll() {
         // given
-        List<String> paths = List.of("a.txt", "b.txt");
+        List<UserPath> userPaths = List.of(
+                new UserPath(USER_ID, "a.txt"),
+                new UserPath(USER_ID, "b.txt"));
 
         // when
-        service.deleteObjects(USER_ID, paths);
+        service.deleteObjects(userPaths);
 
         // then
         verify(storage).deleteList(List.of("user-1-files/a.txt", "user-1-files/b.txt"));

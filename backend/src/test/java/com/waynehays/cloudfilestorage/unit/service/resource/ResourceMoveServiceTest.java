@@ -78,7 +78,7 @@ class ResourceMoveServiceTest {
             // then
             InOrder inOrder = inOrder(storageService, metadataService);
             inOrder.verify(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
-            inOrder.verify(metadataService).updatePathsByPrefix(USER_ID, "docs/file.txt", "images/file.txt");
+            inOrder.verify(metadataService).moveMetadata(USER_ID, "docs/file.txt", "images/file.txt");
             assertThat(result).isEqualTo(expected);
         }
     }
@@ -107,7 +107,7 @@ class ResourceMoveServiceTest {
 
             // then
             verify(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
-            verify(metadataService).updatePathsByPrefix(USER_ID, "docs/", "images/");
+            verify(metadataService).moveMetadata(USER_ID, "docs/", "images/");
             assertThat(result).isEqualTo(expected);
         }
 
@@ -136,7 +136,7 @@ class ResourceMoveServiceTest {
             // when & then
             assertThatThrownBy(() -> service.move(USER_ID, "docs/", "images/"))
                     .isInstanceOf(ResourceStorageOperationException.class);
-            verify(metadataService, never()).updatePathsByPrefix(anyLong(), anyString(), anyString());
+            verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
         }
     }
 

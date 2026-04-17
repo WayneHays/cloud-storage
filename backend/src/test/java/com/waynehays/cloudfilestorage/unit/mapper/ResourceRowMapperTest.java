@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.unit.mapper;
 
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRow;
-import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRow;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRowDto;
 import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class ResourceRowMapperTest {
                 2048L, "application/pdf", InputStream::nullInputStream);
 
         // when
-        FileRow result = mapper.toFileRow(uploadObject);
+        FileRowDto result = mapper.toFileRow(uploadObject);
 
         // then
         assertThat(result.path()).isEqualTo("docs/report.pdf");
@@ -45,7 +45,7 @@ class ResourceRowMapperTest {
                 100L, "text/plain", InputStream::nullInputStream);
 
         // when
-        FileRow result = mapper.toFileRow(uploadObject);
+        FileRowDto result = mapper.toFileRow(uploadObject);
 
         // then
         assertThat(result.path()).isEqualTo("file.txt");
@@ -65,11 +65,11 @@ class ResourceRowMapperTest {
                 200L, "text/plain", InputStream::nullInputStream);
 
         // when
-        List<FileRow> result = mapper.toFileRows(List.of(first, second));
+        List<FileRowDto> result = mapper.toFileRows(List.of(first, second));
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(FileRow::name)
+        assertThat(result).extracting(FileRowDto::name)
                 .containsExactly("a.txt", "b.txt");
     }
 
@@ -80,7 +80,7 @@ class ResourceRowMapperTest {
         String path = "docs/reports/";
 
         // when
-        DirectoryRow result = mapper.toDirectoryRow(path);
+        DirectoryRowDto result = mapper.toDirectoryRow(path);
 
         // then
         assertThat(result.path()).isEqualTo("docs/reports/");
@@ -95,7 +95,7 @@ class ResourceRowMapperTest {
         String path = "docs/";
 
         // when
-        DirectoryRow result = mapper.toDirectoryRow(path);
+        DirectoryRowDto result = mapper.toDirectoryRow(path);
 
         // then
         assertThat(result.path()).isEqualTo("docs/");
@@ -110,11 +110,11 @@ class ResourceRowMapperTest {
         Set<String> paths = Set.of("docs/", "images/");
 
         // when
-        List<DirectoryRow> result = mapper.toDirectoryRows(paths);
+        List<DirectoryRowDto> result = mapper.toDirectoryRows(paths);
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(DirectoryRow::name)
+        assertThat(result).extracting(DirectoryRowDto::name)
                 .containsExactlyInAnyOrder("docs/", "images/");
     }
 }

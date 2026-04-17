@@ -1,38 +1,36 @@
 package com.waynehays.cloudfilestorage.unit.service.quota;
 
-import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceCorrectionDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
-import com.waynehays.cloudfilestorage.dto.internal.quota.StorageQuotaDto;
 import com.waynehays.cloudfilestorage.entity.StorageQuota;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
-import com.waynehays.cloudfilestorage.mapper.StorageQuotaMapper;
 import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class StorageQuotaServiceTest {
-
-    @Mock
-    private StorageQuotaMapper mapper;
 
     @Mock
     private StorageQuotaRepository repository;
@@ -43,17 +41,86 @@ class StorageQuotaServiceTest {
     private static final Long USER_ID = 1L;
 
     @Nested
-    class CreateStorageQuota {
+    @DisplayName("findAllUserIds")
+    class FindAllUserIds {
+
+        @Test
+        @DisplayName("Should find all user ids")
+        void shouldFindAllUserIds() {
+            // given
+            int page = 0;
+            int limit = 5;
+
+            List<Long> userIds = List.of(1L, 2L, 3L, 4L, 5L);
+            Page<Long> expectedPage = new PageImpl<>(userIds,
+                    PageRequest.of(page, limit), userIds.size());
+            when(repository.findAllUserIds(PageRequest.of(page, limit)))
+                    .thenReturn(expectedPage);
+
+            // when
+            Page<Long> result = service.findAllUserIds(page, limit);
+
+            // then
+            assertEquals(expectedPage, result);
+            assertEquals(userIds.size(), result.getTotalElements());
+            assertEquals(1, result.getTotalPages());
+            assertEquals(userIds, result.getContent());
+            verify(repository).findAllUserIds(PageRequest.of(page, limit));
+        }
+
+        @Test
+        void testFindAllUserIds_EmptyPage() {
+            int page = 1;
+            int limit = 10;
+            Page<Long> emptyPage = new PageImpl<>(List.of(), PageRequest.of(page, limit), 0);
+
+            when(repository.findAllUserIds(PageRequest.of(page, limit)))
+                    .thenReturn(emptyPage);
+
+            Page<Long> result = service.findAllUserIds(page, limit);
+
+            assertEquals(0, result.getTotalElements());
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void testFindAllUserIds_DifferentPageAndLimit() {
+            int page = 2;
+            int limit = 5;
+            List<Long> userIds = List.of(11L, 12L, 13L);
+            Page<Long> expectedPage = new PageImpl<>(userIds, PageRequest.of(page, limit), 15);
+
+            when(repository.findAllUserIds(PageRequest.of(page, limit)))
+                    .thenReturn(expectedPage);
+
+            Page<Long> result = service.findAllUserIds(page, limit);
+
+            assertEquals(3, result.getNumberOfElements());
+            assertEquals(15, result.getTotalElements());
+        }
+    }
+
+    @Nested
+    @DisplayName("createAndSaveQuota")
+    class CreateAndSaveQuota {
 
         @Test
         void shouldCreateAndSaveQuota() {
+            // given
+            ArgumentCaptor<StorageQuota> captor = ArgumentCaptor.forClass(StorageQuota.class);
+
             // when
             service.createStorageQuota(USER_ID, 10000L);
 
             // then
-            verify(repository).saveAndFlush(any());
+            verify(repository).saveAndFlush(captor.capture());
+            StorageQuota saved = captor.getValue();
+            assertThat(saved.getUsedSpace()).isEqualTo(0);
+            assertThat(saved.getStorageLimit()).isEqualTo(10000L);
+            assertThat(saved.getUserId()).isEqualTo(USER_ID);
         }
     }
+
 
     @Nested
     class ReserveSpace {
@@ -124,72 +191,55 @@ class StorageQuotaServiceTest {
     class ReleaseSpace {
 
         @Test
-        void shouldDelegateToRepository() {
+        void shouldUpdateUsedSpaceCorrectly() {
+            // given
+            long bytesToRelease = 100L;
+            StorageQuota existingQuota = new StorageQuota();
+            existingQuota.setUserId(USER_ID);
+            existingQuota.setUsedSpace(500L);
+            existingQuota.setStorageLimit(1000L);
+            when(repository.findByUserIdWithLock(USER_ID))
+                    .thenReturn(Optional.of(existingQuota));
+
             // when
-            service.releaseSpace(USER_ID, 500L);
+            service.releaseSpace(USER_ID, bytesToRelease);
 
             // then
-            verify(repository).decreaseUsedSpace(USER_ID, 500L);
+            assertEquals(400L, existingQuota.getUsedSpace());
         }
-    }
-
-    @Nested
-    class FindAllQuotas {
 
         @Test
-        void shouldReturnMappedPage() {
+        void shouldThrowException_WhenQuotaNotFound() {
             // given
-            StorageQuota entity = new StorageQuota();
-            StorageQuotaDto dto = new StorageQuotaDto(USER_ID, 200L, 1000L);
-            Page<StorageQuota> page = new PageImpl<>(List.of(entity));
+            long bytesToRelease = 100L;
 
-            when(repository.findAll(any(Pageable.class))).thenReturn(page);
-            when(mapper.toDto(entity)).thenReturn(dto);
+            when(repository.findByUserIdWithLock(USER_ID))
+                    .thenReturn(Optional.empty());
 
-            // when
-            Page<StorageQuotaDto> result = service.findAllQuotas(0, 10);
-
-            // then
-            assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().getFirst()).isEqualTo(dto);
+            // when & then
+            assertThatThrownBy(() -> service.releaseSpace(USER_ID, bytesToRelease))
+                    .isInstanceOf(StorageQuotaNotFoundException.class);
+            verify(repository, never()).saveAndFlush(any());
         }
-    }
-
-    @Nested
-    class BatchUpdateUsedSpace {
 
         @Test
-        void shouldConvertToParamsAndDelegate() {
+        void shouldSetZero_WithExactUsedSpace() {
             // given
-            List<SpaceCorrectionDto> corrections = List.of(
-                    new SpaceCorrectionDto(1L, 500L),
-                    new SpaceCorrectionDto(2L, 300L)
-            );
+            long bytesToRelease = 500L;
+
+            StorageQuota existingQuota = new StorageQuota();
+            existingQuota.setUserId(USER_ID);
+            existingQuota.setUsedSpace(500L);
+            existingQuota.setStorageLimit(1000L);
+
+            when(repository.findByUserIdWithLock(USER_ID))
+                    .thenReturn(Optional.of(existingQuota));
 
             // when
-            service.batchUpdateUsedSpace(corrections);
+            service.releaseSpace(USER_ID, bytesToRelease);
 
             // then
-            verify(repository).batchUpdateUsedSpace(corrections);
-        }
-    }
-
-    @Nested
-    class BatchDecreaseUsedSpace {
-
-        @Test
-        void shouldConvertToParamsAndDelegate() {
-            // given
-            List<SpaceReleaseDto> releases = List.of(
-                    new SpaceReleaseDto(1L, 100L),
-                    new SpaceReleaseDto(2L, 200L)
-            );
-
-            // when
-            service.batchDecreaseUsedSpace(releases);
-
-            // then
-            verify(repository).batchDecreaseUsedSpace(releases);
+            assertEquals(0L, existingQuota.getUsedSpace());
         }
     }
 }

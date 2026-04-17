@@ -19,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,35 +45,55 @@ class ResourceMetadataServiceTest {
     private ResourceMetadataService service;
 
     @Nested
+    @DisplayName("existsByPath")
+    class ExistsByPath {
+
+        @Test
+        @DisplayName("Should normalize path and delegate to repository")
+        void shouldNormalizeAndDelegate() {
+            // given
+            when(repository.existsByNormalizedPath(USER_ID, "docs/file.txt"))
+                    .thenReturn(true);
+
+            // when
+            boolean result = service.existsByPath(USER_ID, "Docs/File.txt");
+
+            // then
+            assertThat(result).isTrue();
+            verify(repository).existsByNormalizedPath(USER_ID, "docs/file.txt");
+        }
+    }
+
+    @Nested
     @DisplayName("findOrThrow")
     class FindOrThrow {
 
         @Test
-        @DisplayName("should return dto when resource found")
+        @DisplayName("Should normalize path and return dto when found")
         void shouldReturnDtoWhenFound() {
             // given
             ResourceMetadata entity = new ResourceMetadata();
-            entity.setId(1L);
             ResourceMetadataDto dto = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                    1L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
-            when(repository.findByPath(USER_ID, "docs/file.txt"))
+            when(repository.findByNormalizedPath(USER_ID, "docs/file.txt"))
                     .thenReturn(Optional.of(entity));
             when(mapper.toResourceMetadataDto(entity)).thenReturn(dto);
 
             // when
-            ResourceMetadataDto result = service.findOrThrow(USER_ID, "docs/file.txt");
+            ResourceMetadataDto result = service.findOrThrow(USER_ID, "Docs/File.txt");
 
             // then
             assertThat(result).isEqualTo(dto);
+            verify(repository).findByNormalizedPath(USER_ID, "docs/file.txt");
         }
 
         @Test
-        @DisplayName("should throw ResourceNotFoundException when resource missing")
+        @DisplayName("Should throw ResourceNotFoundException when not found")
         void shouldThrowWhenNotFound() {
             // given
-            when(repository.findByPath(USER_ID, "missing.txt"))
+            when(repository.findByNormalizedPath(USER_ID, "missing.txt"))
                     .thenReturn(Optional.empty());
 
             // when & then
@@ -86,20 +107,19 @@ class ResourceMetadataServiceTest {
     class FindDirectoryContent {
 
         @Test
-        @DisplayName("should verify directory existence and return its content")
+        @DisplayName("Should verify directory existence and return content")
         void shouldVerifyExistenceAndReturnContent() {
             // given
             ResourceMetadata dirEntity = new ResourceMetadata();
             ResourceMetadataDto dirDto = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/", "", "docs",
+                    1L, USER_ID, "Docs/", "", "Docs",
                     null, ResourceType.DIRECTORY);
-
             ResourceMetadata fileEntity = new ResourceMetadata();
             ResourceMetadataDto fileDto = new ResourceMetadataDto(
-                    2L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                    2L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
-            when(repository.findByPath(USER_ID, "docs/"))
+            when(repository.findByNormalizedPath(USER_ID, "docs/"))
                     .thenReturn(Optional.of(dirEntity));
             when(mapper.toResourceMetadataDto(dirEntity)).thenReturn(dirDto);
             when(repository.findByParentPath(USER_ID, "docs/"))
@@ -108,16 +128,15 @@ class ResourceMetadataServiceTest {
                     .thenReturn(List.of(fileDto));
 
             // when
-            List<ResourceMetadataDto> result = service.findDirectoryContent(USER_ID, "docs/");
+            List<ResourceMetadataDto> result = service.findDirectoryContent(USER_ID, "Docs/");
 
             // then
             assertThat(result).hasSize(1);
-            assertThat(result.getFirst().name()).isEqualTo("file.txt");
-            verify(repository).findByPath(USER_ID, "docs/");
+            assertThat(result.getFirst().name()).isEqualTo("File.txt");
         }
 
         @Test
-        @DisplayName("should skip existence check for root path")
+        @DisplayName("Should skip existence check for root path")
         void shouldSkipExistenceCheckForRoot() {
             // given
             when(repository.findByParentPath(USER_ID, ""))
@@ -130,7 +149,42 @@ class ResourceMetadataServiceTest {
 
             // then
             assertThat(result).isEmpty();
-            verify(repository, never()).findByPath(anyLong(), anyString());
+            verify(repository, never()).findByNormalizedPath(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should throw when directory does not exist")
+        void shouldThrowWhenDirectoryNotFound() {
+            // given
+            when(repository.findByNormalizedPath(USER_ID, "missing/"))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> service.findDirectoryContent(USER_ID, "missing/"))
+                    .isInstanceOf(ResourceNotFoundException.class);
+            verify(repository, never()).findByParentPath(anyLong(), anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("findExistingPaths")
+    class FindExistingPaths {
+
+        @Test
+        @DisplayName("Should normalize all paths before querying")
+        void shouldNormalizeAllPaths() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs/file.txt", "work/report.txt")))
+                    .thenReturn(Set.of("Docs/File.txt"));
+
+            // when
+            Set<String> result = service.findExistingPaths(USER_ID,
+                    Set.of("Docs/File.txt", "Work/Report.txt"));
+
+            // then
+            assertThat(result).containsExactly("Docs/File.txt");
+            verify(repository).findExistingPaths(USER_ID,
+                    Set.of("docs/file.txt", "work/report.txt"));
         }
     }
 
@@ -139,31 +193,185 @@ class ResourceMetadataServiceTest {
     class SaveDirectory {
 
         @Test
-        @DisplayName("should map to entity and save via repository")
+        @DisplayName("Should map to entity and save")
         void shouldMapAndSave() {
             // given
             ResourceMetadata entity = new ResourceMetadata();
-            when(mapper.toDirectoryEntity(USER_ID, "docs/")).thenReturn(entity);
+            when(mapper.toDirectoryEntity(USER_ID, "Docs/")).thenReturn(entity);
 
             // when
-            service.saveDirectory(USER_ID, "docs/");
+            service.saveDirectory(USER_ID, "Docs/");
 
             // then
             verify(repository).saveAndFlush(entity);
         }
 
         @Test
-        @DisplayName("should throw ResourceAlreadyExistsException on duplicate path")
+        @DisplayName("Should throw ResourceAlreadyExistsException on duplicate")
         void shouldThrowOnDuplicate() {
             // given
-            ResourceMetadata directory = new ResourceMetadata();
-            when(mapper.toDirectoryEntity(USER_ID, "docs/")).thenReturn(directory);
-            when(repository.saveAndFlush(directory))
+            ResourceMetadata entity = new ResourceMetadata();
+            when(mapper.toDirectoryEntity(USER_ID, "Docs/")).thenReturn(entity);
+            when(repository.saveAndFlush(entity))
                     .thenThrow(new DataIntegrityViolationException("Duplicate"));
 
             // when & then
-            assertThatThrownBy(() -> service.saveDirectory(USER_ID, "docs/"))
+            assertThatThrownBy(() -> service.saveDirectory(USER_ID, "Docs/"))
                     .isInstanceOf(ResourceAlreadyExistsException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("moveMetadata")
+    class MoveMetadata {
+
+        @Test
+        @DisplayName("Should normalize pathFrom and compute target fields")
+        void shouldNormalizeAndComputeTargetFields() {
+            // given
+            when(repository.moveMetadata(USER_ID, "docs/", "Archive/Docs/", "archive/", "Docs"))
+                    .thenReturn(3);
+
+            // when
+            service.moveMetadata(USER_ID, "Docs/", "Archive/Docs/");
+
+            // then
+            verify(repository).moveMetadata(USER_ID, "docs/", "Archive/Docs/", "archive/", "Docs");
+        }
+
+        @Test
+        @DisplayName("Should compute empty parent path when moving to root")
+        void shouldComputeEmptyParentForRoot() {
+            // given
+            when(repository.moveMetadata(USER_ID, "archive/docs/", "Docs/", "", "Docs"))
+                    .thenReturn(1);
+
+            // when
+            service.moveMetadata(USER_ID, "archive/docs/", "Docs/");
+
+            // then
+            verify(repository).moveMetadata(USER_ID, "archive/docs/", "Docs/", "", "Docs");
+        }
+
+        @Test
+        @DisplayName("Should compute target name for file move")
+        void shouldComputeTargetNameForFile() {
+            // given
+            when(repository.moveMetadata(USER_ID, "docs/file.txt", "work/Report.txt", "work/", "Report.txt"))
+                    .thenReturn(1);
+
+            // when
+            service.moveMetadata(USER_ID, "docs/file.txt", "work/Report.txt");
+
+            // then
+            verify(repository).moveMetadata(USER_ID, "docs/file.txt", "work/Report.txt", "work/", "Report.txt");
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when nothing moved")
+        void shouldThrowWhenNothingMoved() {
+            // given
+            when(repository.moveMetadata(USER_ID, "nonexistent/", "somewhere/", "", "somewhere"))
+                    .thenReturn(0);
+
+            // when & then
+            assertThatThrownBy(() -> service.moveMetadata(USER_ID, "nonexistent/", "somewhere/"))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("markForDeletion")
+    class MarkForDeletion {
+
+        @Test
+        @DisplayName("Should normalize path before marking")
+        void shouldNormalizePath() {
+            // when
+            service.markForDeletion(USER_ID, "Docs/File.txt");
+
+            // then
+            verify(repository).markForDeletionByNormalizedPath(USER_ID, "docs/file.txt");
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteFileByPath")
+    class DeleteFileByPath {
+
+        @Test
+        @DisplayName("Should normalize path before deleting")
+        void shouldNormalizePath() {
+            // when
+            service.deleteFileByPath(USER_ID, "Docs/File.txt");
+
+            // then
+            verify(repository).deleteFileByNormalizedPath(USER_ID, "docs/file.txt");
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteDirectoryMetadata")
+    class DeleteDirectoryMetadata {
+
+        @Test
+        @DisplayName("Should normalize prefix before deleting")
+        void shouldNormalizePrefix() {
+            // when
+            service.deleteDirectoryMetadata(USER_ID, "Docs/");
+
+            // then
+            verify(repository).deleteByNormalizedPathPrefix(USER_ID, "docs/");
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteByPaths")
+    class DeleteByPaths {
+
+        @Test
+        @DisplayName("Should normalize all paths before deleting")
+        void shouldNormalizeAllPaths() {
+            // when
+            service.deleteByPaths(USER_ID, List.of("Docs/A.txt", "Work/B.txt"));
+
+            // then
+            verify(repository).deleteByNormalizedPaths(USER_ID,
+                    List.of("docs/a.txt", "work/b.txt"));
+        }
+    }
+
+    @Nested
+    @DisplayName("markForDeletionAndSumFileSize")
+    class MarkForDeletionAndSumFileSize {
+
+        @Test
+        @DisplayName("Should normalize path and return sum")
+        void shouldNormalizeAndReturnSum() {
+            // given
+            when(repository.markForDeletionAndSumSize(USER_ID, "docs/"))
+                    .thenReturn(500L);
+
+            // when
+            long result = service.markForDeletionAndSumFileSize(USER_ID, "Docs/");
+
+            // then
+            assertThat(result).isEqualTo(500L);
+            verify(repository).markForDeletionAndSumSize(USER_ID, "docs/");
+        }
+
+        @Test
+        @DisplayName("Should return zero when no files found")
+        void shouldReturnZeroWhenNoFiles() {
+            // given
+            when(repository.markForDeletionAndSumSize(USER_ID, "empty/"))
+                    .thenReturn(0L);
+
+            // when
+            long result = service.markForDeletionAndSumFileSize(USER_ID, "empty/");
+
+            // then
+            assertThat(result).isEqualTo(0L);
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.infrastructure.storage.minio.resilience4j;
 
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import io.github.resilience4j.retry.RetryRegistry;

@@ -27,7 +27,6 @@ class UserMapperTest {
         UserDto result = mapper.toDto(user);
 
         // then
-        assertThat(result.id()).isEqualTo(1L);
         assertThat(result.username()).isEqualTo("john_doe");
     }
 
@@ -41,7 +40,6 @@ class UserMapperTest {
          UserDto result = mapper.toDto(userDetails);
 
         // then
-        assertThat(result.id()).isEqualTo(42L);
         assertThat(result.username()).isEqualTo("jane_doe");
     }
 

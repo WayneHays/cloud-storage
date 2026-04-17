@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.minio.MinioResourceStorage;
 import com.waynehays.cloudfilestorage.integration.container.MinioTestContainer;
