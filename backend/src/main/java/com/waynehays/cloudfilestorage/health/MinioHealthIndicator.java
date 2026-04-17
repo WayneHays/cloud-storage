@@ -21,13 +21,19 @@ public class MinioHealthIndicator implements HealthIndicator {
         String bucketName = properties.bucketName();
 
         try {
-            minioClient.bucketExists(
-                    BucketExistsArgs.builder()
-                            .bucket(bucketName)
-                            .build()
+            boolean exists = minioClient.bucketExists(
+                    BucketExistsArgs.builder().bucket(bucketName).build()
             );
+
+            if (!exists) {
+                return Health.down()
+                        .withDetail("bucket", bucketName)
+                        .withDetail("reason", "bucket does not exist")
+                        .build();
+            }
+
             return Health.up()
-                    .withDetail(key, bucketName)
+                    .withDetail("bucket", bucketName)
                     .build();
         } catch (Exception e) {
             return Health.down(e)
