@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.service.scheduler.cleanup;
 
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.dto.internal.quota.SpaceReleaseDto;
+import com.waynehays.cloudfilestorage.dto.internal.storage.UserPath;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageServiceApi;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,20 +23,16 @@ public class CleanupService implements CleanupServiceApi {
 
     @Override
     public void clean(int limit) {
-        log.info("Deletion cleanup started");
+        log.info("Cleanup started");
         int totalCleaned = 0;
+        int cleaned;
 
-        try {
-            int cleaned;
-            do {
-                cleaned = executeCleanup(limit);
-                totalCleaned += cleaned;
-            } while (cleaned == limit);
-        } catch (Exception e) {
-            log.error("Deletion cleanup failed", e);
-        }
+        do {
+            cleaned = executeCleanup(limit);
+            totalCleaned += cleaned;
+        } while (cleaned == limit);
 
-        log.info("Deletion cleanup completed: {} resources removed", totalCleaned);
+        log.info("Cleanup completed: {} resources removed", totalCleaned);
     }
 
     private int executeCleanup(int limit) {
@@ -49,20 +45,20 @@ public class CleanupService implements CleanupServiceApi {
         try {
             deleteFromStorage(files);
         } catch (Exception e) {
-            log.error("Failed to delete files from storage", e);
+            log.error("Cleanup: failed to delete files from storage", e);
             return 0;
         }
 
         try {
             releaseQuotas(files);
         } catch (Exception e) {
-            log.error("Failed to release quotas", e);
+            log.error("Cleanup: failed to release quotas", e);
         }
 
         try {
             deleteMetadata(files);
         } catch (Exception e) {
-            log.error("Failed to delete metadata", e);
+            log.error("Cleanup: failed to delete metadata", e);
             return 0;
         }
 
@@ -70,24 +66,25 @@ public class CleanupService implements CleanupServiceApi {
     }
 
     private void deleteFromStorage(List<ResourceMetadataDto> files) {
-        Map<Long, List<String>> pathsByUserId = files.stream()
-                .collect(Collectors.groupingBy(
-                        ResourceMetadataDto::userId,
-                        Collectors.mapping(ResourceMetadataDto::path, Collectors.toList())
-                ));
-        pathsByUserId.forEach(storageService::deleteObjects);
+        List<UserPath> userPaths = files.stream()
+                .map(f -> new UserPath(f.userId(), f.path()))
+                .toList();
+        storageService.deleteObjects(userPaths);
     }
 
     private void releaseQuotas(List<ResourceMetadataDto> files) {
-        List<SpaceReleaseDto> releases = files.stream()
-                .collect(Collectors.groupingBy(
-                        ResourceMetadataDto::userId,
-                        Collectors.summingLong(ResourceMetadataDto::size)
-                ))
-                .entrySet().stream()
-                .map(e -> new SpaceReleaseDto(e.getKey(), e.getValue()))
-                .toList();
-        quotaService.batchDecreaseUsedSpace(releases);
+        List<SpaceReleaseDto> spaceToRelease = files.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.groupingBy(
+                                ResourceMetadataDto::userId,
+                                Collectors.summingLong(ResourceMetadataDto::size)
+                        ),
+                        map -> map.entrySet().stream()
+                                .map(entry -> new SpaceReleaseDto(
+                                        entry.getKey(), entry.getValue()))
+                                .toList()
+                ));
+        quotaService.batchReleaseUsedSpace(spaceToRelease);
     }
 
     private void deleteMetadata(List<ResourceMetadataDto> files) {
