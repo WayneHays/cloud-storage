@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -85,10 +86,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                                     @NotNull HttpHeaders headers,
                                                                                     @NotNull HttpStatusCode status,
                                                                                     @NotNull WebRequest request) {
-        log.warn("Too large size of uploaded resource for user: {}", getCurrentUserInfo());
+        log.warn("Too large size of uploaded resource: {}", getCurrentUserInfo());
         ErrorDto error = createErrorDto("File size is too large");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorDto handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation: {}, {}", getCurrentUserInfo(), e.getMostSpecificCause().getMessage());
+        return createErrorDto("Duplicate resource conflict");
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -211,7 +219,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private record UserInfo(Long id, String username) {
         @Override
         public @NonNull String toString() {
-            return "user='%s', id=%s".formatted(username, id != null ? id : "N/A");
+            return "user='%s', userId=%s".formatted(username, id != null ? id : "N/A");
         }
     }
 }
