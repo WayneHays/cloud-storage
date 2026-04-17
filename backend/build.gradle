@@ -22,7 +22,8 @@ configurations {
 }
 
 repositories {
-	mavenCentral()
+    gradlePluginPortal()
+    mavenCentral()
 }
 
 dependencies {
