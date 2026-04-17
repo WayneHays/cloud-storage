@@ -17,7 +17,7 @@ export async function sendUpload(files, updateDownloadTask, updateTask, uploadTa
 
     const formData = new FormData();
     files.forEach(({file, path}) => {
-        formData.append("object", file, path);
+        formData.append("files", file, path);
     })
     formData.append("path", currPath);
 
@@ -44,13 +44,16 @@ export async function sendUpload(files, updateDownloadTask, updateTask, uploadTa
             updateTask(uploadTask, "completed", "Загружено");
         }
     } catch (error) {
-        console.log(error);
-
-        if (error.response.status === 409) {
-            updateTask(uploadTask, "error", "Файл/папка с таким именем уже существует в целевой папке!");
-
-        } else {
-            updateTask(uploadTask, "error", "Ошибка при загрузке. Попробуйте позже");
-        }
-    }
+          if (error.response) {
+              if (error.response.status === 409) {
+                  updateTask(uploadTask, "error", "Файл/папка с таким именем уже существует!");
+              } else if (error.response.status === 400) {
+                  updateTask(uploadTask, "error", error.response.data?.message || "Файл слишком большой: максимальный размер 500 МБ");
+              } else {
+                  updateTask(uploadTask, "error", "Ошибка при загрузке. Попробуйте позже");
+              }
+          } else {
+              updateTask(uploadTask, "error", "Файл слишком большой (максимальный размер 500 МБ) или соединение прервано");
+          }
+      }
 }

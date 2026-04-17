@@ -157,7 +157,7 @@ export const FileUploadDraggableArea = ({dragRef, isDragging, setIsDragging}) =>
 
                                     }}
                         >
-                            Максимальный размер для загрузки - 2Гб
+                            Максимальный размер для загрузки - 500Мб
                         </Typography>
                     </Box>
                 </Box>
