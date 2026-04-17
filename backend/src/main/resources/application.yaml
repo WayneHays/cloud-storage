@@ -6,26 +6,21 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: 50
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 200MB
+      max-file-size: 500MB
+      max-request-size: 500MB
+  session:
+    timeout: 30m
 
 server:
   tomcat:
     max-part-count: 1000
     max-swallow-size: -1
     connection-timeout: 300000
-  servlet:
-    session:
-      timeout: 30m
 
 cleanup:
-  interval: 5m
+  interval: 30m
   limit: 50
 
 search:
@@ -33,8 +28,8 @@ search:
 
 storage-quota:
   default-limit: 1GB
-  interval: 1h
-  batch-size: 10
+  reconciliation-interval: 1h
+  reconciliation-batch-size: 10
 
 executors:
   move-thread-pool-size: 10
@@ -88,5 +83,4 @@ management:
 
 logging:
   level:
-    root: info
-
+    root: INFO

@@ -5,8 +5,8 @@ spring:
     password: ${POSTGRES_PASSWORD}
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST}
-      port: ${SPRING_DATA_REDIS_PORT}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
 
 minio:
   security:
@@ -20,4 +20,3 @@ minio:
     write-timeout: 30s
     call-timeout: 30s
     deletion-batch-size: 50
-

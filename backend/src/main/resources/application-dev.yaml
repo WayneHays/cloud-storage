@@ -3,6 +3,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/dev-db
     username: dev-user
     password: dev-password
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 minio:
   security:
@@ -16,3 +20,9 @@ minio:
     write-timeout: 10s
     call-timeout: 20s
     deletion-batch-size: 10
+
+logging:
+  pattern:
+    dateformat: yyyy-MM-dd HH:mm:ss.SSS,Europe/Moscow
+  level:
+    com.waynehays.cloudfilestorage: DEBUG
