@@ -45,6 +45,10 @@ public class PathUtils {
         return directories;
     }
 
+    public static String normalizePath(String path) {
+        return path.toLowerCase();
+    }
+
     public static String normalizeSeparators(String path) {
         return FilenameUtils.separatorsToUnix(path);
     }
