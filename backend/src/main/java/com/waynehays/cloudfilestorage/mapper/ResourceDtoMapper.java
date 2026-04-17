@@ -12,8 +12,13 @@ import java.util.Set;
 @Mapper(componentModel = "spring")
 public interface ResourceDtoMapper {
 
+    List<ResourceDto> fromResourceMetadataDto(List<ResourceMetadataDto> dtos);
+
     default ResourceDto fromResourceMetadataDto(ResourceMetadataDto dto) {
-        return createDto(dto.path(), dto.name(), dto.size(), dto.type());
+        String name = dto.isFile()
+                ? dto.name()
+                : PathUtils.ensureTrailingSlash(dto.name());
+        return createDto(dto.path(), name, dto.size(), dto.type());
     }
 
     default ResourceDto fileFromPath(String path, Long size) {
@@ -21,7 +26,8 @@ public interface ResourceDtoMapper {
     }
 
     default ResourceDto directoryFromPath(String path) {
-        return createDto(path, PathUtils.extractFilename(path),null,ResourceType.DIRECTORY);
+        String name = PathUtils.ensureTrailingSlash(PathUtils.extractFilename(path));
+        return createDto(path, name, null, ResourceType.DIRECTORY);
     }
 
     default List<ResourceDto> directoriesFromPaths(Set<String> paths) {
