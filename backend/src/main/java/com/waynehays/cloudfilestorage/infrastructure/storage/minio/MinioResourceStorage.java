@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
+import com.waynehays.cloudfilestorage.dto.internal.storage.StorageItem;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.dto.internal.StorageItem;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.minio.CopyObjectArgs;
@@ -34,6 +34,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MinioResourceStorage implements ResourceStorageApi {
+    private static final String RETRY_NAME = "minioStorage";
+    private static final String CIRCUIT_BREAKER_NAME = "minioStorage";
+
     private static final String MSG_FAILED_GET = "Failed to get object with key: %s";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: %s";
     private static final String MSG_FAILED_PUT = "Failed to put object with key: %s";
@@ -54,8 +57,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public Optional<StorageItem> getObject(String objectKey) {
         try {
             InputStream inputStream = minioClient.getObject(
@@ -92,8 +95,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public void moveObject(String sourceKey, String targetKey) {
         copyObject(sourceKey, targetKey);
         try {
@@ -109,8 +112,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public void deleteObject(String objectKey) {
         executeWithExceptionHandling(
                 () -> minioClient.removeObject(
@@ -123,8 +126,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public void deleteByPrefix(String prefix) {
         List<String> keys = new ArrayList<>();
         Iterable<Result<Item>> objects = getListByPrefix(prefix);
@@ -143,8 +146,8 @@ public class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
-    @Retry(name = "minioStorage")
-    @CircuitBreaker(name = "minioStorage")
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public void deleteList(List<String> keys) {
         List<DeleteObject> objects = keys.stream()
                 .map(DeleteObject::new)
