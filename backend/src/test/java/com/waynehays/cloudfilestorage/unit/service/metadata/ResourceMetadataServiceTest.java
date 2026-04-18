@@ -110,10 +110,6 @@ class ResourceMetadataServiceTest {
         @DisplayName("Should verify directory existence and return content")
         void shouldVerifyExistenceAndReturnContent() {
             // given
-            ResourceMetadata dirEntity = new ResourceMetadata();
-            ResourceMetadataDto dirDto = new ResourceMetadataDto(
-                    1L, USER_ID, "Docs/", "", "Docs",
-                    null, ResourceType.DIRECTORY);
             ResourceMetadata fileEntity = new ResourceMetadata();
             ResourceMetadataDto fileDto = new ResourceMetadataDto(
                     2L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
