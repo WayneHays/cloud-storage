@@ -19,16 +19,12 @@ public interface ResourceMetadataMapper {
         String dirPath = PathUtils.ensureTrailingSlash(path);
         ResourceMetadata entity = new ResourceMetadata();
         entity.setUserId(userId);
-        applyPath(entity, dirPath);
+        entity.setPath(dirPath);
+        entity.setNormalizedPath(PathUtils.normalizePath(dirPath));
+        entity.setParentPath(PathUtils.extractParentPath(PathUtils.normalizePath(dirPath)));
+        entity.setName(PathUtils.extractDisplayName(dirPath));
         entity.setType(ResourceType.DIRECTORY);
         entity.setMarkedForDeletion(false);
         return entity;
-    }
-
-    private void applyPath(ResourceMetadata entity, String path) {
-        entity.setPath(path);
-        entity.setNormalizedPath(PathUtils.normalizePath(path));
-        entity.setParentPath(PathUtils.extractParentPath(PathUtils.normalizePath(path)));
-        entity.setName(PathUtils.extractDisplayName(path));
     }
 }
