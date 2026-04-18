@@ -8,8 +8,8 @@ import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.exception.ApplicationException;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceUploadService implements ResourceUploadServiceApi {
-    private final ResourceRowMapper resourceRowMapper;
+    private final BatchInsertMapper batchInsertMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
     private final ResourceStorageService storageService;
@@ -118,7 +118,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
     }
 
     private void saveFilesMetadata(Long userId, List<UploadObjectDto> objects, UploadContext context) {
-        List<FileRowDto> newFiles = resourceRowMapper.toFileRows(objects);
+        List<FileRowDto> newFiles = batchInsertMapper.toFileRows(objects);
         metadataService.saveFiles(userId, newFiles);
         objects.forEach(o -> context.addSavedToDatabasePath(o.fullPath()));
     }
@@ -136,7 +136,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
             return List.of();
         }
 
-        List<DirectoryRowDto> directoriesToSave = resourceRowMapper.toDirectoryRows(missingPaths);
+        List<DirectoryRowDto> directoriesToSave = batchInsertMapper.toDirectoryRows(missingPaths);
         metadataService.saveDirectories(userId, directoriesToSave);
         missingPaths.forEach(context::addSavedToDatabasePath);
         return resourceDtoMapper.directoriesFromPaths(missingPaths);

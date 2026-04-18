@@ -3,7 +3,7 @@ package com.waynehays.cloudfilestorage.unit.mapper;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.FileRowDto;
-import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
+import com.waynehays.cloudfilestorage.mapper.BatchInsertMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -14,9 +14,9 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ResourceRowMapperTest {
+class BatchInsertMapperTest {
 
-    private final ResourceRowMapper mapper = Mappers.getMapper(ResourceRowMapper.class);
+    private final BatchInsertMapper mapper = Mappers.getMapper(BatchInsertMapper.class);
 
     @Test
     @DisplayName("Should map path, parent path, name and size")

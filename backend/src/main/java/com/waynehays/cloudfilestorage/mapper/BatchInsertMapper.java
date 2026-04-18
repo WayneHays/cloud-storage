@@ -10,12 +10,13 @@ import java.util.List;
 import java.util.Set;
 
 @Mapper(componentModel = "spring")
-public interface ResourceRowMapper {
+public interface BatchInsertMapper {
 
     default FileRowDto toFileRow(UploadObjectDto uploadObject) {
         String path = uploadObject.fullPath();
         return new FileRowDto(
                 path,
+                PathUtils.normalizePath(path),
                 PathUtils.normalizePath(PathUtils.extractParentPath(path)),
                 PathUtils.extractFilename(path),
                 uploadObject.size()
@@ -25,6 +26,7 @@ public interface ResourceRowMapper {
     default DirectoryRowDto toDirectoryRow(String path) {
         return new DirectoryRowDto(
                 path,
+                PathUtils.normalizePath(path),
                 PathUtils.normalizePath(PathUtils.extractParentPath(path)),
                 PathUtils.extractFilename(path)
         );

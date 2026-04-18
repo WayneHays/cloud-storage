@@ -107,14 +107,16 @@ class ResourceMetadataServiceTest {
     class FindDirectoryContent {
 
         @Test
-        @DisplayName("Should verify directory existence and return content")
-        void shouldVerifyExistenceAndReturnContent() {
+        @DisplayName("Should return content when directory has files")
+        void shouldReturnContentWhenDirectoryHasFiles() {
             // given
             ResourceMetadata fileEntity = new ResourceMetadata();
             ResourceMetadataDto fileDto = new ResourceMetadataDto(
                     2L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
+            when(repository.findByParentPath(USER_ID, "docs/"))
+                    .thenReturn(List.of(fileEntity));
             when(mapper.toResourceMetadataDto(List.of(fileEntity)))
                     .thenReturn(List.of(fileDto));
 

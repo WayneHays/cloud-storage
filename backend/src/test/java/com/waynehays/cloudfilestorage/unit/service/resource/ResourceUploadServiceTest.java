@@ -7,8 +7,8 @@ import com.waynehays.cloudfilestorage.entity.ResourceType;
 import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.mapper.ResourceRowMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.upload.ResourceUploadService;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 class ResourceUploadServiceTest {
 
     @Mock
-    private ResourceRowMapper resourceRowMapper;
+    private BatchInsertMapper batchInsertMapper;
 
     @Mock
     private ResourceDtoMapper resourceDtoMapper;
@@ -65,7 +65,7 @@ class ResourceUploadServiceTest {
     void setUp() {
         ExecutorService uploadExecutor = Executors.newSingleThreadExecutor();
         service = new ResourceUploadService(
-                resourceRowMapper, resourceDtoMapper, uploadExecutor,
+                batchInsertMapper, resourceDtoMapper, uploadExecutor,
                 storageService, quotaService, metadataService);
     }
 
@@ -87,7 +87,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of("docs/"));
             when(resourceDtoMapper.directoriesFromPaths(anySet()))
                     .thenReturn(List.of());
-            when(resourceRowMapper.toDirectoryRows(anySet()))
+            when(batchInsertMapper.toDirectoryRows(anySet()))
                     .thenReturn(List.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
@@ -121,7 +121,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(fileDto1);
             when(resourceDtoMapper.fileFromPath("work/b.txt", 200L))
                     .thenReturn(fileDto2);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
@@ -149,7 +149,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
 
             // when
@@ -256,7 +256,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             doThrow(new RuntimeException("DB error"))
                     .when(metadataService).saveFiles(eq(USER_ID), anyList());
@@ -281,11 +281,11 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of("docs/"));
-            when(resourceRowMapper.toDirectoryRows(anySet()))
+            when(batchInsertMapper.toDirectoryRows(anySet()))
                     .thenReturn(List.of());
             doThrow(new RuntimeException("DB error"))
                     .when(metadataService).saveDirectories(eq(USER_ID), anyList());
@@ -331,7 +331,7 @@ class ResourceUploadServiceTest {
                     .thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             doThrow(new RuntimeException("DB error"))
                     .when(metadataService).saveFiles(eq(USER_ID), anyList());
@@ -359,18 +359,18 @@ class ResourceUploadServiceTest {
                     100L, "text/plain", InputStream::nullInputStream);
             ResourceDto fileDto = new ResourceDto("docs/sub/", "file.txt", 100L, ResourceType.FILE);
             List<DirectoryRowDto> missingRows = List.of(
-                    new DirectoryRowDto("docs/sub/", "docs/", "sub")
+                    new DirectoryRowDto("docs/sub/","docs/sub/", "docs/", "sub")
             );
 
             when(resourceDtoMapper.fileFromPath("docs/sub/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
             when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of("docs/sub/"));
-            when(resourceRowMapper.toDirectoryRows(Set.of("docs/sub/")))
+            when(batchInsertMapper.toDirectoryRows(Set.of("docs/sub/")))
                     .thenReturn(missingRows);
             when(resourceDtoMapper.directoriesFromPaths(anySet()))
                     .thenReturn(List.of());
@@ -379,7 +379,7 @@ class ResourceUploadServiceTest {
             service.upload(USER_ID, List.of(object));
 
             // then
-            verify(resourceRowMapper).toDirectoryRows(Set.of("docs/sub/"));
+            verify(batchInsertMapper).toDirectoryRows(Set.of("docs/sub/"));
             verify(metadataService).saveDirectories(USER_ID, missingRows);
         }
 
@@ -394,7 +394,7 @@ class ResourceUploadServiceTest {
 
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
                     .thenReturn(fileDto);
-            when(resourceRowMapper.toFileRows(anyList()))
+            when(batchInsertMapper.toFileRows(anyList()))
                     .thenReturn(List.of());
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
@@ -406,7 +406,7 @@ class ResourceUploadServiceTest {
 
             // then
             verify(metadataService, never()).saveDirectories(anyLong(), anyList());
-            verify(resourceRowMapper, never()).toDirectoryRows(anySet());
+            verify(batchInsertMapper, never()).toDirectoryRows(anySet());
         }
     }
 }

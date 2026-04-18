@@ -45,17 +45,17 @@ public class ResourceMetadataRepositoryCustomImpl implements ResourceMetadataRep
     @Override
     public void batchSaveDirectories(Long userId, List<DirectoryRowDto> directories) {
         String sql = """
-                INSERT INTO resource_metadata
-                    (user_id, path, normalized_path, parent_path, name, type, size, marked_for_deletion)
-                VALUES (?, ?, ?, ?, ?, 'DIRECTORY', 0, false)
-                ON CONFLICT (user_id, normalized_path) DO NOTHING
-                """;
+            INSERT INTO resource_metadata
+                (user_id, path, normalized_path, parent_path, name, type, size, marked_for_deletion)
+            VALUES (?, ?, ?, ?, ?, 'DIRECTORY', 0, false)
+            ON CONFLICT (user_id, normalized_path) DO NOTHING
+            """;
         List<Object[]> params = directories.stream()
                 .map(d -> new Object[]{
                         userId,
                         d.path(),
-                        d.path().toLowerCase(),
-                        d.parentPath().toLowerCase(),
+                        d.normalizedPath(),
+                        d.parentPath(),
                         d.name()
                 })
                 .toList();
@@ -63,19 +63,20 @@ public class ResourceMetadataRepositoryCustomImpl implements ResourceMetadataRep
         jdbcTemplate.batchUpdate(sql, params);
     }
 
+
     @Override
     public void batchSaveFiles(Long userId, List<FileRowDto> files) {
         String sql = """
-                INSERT INTO resource_metadata
-                    (user_id, path, normalized_path, parent_path, name, size, type, marked_for_deletion)
-                VALUES (?, ?, ?, ?, ?, ?, 'FILE', false)
-                """;
+            INSERT INTO resource_metadata
+                (user_id, path, normalized_path, parent_path, name, size, type, marked_for_deletion)
+            VALUES (?, ?, ?, ?, ?, ?, 'FILE', false)
+            """;
         List<Object[]> params = files.stream()
                 .map(f -> new Object[]{
                         userId,
                         f.path(),
-                        f.path().toLowerCase(),
-                        f.parentPath().toLowerCase(),
+                        f.normalizedPath(),
+                        f.parentPath(),
                         f.name(),
                         f.size()
                 })
