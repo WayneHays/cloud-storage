@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.validator;
 import com.waynehays.cloudfilestorage.config.properties.PathLimitsProperties;
 import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
+import com.waynehays.cloudfilestorage.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,10 @@ public class MultipartFileValidator {
 
         String filename = PathUtils.extractFilename(originalFilename);
 
+        if (ValidationUtils.isInvalidSegment(filename)) {
+            throw new MultipartValidationException("Filename contains invalid characters");
+        }
+
         if (filename.length() > properties.maxFilenameLength()) {
             throw new MultipartValidationException(
                     "Filename exceeds max length of %d characters".formatted(properties.maxFilenameLength()));
@@ -26,7 +31,7 @@ public class MultipartFileValidator {
 
         if (fullPath.length() > properties.maxPathLength()) {
             throw new MultipartValidationException(
-                    "Full parentPath exceeds max length of %d characters".formatted(properties.maxPathLength()));
+                    "Full path exceeds max length of %d characters".formatted(properties.maxPathLength()));
         }
     }
 }

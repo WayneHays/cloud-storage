@@ -2,19 +2,15 @@ package com.waynehays.cloudfilestorage.validator;
 
 import com.waynehays.cloudfilestorage.annotation.ValidPath;
 import com.waynehays.cloudfilestorage.config.properties.PathLimitsProperties;
+import com.waynehays.cloudfilestorage.utils.ValidationUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.regex.Pattern;
-
 @RequiredArgsConstructor
 public class PathValidator implements ConstraintValidator<ValidPath, String> {
-    private static final Pattern ALLOWED_CHARACTERS = Pattern.compile("^[\\p{L}\\p{N}._\\- ]+$");
     private static final String SEPARATOR = "/";
-    private static final String CURRENT_DIR = ".";
-    private static final String PARENT_DIR = "..";
 
     private final PathLimitsProperties limitsProperties;
     private boolean mustBeDirectory;
@@ -48,25 +44,11 @@ public class PathValidator implements ConstraintValidator<ValidPath, String> {
                 continue;
             }
 
-            if (!isValidSegment(segment)) {
+            if (ValidationUtils.isInvalidSegment(segment)) {
                 return false;
             }
         }
 
         return true;
-    }
-
-    private boolean isValidSegment(String segment) {
-        if (segment.isBlank()) {
-            return false;
-        }
-        if (PARENT_DIR.equals(segment) || CURRENT_DIR.equals(segment)) {
-            return false;
-        }
-        if (segment.startsWith(CURRENT_DIR) || segment.endsWith(CURRENT_DIR)) {
-            return false;
-        }
-
-        return ALLOWED_CHARACTERS.matcher(segment).matches();
     }
 }
