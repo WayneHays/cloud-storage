@@ -119,11 +119,6 @@ class ResourceMetadataServiceTest {
                     2L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
-            when(repository.findByNormalizedPath(USER_ID, "docs/"))
-                    .thenReturn(Optional.of(dirEntity));
-            when(mapper.toResourceMetadataDto(dirEntity)).thenReturn(dirDto);
-            when(repository.findByParentPath(USER_ID, "docs/"))
-                    .thenReturn(List.of(fileEntity));
             when(mapper.toResourceMetadataDto(List.of(fileEntity)))
                     .thenReturn(List.of(fileDto));
 
@@ -156,13 +151,32 @@ class ResourceMetadataServiceTest {
         @DisplayName("Should throw when directory does not exist")
         void shouldThrowWhenDirectoryNotFound() {
             // given
-            when(repository.findByNormalizedPath(USER_ID, "missing/"))
-                    .thenReturn(Optional.empty());
+            when(repository.findByParentPath(USER_ID, "missing/"))
+                    .thenReturn(List.of());
+            when(repository.existsByNormalizedPath(USER_ID, "missing/"))
+                    .thenReturn(false);
 
             // when & then
             assertThatThrownBy(() -> service.findDirectoryContent(USER_ID, "missing/"))
                     .isInstanceOf(ResourceNotFoundException.class);
-            verify(repository, never()).findByParentPath(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should return empty list for existing empty directory")
+        void shouldReturnEmptyListForExistingEmptyDirectory() {
+            // given
+            when(repository.findByParentPath(USER_ID, "empty/"))
+                    .thenReturn(List.of());
+            when(repository.existsByNormalizedPath(USER_ID, "empty/"))
+                    .thenReturn(true);
+            when(mapper.toResourceMetadataDto(List.of()))
+                    .thenReturn(List.of());
+
+            // when
+            List<ResourceMetadataDto> result = service.findDirectoryContent(USER_ID, "empty/");
+
+            // then
+            assertThat(result).isEmpty();
         }
     }
 

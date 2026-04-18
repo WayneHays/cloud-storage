@@ -43,10 +43,14 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     public List<ResourceMetadataDto> findDirectoryContent(Long userId, String path) {
-        if (StringUtils.isNotEmpty(path)) {
-            findOrThrow(userId, path);
-        }
         List<ResourceMetadata> result = repository.findByParentPath(userId, normalize(path));
+
+        if (result.isEmpty() && StringUtils.isNotEmpty(path)) {
+            if (!repository.existsByNormalizedPath(userId, normalize(path))) {
+                throw new ResourceNotFoundException("Resource not found", path);
+            }
+        }
+
         return mapper.toResourceMetadataDto(result);
     }
 
@@ -127,7 +131,6 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
         String normalizedPathFrom = normalize(pathFrom);
         String targetParentPath = normalize(PathUtils.extractParentPath(pathTo));
         String targetName = PathUtils.extractDisplayName(pathTo);
-        log.debug("moveMetadata targetName={}, pathTo={}", targetName, pathTo);
 
         int updated = repository.moveMetadata(
                 userId, normalizedPathFrom, pathTo, targetParentPath, targetName);
