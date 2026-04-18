@@ -11,7 +11,6 @@ import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationExceptio
 import com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.exception.StorageQuotaNotFoundException;
 import com.waynehays.cloudfilestorage.exception.UserAlreadyExistsException;
-import com.waynehays.cloudfilestorage.exception.UserNotFoundException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -121,13 +120,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ErrorDto handleResourceStorageTransientException(ResourceStorageTransientException e) {
         log.error("Transient storage error: {}", getCurrentUserInfo(), e);
         return createErrorDto("Storage temporarily unavailable, please try again");
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorDto handleUserNotFoundException(UserNotFoundException e) {
-        log.warn("User not found: userId={}", e.getUserId());
-        return createErrorDto("User not found");
     }
 
     @ExceptionHandler(ResourceStorageLimitException.class)
