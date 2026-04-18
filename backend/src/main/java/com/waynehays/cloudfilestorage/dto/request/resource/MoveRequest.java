@@ -32,6 +32,6 @@ public record MoveRequest(
         if (from == null || to == null) {
             return true;
         }
-        return !from.equals(to);
+        return !from.equalsIgnoreCase(to);
     }
 }
