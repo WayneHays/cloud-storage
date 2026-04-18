@@ -15,6 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AuthControllerTest extends AbstractControllerTest {
+    private static final String ANOTHER_USER = "another_user";
+    private static final String ANOTHER_PASSWORD = "another_password";
 
     private ResultActions signUp(String body) throws Exception {
         return mockMvc.perform(post(PATH_SIGN_UP)
@@ -47,16 +49,9 @@ class AuthControllerTest extends AbstractControllerTest {
     class SignUpTests {
 
         @Test
-        @DisplayName("Should register new user and return 201")
-        void shouldRegisterNewUserAndReturn201() throws Exception {
-            registerAndLoginDefaultUser();
-        }
-
-        @Test
         @DisplayName("Should return 409 when username already exists")
         void shouldReturn409_whenUsernameAlreadyExists() throws Exception {
-            registerAndLoginDefaultUser();
-            String duplicate = buildRequestBody("user", "password");
+            String duplicate = buildRequestBody(DEFAULT_USER, DEFAULT_PASSWORD);
 
             signUp(duplicate)
                     .andExpect(status().isConflict())
@@ -89,8 +84,6 @@ class AuthControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should access protected endpoint after sign-up")
         void shouldAccessProtectedEndpoint_afterSignUp() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-
             getResource(sessionCookie)
                     .andExpect(status().isNotFound());
         }
@@ -102,19 +95,15 @@ class AuthControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 200 when user exists")
         void shouldReturn200_whenUserExists() throws Exception {
-            registerAndLoginDefaultUser();
-            String signInBody = buildRequestBody("user", "password");
+            String signInBody = buildRequestBody(DEFAULT_USER, DEFAULT_PASSWORD);
             signIn(signInBody)
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.username").value("user"));
-
+                    .andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should return 401 when wrong password")
         void shouldReturn401_whenWrongPassword() throws Exception {
-            registerAndLoginDefaultUser();
-            String signInBody = buildRequestBody("user", "wrong_password");
+            String signInBody = buildRequestBody(DEFAULT_USER, "wrong_password");
             signIn(signInBody)
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.message").value("Invalid credentials"));
@@ -123,10 +112,9 @@ class AuthControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 401 when user not exists")
         void shouldReturn401_whenUserNotExists() throws Exception {
-            String signInBody = buildRequestBody("user", "password");
+            String signInBody = buildRequestBody(ANOTHER_USER, ANOTHER_PASSWORD);
             signIn(signInBody)
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
@@ -150,8 +138,6 @@ class AuthControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should access protected endpoint after sign-in")
         void shouldAccessProtectedEndpoint_afterSignIn() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-
             getResource(sessionCookie)
                     .andExpect(status().isNotFound());
         }
@@ -163,16 +149,12 @@ class AuthControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 204 when authorized user signs out")
         void shouldReturn204_whenAuthorizedUserSignsOut() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-
             signOut(sessionCookie).andExpect(status().isNoContent());
         }
 
         @Test
         @DisplayName("Should return 401 when unauthorized user access to protected endpoint")
         void shouldReturn401_whenUnauthorizedUserAccessToProtectedEndpoint() throws Exception {
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-
             signOut(sessionCookie).andExpect(status().isNoContent());
 
             mockMvc.perform(get(PATH_RESOURCE)

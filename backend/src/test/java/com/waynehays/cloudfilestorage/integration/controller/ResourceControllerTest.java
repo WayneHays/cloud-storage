@@ -10,6 +10,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -39,40 +40,40 @@ class ResourceControllerTest extends AbstractControllerTest {
         return result.getResponse().getCookie("SESSION");
     }
 
-    private ResultActions getResource(Cookie session, String path) throws Exception {
+    private ResultActions getResource(Cookie sessionCookie, String path) throws Exception {
         return mockMvc.perform(get(PATH_RESOURCE)
                 .with(csrf())
                 .param(PARAM_PATH, path)
-                .cookie(session));
+                .cookie(sessionCookie));
     }
 
-    private ResultActions deleteResource(Cookie session, String path) throws Exception {
+    private ResultActions deleteResource(Cookie sessionCookie, String path) throws Exception {
         return mockMvc.perform(delete(PATH_RESOURCE)
                 .with(csrf())
                 .param(PARAM_PATH, path)
-                .cookie(session));
+                .cookie(sessionCookie));
     }
 
-    private ResultActions downloadResource(Cookie session, String path) throws Exception {
+    private ResultActions downloadResource(Cookie sessionCookie, String path) throws Exception {
         return mockMvc.perform(get(PATH_DOWNLOAD)
                 .with(csrf())
                 .param(PARAM_PATH, path)
-                .cookie(session));
+                .cookie(sessionCookie));
     }
 
-    private ResultActions moveResource(Cookie session, String from, String to) throws Exception {
+    private ResultActions moveResource(Cookie sessionCookie, String from, String to) throws Exception {
         return mockMvc.perform(put(PATH_MOVE)
                 .with(csrf())
                 .param(PARAM_FROM, from)
                 .param(PARAM_TO, to)
-                .cookie(session));
+                .cookie(sessionCookie));
     }
 
-    private ResultActions searchResources(Cookie session, String query) throws Exception {
+    private ResultActions searchResources(Cookie sessionCookie, String query) throws Exception {
         return mockMvc.perform(get(PATH_SEARCH)
                 .with(csrf())
                 .param(PARAM_QUERY, query)
-                .cookie(session));
+                .cookie(sessionCookie));
     }
 
     @Nested
@@ -82,21 +83,27 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should upload file to root and return 201")
         void shouldUploadFileToRoot_andReturn201() throws Exception {
             // given
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
+            String filename = "file.txt";
+            String content = "content";
+            byte[] contentBytes = content.getBytes();
+            int expectedSize = contentBytes.length;
+
+            MockMultipartFile file = multipartFile(filename, content.getBytes());
+
             // when & then
             performUpload(sessionCookie, "", file)
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$[*].name", hasItem("file.txt")))
-                    .andExpect(jsonPath("$[*].type", hasItem("FILE")));
+                    .andExpect(jsonPath("$[*].name", hasItem(filename)))
+                    .andExpect(jsonPath("$[*].type", hasItem("FILE")))
+                    .andExpect(jsonPath("$[*].size", hasItem(expectedSize)));
         }
 
         @Test
         @DisplayName("Should upload file to directory and return 201")
         void shouldUploadFileToDirectory_andReturn201() throws Exception {
             // given
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
             MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
 
             // when & then
@@ -110,8 +117,8 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should upload multiple files and return 201")
         void shouldUploadMultipleFiles_andReturn201() throws Exception {
             // given
-            Cookie sessionCookie = registerAndLoginDefaultUser();
-            createDirectory(sessionCookie, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
             MockMultipartFile file1 = multipartFile("file1.txt", "content1".getBytes());
             MockMultipartFile file2 = multipartFile("file2.txt", "content2".getBytes());
 
@@ -125,7 +132,6 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should upload file with nested directory and create structure")
         void shouldUploadFileWithNestedDirectory_andReturn201() throws Exception {
             // given
-            Cookie sessionCookie = registerAndLoginDefaultUser();
             MockMultipartFile file = multipartFile("work/report.txt", "content".getBytes());
 
             // when & then
@@ -138,7 +144,6 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 409 when file already exists")
         void shouldReturn409_whenFileAlreadyExists() throws Exception {
             // given
-            Cookie sessionCookie = registerAndLoginDefaultUser();
             MockMultipartFile file = multipartFile("file.txt", "content".getBytes());
             performUpload(sessionCookie, "docs/", file);
             MockMultipartFile duplicate = multipartFile("file.txt", "content".getBytes());
@@ -147,6 +152,30 @@ class ResourceControllerTest extends AbstractControllerTest {
             performUpload(sessionCookie, "docs/", duplicate)
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when lower case filename upload to same directory")
+        void shouldReturn409_whenCaseSensitiveFilenameExists() throws Exception {
+            // given
+            MockMultipartFile file = multipartFile("README.md", "content".getBytes());
+            MockMultipartFile expectedDuplicate = multipartFile("readme.md", "content".getBytes());
+            performUpload(sessionCookie, "", file);
+
+            // when & then
+            performUpload(sessionCookie, "", expectedDuplicate)
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when case sensitive duplicate path")
+        void shouldReturn409_whenCaseSensitiveDuplicatePath() throws Exception {
+            // given
+            uploadFileAndExpectIsCreated(sessionCookie, "", "README.md", "content".getBytes());
+
+            // when & then
+            uploadFile(sessionCookie, "", "readme.md", "content".getBytes())
+                    .andExpect(status().isConflict());
         }
 
         @Test
@@ -171,11 +200,10 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and file info")
         void shouldReturn200_andFileInfo() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            getResource(session, "docs/file.txt")
+            getResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("file.txt"))
                     .andExpect(jsonPath("$.path").value("docs/"))
@@ -187,11 +215,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and directory info")
         void shouldReturn200_andDirectoryInfo() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            getResource(session, "docs/")
+            getResource(sessionCookie, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("docs/"))
                     .andExpect(jsonPath("$.path").value(""))
@@ -202,23 +230,29 @@ class ResourceControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 404 when resource not found")
         void shouldReturn404_whenNotFound() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            getResource(session, "nonexistent.txt")
+            getResource(sessionCookie, "nonexistent.txt")
                     .andExpect(status().isNotFound());
         }
 
         @Test
         @DisplayName("Should return 400 when path is invalid")
         void shouldReturn400_whenPathInvalid() throws Exception {
+            // when & then
+            getResource(sessionCookie, "../hack")
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Should return 200 when case-sensitive request")
+        void shouldReturn200_whenCaseSensitiveRequest() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "File.txt", "content".getBytes());
 
             // when & then
-            getResource(session, "../hack")
-                    .andExpect(status().isBadRequest());
+            getResource(sessionCookie, "docs/file.txt")
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name", containsString("File.txt")));
         }
 
         @Test
@@ -239,14 +273,13 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should delete file and return 204")
         void shouldDeleteFile_andReturn204() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            deleteResource(session, "docs/file.txt")
+            deleteResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isNoContent());
 
-            getResource(session, "docs/file.txt")
+            getResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -254,17 +287,16 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should delete directory with content and return 204")
         void shouldDeleteDirectoryWithContent_andReturn204() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            deleteResource(session, "docs/")
+            deleteResource(sessionCookie, "docs/")
                     .andExpect(status().isNoContent());
 
-            getResource(session, "docs/")
+            getResource(sessionCookie, "docs/")
                     .andExpect(status().isNotFound());
 
-            getResource(session, "docs/file.txt")
+            getResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -272,25 +304,22 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should delete empty directory and return 204")
         void shouldDeleteEmptyDirectory_andReturn204() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "empty/");
+            createDirectory(sessionCookie, "empty/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            deleteResource(session, "empty/")
+            deleteResource(sessionCookie, "empty/")
                     .andExpect(status().isNoContent());
 
-            getResource(session, "empty/")
+            getResource(sessionCookie, "empty/")
                     .andExpect(status().isNotFound());
         }
 
         @Test
         @DisplayName("Should return 404 when resource not found")
         void shouldReturn404_whenNotFound() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            deleteResource(session, "nonexistent.txt")
+            deleteResource(sessionCookie, "nonexistent.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -312,12 +341,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should download file and return 200")
         void shouldDownloadFile_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
             byte[] content = "file content".getBytes();
-            uploadFile(session, "docs/", "file.txt", content);
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", content);
 
             // when & then
-            downloadResource(session, "docs/file.txt")
+            downloadResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE))
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("file.txt")))
@@ -328,12 +356,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should download directory as ZIP and return 200")
         void shouldDownloadDirectoryAsZip_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file2.txt", "content2".getBytes());
 
             // when & then
-            downloadResource(session, "docs/")
+            downloadResource(sessionCookie, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/zip"))
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("docs.zip")));
@@ -342,11 +369,8 @@ class ResourceControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 404 when resource not found")
         void shouldReturn404_whenNotFound() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            downloadResource(session, "nonexistent.txt")
+            downloadResource(sessionCookie, "nonexistent.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -368,81 +392,76 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should rename file and return 200")
         void shouldRenameFile_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "old.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "old.txt", "content".getBytes());
 
             // when & then
-            moveResource(session, "docs/old.txt", "docs/new.txt")
+            moveResource(sessionCookie, "docs/old.txt", "docs/new.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("new.txt"))
                     .andExpect(jsonPath("$.path").value("docs/"))
                     .andExpect(jsonPath("$.type").value("FILE"));
 
-            getResource(session, "docs/old.txt").andExpect(status().isNotFound());
-            getResource(session, "docs/new.txt").andExpect(status().isOk());
+            getResource(sessionCookie, "docs/old.txt").andExpect(status().isNotFound());
+            getResource(sessionCookie, "docs/new.txt").andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should move file to another directory and return 200")
         void shouldMoveFileToAnotherDirectory_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
-            createDirectory(session, "archive/");
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
+            createDirectory(sessionCookie, "archive/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            moveResource(session, "docs/file.txt", "archive/file.txt")
+            moveResource(sessionCookie, "docs/file.txt", "archive/file.txt")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.path").value("archive/"))
                     .andExpect(jsonPath("$.name").value("file.txt"));
 
-            getResource(session, "docs/file.txt").andExpect(status().isNotFound());
-            getResource(session, "archive/file.txt").andExpect(status().isOk());
+            getResource(sessionCookie, "docs/file.txt").andExpect(status().isNotFound());
+            getResource(sessionCookie, "archive/file.txt").andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should move directory with content and return 200")
         void shouldMoveDirectoryWithContent_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "target/");
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            createDirectory(sessionCookie, "target/")
+                    .andExpect(status().isCreated());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            moveResource(session, "docs/", "target/docs/")
+            moveResource(sessionCookie, "docs/", "target/docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("docs/"))
                     .andExpect(jsonPath("$.path").value("target/"))
                     .andExpect(jsonPath("$.type").value("DIRECTORY"));
 
-            getResource(session, "docs/file.txt").andExpect(status().isNotFound());
-            getResource(session, "target/docs/file.txt").andExpect(status().isOk());
+            getResource(sessionCookie, "docs/file.txt").andExpect(status().isNotFound());
+            getResource(sessionCookie, "target/docs/file.txt").andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should rename directory and return 200")
         void shouldRenameDirectory_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            moveResource(session, "docs/", "documents/")
+            moveResource(sessionCookie, "docs/", "documents/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("documents/"))
                     .andExpect(jsonPath("$.type").value("DIRECTORY"));
 
-            getResource(session, "documents/file.txt").andExpect(status().isOk());
+            getResource(sessionCookie, "documents/file.txt").andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("Should return 404 when source not found")
         void shouldReturn404_whenSourceNotFound() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            moveResource(session, "nonexistent.txt", "other.txt")
+            moveResource(sessionCookie, "nonexistent.txt", "other.txt")
                     .andExpect(status().isNotFound());
         }
 
@@ -450,12 +469,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 409 when target already exists")
         void shouldReturn409_whenTargetExists() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file2.txt", "content2".getBytes());
 
             // when & then
-            moveResource(session, "docs/file1.txt", "docs/file2.txt")
+            moveResource(sessionCookie, "docs/file1.txt", "docs/file2.txt")
                     .andExpect(status().isConflict());
         }
 
@@ -463,11 +481,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 400 when moving directory to file")
         void shouldReturn400_whenMovingDirectoryToFile() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            moveResource(session, "docs/", "file.txt")
+            moveResource(sessionCookie, "docs/", "file.txt")
                     .andExpect(status().isBadRequest());
         }
 
@@ -490,12 +508,11 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should find files by name and return 200")
         void shouldFindFiles_andReturn200() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "report.txt", "content".getBytes());
-            uploadFile(session, "docs/", "photo.png", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "report.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "photo.png", "content".getBytes());
 
             // when & then
-            searchResources(session, "report")
+            searchResources(sessionCookie, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("report.txt"));
@@ -505,11 +522,10 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should search case insensitively")
         void shouldSearchCaseInsensitively() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "Report.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "Report.txt", "content".getBytes());
 
             // when & then
-            searchResources(session, "report")
+            searchResources(sessionCookie, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("Report.txt"));
@@ -519,11 +535,10 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should find files in nested directories")
         void shouldFindFilesInNestedDirectories() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/work/", "report.txt", "content".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/work/", "report.txt", "content".getBytes());
 
             // when & then
-            searchResources(session, "report")
+            searchResources(sessionCookie, "report")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].name").value("report.txt"));
@@ -533,12 +548,10 @@ class ResourceControllerTest extends AbstractControllerTest {
         @DisplayName("Should return empty list when nothing found")
         void shouldReturnEmptyList_whenNothingFound() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file.txt", "content".getBytes());
-
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", "content".getBytes());
 
             // when & then
-            searchResources(session, "nonexistent")
+            searchResources(sessionCookie, "nonexistent")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
@@ -546,11 +559,8 @@ class ResourceControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 400 when query is blank")
         void shouldReturn400_whenQueryBlank() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            searchResources(session, "")
+            searchResources(sessionCookie, "")
                     .andExpect(status().isBadRequest());
         }
 
@@ -573,7 +583,7 @@ class ResourceControllerTest extends AbstractControllerTest {
         void shouldNotFindFilesOfAnotherUser() throws Exception {
             // given
             Cookie session1 = registerAndLoginUser("user1", "password1");
-            uploadFile(session1, "docs/", "secret.txt", "secret".getBytes());
+            uploadFileAndExpectIsCreated(session1, "docs/", "secret.txt", "secret".getBytes());
 
             Cookie session2 = registerAndLoginUser("user2", "password2");
 
@@ -588,7 +598,7 @@ class ResourceControllerTest extends AbstractControllerTest {
         void shouldNotAccessFileOfAnotherUser() throws Exception {
             // given
             Cookie session1 = registerAndLoginUser("user1", "password1");
-            uploadFile(session1, "docs/", "secret.txt", "secret".getBytes());
+            uploadFileAndExpectIsCreated(session1, "docs/", "secret.txt", "secret".getBytes());
 
             Cookie session2 = registerAndLoginUser("user2", "password2");
 
@@ -605,11 +615,51 @@ class ResourceControllerTest extends AbstractControllerTest {
             Cookie session2 = registerAndLoginUser("user2", "password2");
 
             // when & then
-            createDirectory(session1, "docs/");
-            createDirectory(session2, "docs/");
+            createDirectory(session1, "docs/")
+                    .andExpect(status().isCreated());
+            createDirectory(session2, "docs/")
+                    .andExpect(status().isCreated());
 
             getDirectoryContent(session1, "docs/").andExpect(status().isOk());
             getDirectoryContent(session2, "docs/").andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    class QuotaTests {
+
+        @Test
+        @DisplayName("Should release quota after file deletion, allowing re-upload")
+        void shouldReleaseQuotaAfterDeletion() throws Exception {
+            // given
+            byte[] content = new byte[1000];
+            uploadFile(sessionCookie, "", "file.txt", content);
+            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(1000);
+
+            // when
+            deleteResource(sessionCookie, "file.txt")
+                    .andExpect(status().isNoContent());
+
+            // then
+            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("Should release quota only for deleted file, not for all files")
+        void shouldReleaseQuotaOnlyForDeletedFile() throws Exception {
+            // given
+            byte[] content100 = new byte[100];
+            byte[] content200 = new byte[200];
+            uploadFile(sessionCookie, "", "small.txt", content100);
+            uploadFile(sessionCookie, "", "large.txt", content200);
+            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(300);
+
+            // when
+            deleteResource(sessionCookie, "small.txt")
+                    .andExpect(status().isNoContent());
+
+            // then
+            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(200);
         }
     }
 }

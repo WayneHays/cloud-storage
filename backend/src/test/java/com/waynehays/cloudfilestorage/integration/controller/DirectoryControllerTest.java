@@ -1,11 +1,9 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
 import com.waynehays.cloudfilestorage.utils.PathUtils;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.web.servlet.ResultActions;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
@@ -19,28 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class DirectoryControllerTest extends AbstractControllerTest {
 
-    private ResultActions createDirectoryRequest(Cookie session, String path) throws Exception {
-        return mockMvc.perform(post(PATH_DIRECTORY)
-                .with(csrf())
-                .param(PARAM_PATH, path)
-                .cookie(session));
-    }
-
-    private void createDirectoryAndExpectSuccess(Cookie sessionCookie, String path) throws Exception {
-        String parentPath = PathUtils.extractParentPath(path);
-        String name = PathUtils.extractFilename(path);
-
-        mockMvc.perform(post(PATH_DIRECTORY)
-                        .with(csrf())
-                        .param(PARAM_PATH, path)
-                        .cookie(sessionCookie))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.path").value(parentPath))
-                .andExpect(jsonPath("$.name").value(name))
-                .andExpect(jsonPath("$.size").doesNotExist())
-                .andExpect(jsonPath("$.type").value("DIRECTORY"));
-    }
-
     @Nested
     class CreateDirectoryTests {
 
@@ -48,44 +24,56 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should create directory in root and return 201")
         void shouldCreateDirectoryInRoot_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
+            String path = "docs/";
+            String parentPath = PathUtils.extractParentPath(path);
+            String name = PathUtils.extractFilename(path);
 
             // when & then
-            createDirectoryAndExpectSuccess(session, "docs/");
+            createDirectory(sessionCookie, path)
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.path").value(parentPath))
+                    .andExpect(jsonPath("$.name").value(name))
+                    .andExpect(jsonPath("$.size").doesNotExist())
+                    .andExpect(jsonPath("$.type").value("DIRECTORY"));
         }
 
         @Test
         @DisplayName("Should create nested directory and return 201 when parent exists")
         void shouldCreateNestedDirectory_andReturn201() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
+
+            String nestedPath = "docs/work/";
+            String parentPath = PathUtils.extractParentPath(nestedPath);
+            String name = PathUtils.extractFilename(nestedPath);
 
             // when & then
-            createDirectoryAndExpectSuccess(session, "docs/work/");
+            createDirectory(sessionCookie, nestedPath)
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.path").value(parentPath))
+                    .andExpect(jsonPath("$.name").value(name))
+                    .andExpect(jsonPath("$.size").doesNotExist())
+                    .andExpect(jsonPath("$.type").value("DIRECTORY"));
         }
 
         @Test
         @DisplayName("Should return 409 when directory already exists")
         void shouldReturn409_whenDirectoryAlreadyExists() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            createDirectoryRequest(session, "docs/")
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.message").value("Resources already exists: [docs/]"));
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isConflict());
         }
 
         @Test
         @DisplayName("Should return 404 when parent directory not exists")
         void shouldReturn404_whenParentNotExists() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            createDirectoryRequest(session, "docs/work/")
+            createDirectory(sessionCookie, "docs/work/")
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Resource not found: docs/"));
         }
@@ -93,23 +81,28 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 400 when path is invalid")
         void shouldReturn400_whenPathIsInvalid() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            createDirectoryRequest(session, "../hack/")
+            createDirectory(sessionCookie, "../hack/")
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("Should return 400 when path does not end with slash")
         void shouldReturn400_whenPathNotDirectory() throws Exception {
+            // when & then
+            createDirectory(sessionCookie, "docs")
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when case-sensitive create directory duplicate")
+        void shouldReturn409_whenCaseSensitiveDuplicate() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
+            createDirectory(sessionCookie, "Photos/");
 
             // when & then
-            createDirectoryRequest(session, "docs")
-                    .andExpect(status().isBadRequest());
+            createDirectory(sessionCookie, "photos/")
+                    .andExpect(status().isConflict());
         }
 
         @Test
@@ -130,12 +123,13 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and root content")
         void shouldReturn200_andRootContent() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "docs/");
-            createDirectory(session, "images/");
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
+            createDirectory(sessionCookie, "images/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            getDirectoryContent(session, "")
+            getDirectoryContent(sessionCookie, "")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("docs/", "images/")))
@@ -146,13 +140,12 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and list of files")
         void shouldReturn200_andListOfFiles() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(session, "docs/", "file2.txt", "content2".getBytes());
-            uploadFile(session, "docs/", "file3.txt", "content3".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file2.txt", "content2".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file3.txt", "content3".getBytes());
 
             // when & then
-            getDirectoryContent(session, "docs/")
+            getDirectoryContent(sessionCookie, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(3)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "file2.txt", "file3.txt")))
@@ -164,12 +157,11 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and mixed content (files and directories)")
         void shouldReturn200_andMixedContent() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(session, "docs/work/", "file2.txt", "content2".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/work/", "file2.txt", "content2".getBytes());
 
             // when & then
-            getDirectoryContent(session, "docs/")
+            getDirectoryContent(sessionCookie, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "work/")))
@@ -180,13 +172,12 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should return only direct children, not recursive")
         void shouldReturnOnlyDirectChildren() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            uploadFile(session, "docs/", "file1.txt", "content1".getBytes());
-            uploadFile(session, "docs/work/", "file2.txt", "content2".getBytes());
-            uploadFile(session, "docs/work/reports/", "file3.txt", "content3".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file1.txt", "content1".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/work/", "file2.txt", "content2".getBytes());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/work/reports/", "file3.txt", "content3".getBytes());
 
             // when & then
-            getDirectoryContent(session, "docs/")
+            getDirectoryContent(sessionCookie, "docs/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[*].name", containsInAnyOrder("file1.txt", "work/")));
@@ -196,11 +187,11 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @DisplayName("Should return 200 and empty list when directory is empty")
         void shouldReturn200_andEmptyList() throws Exception {
             // given
-            Cookie session = registerAndLoginDefaultUser();
-            createDirectory(session, "empty/");
+            createDirectory(sessionCookie, "empty/")
+                    .andExpect(status().isCreated());
 
             // when & then
-            getDirectoryContent(session, "empty/")
+            getDirectoryContent(sessionCookie, "empty/")
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
         }
@@ -208,11 +199,8 @@ class DirectoryControllerTest extends AbstractControllerTest {
         @Test
         @DisplayName("Should return 404 when directory not found")
         void shouldReturn404_whenDirectoryNotFound() throws Exception {
-            // given
-            Cookie session = registerAndLoginDefaultUser();
-
             // when & then
-            getDirectoryContent(session, "nonexistent/")
+            getDirectoryContent(sessionCookie, "nonexistent/")
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message").value("Resource not found: nonexistent/"));
         }

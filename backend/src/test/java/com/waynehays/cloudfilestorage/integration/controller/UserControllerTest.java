@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.integration.controller;
 
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -16,8 +15,6 @@ class UserControllerTest extends AbstractControllerTest {
     @Test
     @DisplayName("Should return user info when authenticated")
     void shouldReturnUserInfo_whenAuthenticated() throws Exception {
-        Cookie sessionCookie = registerAndLoginDefaultUser();
-
         mockMvc.perform(get(PATH_ME)
                         .with(csrf())
                         .cookie(sessionCookie))
@@ -36,8 +33,6 @@ class UserControllerTest extends AbstractControllerTest {
     @Test
     @DisplayName("Should return 401 after user logs out")
     void shouldReturn401_afterUserLogsOut() throws Exception {
-        Cookie sessionCookie = registerAndLoginDefaultUser();
-
         mockMvc.perform(post(PATH_SIGN_OUT)
                         .with(csrf())
                         .cookie(sessionCookie))

@@ -8,6 +8,7 @@ import com.waynehays.cloudfilestorage.repository.metadata.ResourceMetadataReposi
 import com.waynehays.cloudfilestorage.repository.quota.StorageQuotaRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -46,13 +47,16 @@ public abstract class AbstractControllerTest {
     protected static final String PARAM_QUERY = "query";
     protected static final String PARAM_FILES = "files";
 
+    protected static final String DEFAULT_USER = "user";
+    protected static final String DEFAULT_PASSWORD = "password";
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", PostgresTestContainer::getJdbcUrl);
         registry.add("spring.datasource.username", PostgresTestContainer::getUsername);
         registry.add("spring.datasource.password", PostgresTestContainer::getPassword);
         registry.add("spring.data.redis.host", RedisTestContainer::getHost);
-        registry.add("spring.data.redis.port",  RedisTestContainer::getPort);
+        registry.add("spring.data.redis.port", RedisTestContainer::getPort);
         registry.add("minio.security.url", MinioTestContainer::getUrl);
         registry.add("minio.security.access-key", MinioTestContainer::getUsername);
         registry.add("minio.security.secret-key", MinioTestContainer::getPassword);
@@ -62,13 +66,20 @@ public abstract class AbstractControllerTest {
     private UserRepository userRepository;
 
     @Autowired
-    private StorageQuotaRepository quotaRepository;
-
-    @Autowired
     private ResourceMetadataRepository metadataRepository;
 
     @Autowired
+    protected StorageQuotaRepository quotaRepository;
+
+    @Autowired
     protected MockMvc mockMvc;
+
+    protected Cookie sessionCookie;
+
+    @BeforeEach
+    void registerAndLoginUser() throws Exception {
+        sessionCookie = registerAndLoginDefaultUser();
+    }
 
     @AfterEach
     void cleanStorage() {
@@ -102,31 +113,52 @@ public abstract class AbstractControllerTest {
         return mockMvc.perform(builder);
     }
 
-    protected void uploadFile(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
+    protected ResultActions uploadFile(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 PARAM_FILES,
                 filename,
                 "text/plain",
                 content);
 
-        mockMvc.perform(multipart(PATH_RESOURCE)
-                        .with(csrf())
-                        .file(file)
-                        .param(PARAM_PATH, directory)
-                        .cookie(sessionCookie))
+        return mockMvc.perform(multipart(PATH_RESOURCE)
+                .with(csrf())
+                .file(file)
+                .param(PARAM_PATH, directory)
+                .cookie(sessionCookie));
+    }
+
+    protected void uploadFileAndExpectIsCreated(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
+        uploadFile(sessionCookie, directory, filename, content)
                 .andExpect(status().isCreated());
     }
 
-    protected void createDirectory(Cookie sessionCookie, String path) throws Exception {
-        mockMvc.perform(post(PATH_DIRECTORY)
-                        .with(csrf())
-                        .param(PARAM_PATH, path)
-                        .cookie(sessionCookie))
-                .andExpect(status().isCreated());
+    protected ResultActions createDirectory(Cookie sessionCookie, String path) throws Exception {
+        return mockMvc.perform(post(PATH_DIRECTORY)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(sessionCookie));
+    }
+
+    protected ResultActions getDirectoryContent(Cookie sessionCookie, String path) throws Exception {
+        return mockMvc.perform(get(PATH_DIRECTORY)
+                .with(csrf())
+                .param(PARAM_PATH, path)
+                .cookie(sessionCookie));
+    }
+
+    protected long getUsedSpace(String username) {
+        Long userId = userRepository.findByUsername(username)
+                .orElseThrow()
+                .getId();
+        return quotaRepository.findAll().stream()
+                .filter(q -> q.getUserId().equals(userId))
+                .findFirst()
+                .orElseThrow()
+                .getUsedSpace();
     }
 
     protected Cookie registerAndLoginDefaultUser() throws Exception {
-        String requestBody = buildRequestBody("user", "password");
+        String requestBody = buildRequestBody(DEFAULT_USER, DEFAULT_PASSWORD);
         MvcResult result = mockMvc.perform(post(PATH_SIGN_UP)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -135,12 +167,5 @@ public abstract class AbstractControllerTest {
                 .andReturn();
 
         return result.getResponse().getCookie("SESSION");
-    }
-
-    protected ResultActions getDirectoryContent(Cookie sessionCookie, String path) throws Exception {
-        return mockMvc.perform(get(PATH_DIRECTORY)
-                .with(csrf())
-                .param(PARAM_PATH, path)
-                .cookie(sessionCookie));
     }
 }

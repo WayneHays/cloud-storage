@@ -86,7 +86,7 @@ class ResourceMetadataMapperTest {
         assertThat(result.getUserId()).isEqualTo(10L);
         assertThat(result.getPath()).isEqualTo("docs/reports/");
         assertThat(result.getParentPath()).isEqualTo("docs/");
-        assertThat(result.getName()).isEqualTo("reports/");
+        assertThat(result.getName()).isEqualTo("reports");
         assertThat(result.getType()).isEqualTo(ResourceType.DIRECTORY);
         assertThat(result.isMarkedForDeletion()).isFalse();
         assertThat(result.getId()).isNull();
@@ -106,6 +106,6 @@ class ResourceMetadataMapperTest {
         // then
         assertThat(result.getPath()).isEqualTo("docs/reports/");
         assertThat(result.getParentPath()).isEqualTo("docs/");
-        assertThat(result.getName()).isEqualTo("reports/");
+        assertThat(result.getName()).isEqualTo("reports");
     }
 }
