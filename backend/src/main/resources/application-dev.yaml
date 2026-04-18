@@ -10,7 +10,7 @@ spring:
 
 minio:
   security:
-    url: http://localhost:9000
+    url: http://localhost:9700
     access-key: minioadmin
     secret-key: minioadmin123
   storage:

@@ -40,8 +40,8 @@ services:
     volumes:
       - minio_dev_data:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9700:9000"
+      - "9701:9001"
     healthcheck:
       test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
