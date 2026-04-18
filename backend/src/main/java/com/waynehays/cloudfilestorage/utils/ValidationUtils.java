@@ -10,16 +10,16 @@ public class ValidationUtils {
     private static final String CURRENT_DIR = ".";
     private static final String PARENT_DIR = "..";
 
-    public static boolean isInvalidSegment(String segment) {
-        if (segment.isBlank()) {
+    public static boolean isInvalidInput(String input) {
+        if (input.isBlank()) {
             return true;
         }
-        if (PARENT_DIR.equals(segment) || CURRENT_DIR.equals(segment)) {
+        if (PARENT_DIR.equals(input) || CURRENT_DIR.equals(input)) {
             return true;
         }
-        if (segment.startsWith(CURRENT_DIR) || segment.endsWith(CURRENT_DIR)) {
+        if (input.startsWith(CURRENT_DIR) || input.endsWith(CURRENT_DIR)) {
             return true;
         }
-        return !ALLOWED_CHARACTERS.matcher(segment).matches();
+        return !ALLOWED_CHARACTERS.matcher(input).matches();
     }
 }

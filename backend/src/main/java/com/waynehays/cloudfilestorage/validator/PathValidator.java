@@ -44,7 +44,7 @@ public class PathValidator implements ConstraintValidator<ValidPath, String> {
                 continue;
             }
 
-            if (ValidationUtils.isInvalidSegment(segment)) {
+            if (ValidationUtils.isInvalidInput(segment)) {
                 return false;
             }
         }

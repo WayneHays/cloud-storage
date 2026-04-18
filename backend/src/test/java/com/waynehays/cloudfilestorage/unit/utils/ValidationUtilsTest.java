@@ -21,7 +21,7 @@ class ValidationUtilsTest {
         @DisplayName("Should accept valid segments")
         void shouldAcceptValidSegments(String segment) {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment(segment)).isFalse();
+            assertThat(ValidationUtils.isInvalidInput(segment)).isFalse();
         }
 
         @ParameterizedTest
@@ -29,43 +29,43 @@ class ValidationUtilsTest {
         @DisplayName("Should accept segments with dots in the middle")
         void shouldAcceptDotsInMiddle(String segment) {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment(segment)).isFalse();
+            assertThat(ValidationUtils.isInvalidInput(segment)).isFalse();
         }
 
         @Test
         @DisplayName("Should reject blank segment")
         void shouldRejectBlank() {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment("")).isTrue();
-            assertThat(ValidationUtils.isInvalidSegment("   ")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput("")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput("   ")).isTrue();
         }
 
         @Test
         @DisplayName("Should reject current directory segment")
         void shouldRejectCurrentDir() {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment(".")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput(".")).isTrue();
         }
 
         @Test
         @DisplayName("Should reject parent directory segment")
         void shouldRejectParentDir() {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment("..")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput("..")).isTrue();
         }
 
         @Test
         @DisplayName("Should reject segment starting with dot")
         void shouldRejectStartingWithDot() {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment(".hidden")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput(".hidden")).isTrue();
         }
 
         @Test
         @DisplayName("Should reject segment ending with dot")
         void shouldRejectEndingWithDot() {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment("file.")).isTrue();
+            assertThat(ValidationUtils.isInvalidInput("file.")).isTrue();
         }
 
         @ParameterizedTest
@@ -73,7 +73,7 @@ class ValidationUtilsTest {
         @DisplayName("Should reject segments with special characters")
         void shouldRejectSpecialCharacters(String segment) {
             // when & then
-            assertThat(ValidationUtils.isInvalidSegment(segment)).isTrue();
+            assertThat(ValidationUtils.isInvalidInput(segment)).isTrue();
         }
     }
 }

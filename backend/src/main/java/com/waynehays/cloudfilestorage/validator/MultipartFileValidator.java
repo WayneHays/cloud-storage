@@ -20,7 +20,7 @@ public class MultipartFileValidator {
 
         String filename = PathUtils.extractFilename(originalFilename);
 
-        if (ValidationUtils.isInvalidSegment(filename)) {
+        if (ValidationUtils.isInvalidInput(filename)) {
             throw new MultipartValidationException("Filename contains invalid characters");
         }
 
