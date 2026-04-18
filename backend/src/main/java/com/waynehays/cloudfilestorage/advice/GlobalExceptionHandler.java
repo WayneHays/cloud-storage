@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -89,6 +90,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorDto error = createErrorDto("File size is too large");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorDto handleMultipartException(MultipartException e) {
+        log.warn("Multipart error: {}, {}", getCurrentUserInfo(), e.getMessage());
+        return createErrorDto("Too many files or invalid upload request");
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

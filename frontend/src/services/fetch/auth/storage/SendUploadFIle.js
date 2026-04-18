@@ -48,12 +48,12 @@ export async function sendUpload(files, updateDownloadTask, updateTask, uploadTa
               if (error.response.status === 409) {
                   updateTask(uploadTask, "error", "Файл/папка с таким именем уже существует!");
               } else if (error.response.status === 400) {
-                  updateTask(uploadTask, "error", error.response.data?.message || "Файл слишком большой: максимальный размер 500 МБ");
+                  const message = error.response.data?.message || "Ошибка загрузки";
+                  updateTask(uploadTask, "error", message);
               } else {
                   updateTask(uploadTask, "error", "Ошибка при загрузке. Попробуйте позже");
               }
           } else {
-              updateTask(uploadTask, "error", "Файл слишком большой (максимальный размер 500 МБ) или соединение прервано");
+              updateTask(uploadTask, "error", "Файл слишком большой или соединение прервано");
           }
-      }
 }
