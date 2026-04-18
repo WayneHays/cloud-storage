@@ -56,4 +56,5 @@ export async function sendUpload(files, updateDownloadTask, updateTask, uploadTa
           } else {
               updateTask(uploadTask, "error", "Файл слишком большой или соединение прервано");
           }
+          }
 }
