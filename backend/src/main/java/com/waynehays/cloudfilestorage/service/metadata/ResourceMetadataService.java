@@ -88,7 +88,7 @@ public class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public long markForDeletionAndSumFileSize(Long userId, String path) {
+    public long markDirectoryForDeletionAndSumSize(Long userId, String path) {
         return repository.markForDeletionAndSumSize(userId, normalize(path));
     }
 

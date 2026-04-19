@@ -15,7 +15,6 @@ import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
@@ -150,7 +149,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorDto handleInvalidMoveException(InvalidMoveException e) {
         log.warn("{}: {}, '{}' -> '{}'", e.getMessage(), getCurrentUserInfo(), e.getFrom(), e.getTo());
-        String clientMessage = "Cannot move directory to file: '%s' -> '%s'".formatted(e.getFrom(), e.getTo());
+        String clientMessage = "%s: '%s' -> '%s'".formatted(e.getMessage(), e.getFrom(), e.getTo());
         return createErrorDto(clientMessage);
     }
 
@@ -165,14 +164,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorDto handleResourceNotFoundException(ResourceNotFoundException e) {
         log.warn("{}: {}, path='{}'", e.getMessage(), getCurrentUserInfo(), e.getPath());
-        return createErrorDto("Resource not found: " + e.getPath());
+        return createErrorDto("Resource not found: '%s'".formatted(e.getPath()));
     }
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorDto handleResourceAlreadyExistsException(ResourceAlreadyExistsException e) {
         log.warn("{}: {}, paths={}", e.getMessage(), getCurrentUserInfo(), e.getPaths());
-        return createErrorDto("Resources already exists: " + e.getPaths());
+        return createErrorDto("Resources already exist: %s".formatted(e.getPaths()));
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
@@ -218,7 +217,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private record UserInfo(Long id, String username) {
         @Override
-        public @NonNull String toString() {
+        public @NotNull String toString() {
             return "user='%s', userId=%s".formatted(username, id != null ? id : "N/A");
         }
     }

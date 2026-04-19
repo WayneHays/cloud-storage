@@ -3,7 +3,7 @@ package com.waynehays.cloudfilestorage.service.resource.deletion;
 import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ResourceDeletionService implements ResourceDeletionServiceApi {
-    private final ResourceStorageService storageService;
+    private final ResourceStorageServiceApi storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
@@ -41,7 +41,7 @@ public class ResourceDeletionService implements ResourceDeletionServiceApi {
     private void deleteDirectory(Long userId, String path) {
         log.info("Start delete directory: userId={}, path={}", userId, path);
 
-        long totalSize = metadataService.markForDeletionAndSumFileSize(userId, path);
+        long totalSize = metadataService.markDirectoryForDeletionAndSumSize(userId, path);
         storageService.deleteDirectory(userId, path);
         metadataService.deleteDirectoryMetadata(userId, path);
 

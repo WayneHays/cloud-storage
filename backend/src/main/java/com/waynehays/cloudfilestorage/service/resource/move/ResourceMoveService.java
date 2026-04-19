@@ -8,7 +8,7 @@ import com.waynehays.cloudfilestorage.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageServiceApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 @Service
 @RequiredArgsConstructor
 public class ResourceMoveService implements ResourceMoveServiceApi {
-    private final ResourceStorageService storageService;
+    private final ResourceStorageServiceApi storageService;
     private final ExecutorService moveExecutor;
     private final ResourceDtoMapper mapper;
     private final ResourceMetadataServiceApi metadataService;

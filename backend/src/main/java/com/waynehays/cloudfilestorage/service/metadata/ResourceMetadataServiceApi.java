@@ -25,7 +25,7 @@ public interface ResourceMetadataServiceApi {
 
     Set<String> findMissingPaths(Long userId, Set<String> paths);
 
-    long markForDeletionAndSumFileSize(Long userId, String path);
+    long markDirectoryForDeletionAndSumSize(Long userId, String path);
 
     void saveFiles(Long userId, List<FileRowDto> files);
 

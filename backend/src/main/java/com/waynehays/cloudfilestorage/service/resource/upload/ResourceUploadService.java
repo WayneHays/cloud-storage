@@ -12,7 +12,7 @@ import com.waynehays.cloudfilestorage.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.service.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.service.storage.ResourceStorageService;
+import com.waynehays.cloudfilestorage.service.storage.ResourceStorageServiceApi;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
     private final BatchInsertMapper batchInsertMapper;
     private final ResourceDtoMapper resourceDtoMapper;
     private final ExecutorService uploadExecutor;
-    private final ResourceStorageService storageService;
+    private final ResourceStorageServiceApi storageService;
     private final StorageQuotaServiceApi quotaService;
     private final ResourceMetadataServiceApi metadataService;
 
