@@ -151,15 +151,6 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
     private void rollback(Long userId, long totalSize, UploadContext context) {
         safeExecuteRollback(
                 () -> {
-                    if (context.hasAnySavedToDbPaths()) {
-                        metadataService.deleteByPaths(userId, context.getSavedToDbPaths());
-                    }
-                },
-                "Failed to rollback metadata",
-                userId);
-
-        safeExecuteRollback(
-                () -> {
                     if (context.hasAnyUploadedToStoragePaths()) {
                         List<UserPath> userPaths = context.getUploadedToStoragePaths()
                                 .stream()
@@ -169,6 +160,15 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
                     }
                 },
                 "Failed to rollback storage",
+                userId);
+
+        safeExecuteRollback(
+                () -> {
+                    if (context.hasAnySavedToDbPaths()) {
+                        metadataService.deleteByPaths(userId, context.getSavedToDbPaths());
+                    }
+                },
+                "Failed to rollback metadata",
                 userId);
 
         safeExecuteRollback(
@@ -189,5 +189,3 @@ public class ResourceUploadService implements ResourceUploadServiceApi {
         }
     }
 }
-
-
