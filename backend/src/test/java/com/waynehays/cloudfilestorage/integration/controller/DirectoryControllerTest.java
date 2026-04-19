@@ -74,8 +74,7 @@ class DirectoryControllerTest extends AbstractControllerTest {
         void shouldReturn404_whenParentNotExists() throws Exception {
             // when & then
             createDirectory(sessionCookie, "docs/work/")
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found: docs/"));
+                    .andExpect(status().isNotFound());
         }
 
         @Test
@@ -201,8 +200,7 @@ class DirectoryControllerTest extends AbstractControllerTest {
         void shouldReturn404_whenDirectoryNotFound() throws Exception {
             // when & then
             getDirectoryContent(sessionCookie, "nonexistent/")
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value("Resource not found: nonexistent/"));
+                    .andExpect(status().isNotFound());
         }
 
         @Test

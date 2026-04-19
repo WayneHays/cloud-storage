@@ -365,7 +365,7 @@ class ResourceMetadataServiceTest {
                     .thenReturn(500L);
 
             // when
-            long result = service.markForDeletionAndSumFileSize(USER_ID, "Docs/");
+            long result = service.markDirectoryForDeletionAndSumSize(USER_ID, "Docs/");
 
             // then
             assertThat(result).isEqualTo(500L);
@@ -380,7 +380,7 @@ class ResourceMetadataServiceTest {
                     .thenReturn(0L);
 
             // when
-            long result = service.markForDeletionAndSumFileSize(USER_ID, "empty/");
+            long result = service.markDirectoryForDeletionAndSumSize(USER_ID, "empty/");
 
             // then
             assertThat(result).isEqualTo(0L);

@@ -82,14 +82,14 @@ class ResourceDeletionServiceTest {
                     null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
-            when(metadataService.markForDeletionAndSumFileSize(USER_ID, "docs/")).thenReturn(1500L);
+            when(metadataService.markDirectoryForDeletionAndSumSize(USER_ID, "docs/")).thenReturn(1500L);
 
             // when
             service.delete(USER_ID, "docs/");
 
             // then
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
-            inOrder.verify(metadataService).markForDeletionAndSumFileSize(USER_ID, "docs/");
+            inOrder.verify(metadataService).markDirectoryForDeletionAndSumSize(USER_ID, "docs/");
             inOrder.verify(storageService).deleteDirectory(USER_ID, "docs/");
             inOrder.verify(metadataService).deleteDirectoryMetadata(USER_ID, "docs/");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 1500L);
@@ -104,7 +104,7 @@ class ResourceDeletionServiceTest {
                     null, ResourceType.DIRECTORY);
 
             when(metadataService.findOrThrow(USER_ID, "empty/")).thenReturn(dir);
-            when(metadataService.markForDeletionAndSumFileSize(USER_ID, "empty/")).thenReturn(0L);
+            when(metadataService.markDirectoryForDeletionAndSumSize(USER_ID, "empty/")).thenReturn(0L);
 
             // when
             service.delete(USER_ID, "empty/");
