@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.interceptor;
 
-import com.waynehays.cloudfilestorage.exception.RateLimitException;
-import com.waynehays.cloudfilestorage.service.ratelimit.RateLimiterServiceApi;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RateLimitCheckResult;
 import com.waynehays.cloudfilestorage.dto.internal.ratelimit.RequestData;
+import com.waynehays.cloudfilestorage.exception.RateLimitException;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
+import com.waynehays.cloudfilestorage.service.ratelimit.RateLimiterServiceApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         RateLimitCheckResult result = rateLimiter.checkRateLimit(requestData);
 
         if (result.allowed()) {
-            if (result.hasRemainingTokens()) {
+            if (result.isRateLimited()) {
                 response.addHeader(HEADER_RATE_LIMIT_REMAINING, String.valueOf(result.remainingTokens()));
             }
             return true;

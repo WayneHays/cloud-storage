@@ -31,7 +31,7 @@ public record RateLimitProperties(
         }
 
         long distinctCount = rules.stream()
-                .map(r -> r.endpoint() + ":" + r.httpMethod())
+                .map(r -> r.endpoint() + "|" + r.httpMethod())
                 .distinct()
                 .count();
         return distinctCount == rules.size();

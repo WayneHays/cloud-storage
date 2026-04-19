@@ -65,7 +65,7 @@ public class StorageQuotaService implements StorageQuotaServiceApi {
 
         StorageQuota quota = repository.findByUserIdWithLock(userId)
                 .orElseThrow(() -> new StorageQuotaNotFoundException("Quota not found for user", userId));
-        long updatedUsedSpace = quota.getUsedSpace() - bytes;
+        long updatedUsedSpace = Math.max(0, quota.getUsedSpace() - bytes);
         long freeSpace = quota.getStorageLimit() - updatedUsedSpace;
         quota.setUsedSpace(updatedUsedSpace);
 

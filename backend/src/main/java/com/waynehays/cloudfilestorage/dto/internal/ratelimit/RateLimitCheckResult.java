@@ -7,7 +7,7 @@ public record RateLimitCheckResult(
         String errorMessage
 ) {
 
-    public boolean hasRemainingTokens() {
+    public boolean isRateLimited() {
         return remainingTokens >= 0;
     }
 
