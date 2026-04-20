@@ -66,5 +66,4 @@ Desktop.ini
 .env.local
 .env.*.local
 
-.gitattributes
 /qodana.yaml
