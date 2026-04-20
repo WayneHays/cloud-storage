@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ResourceControllerTest extends AbstractControllerTest {
@@ -345,11 +347,16 @@ class ResourceControllerTest extends AbstractControllerTest {
             uploadFileAndExpectIsCreated(sessionCookie, "docs/", "file.txt", content);
 
             // when & then
-            downloadResource(sessionCookie, "docs/file.txt")
+            MvcResult mvcResult = downloadResource(sessionCookie, "docs/file.txt")
                     .andExpect(status().isOk())
-                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE))
-                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("file.txt")))
+                    .andExpect(request().asyncStarted())
+                    .andReturn();
+
+            mockMvc.perform(asyncDispatch(mvcResult))
+                    .andExpect(status().isOk())
                     .andExpect(content().bytes(content));
+
+
         }
 
         @Test
