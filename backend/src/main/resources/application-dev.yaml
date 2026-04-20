@@ -1,16 +1,16 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/dev-db
+    url: jdbc:postgresql://localhost:55432/dev-db
     username: dev-user
     password: dev-password
   data:
     redis:
       host: localhost
-      port: 6379
+      port: 56379
 
 minio:
   security:
-    url: http://localhost:9700
+    url: http://localhost:59000
     access-key: minioadmin
     secret-key: minioadmin123
   storage:

@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "55432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U dev-user -d dev-db" ]
       interval: 5s
@@ -22,7 +22,7 @@ services:
     container_name: redis-dev
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "56379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -40,8 +40,8 @@ services:
     volumes:
       - minio_dev_data:/data
     ports:
-      - "9700:9000"
-      - "9701:9001"
+      - "59000:9000"
+      - "59001:9001"
     healthcheck:
       test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s

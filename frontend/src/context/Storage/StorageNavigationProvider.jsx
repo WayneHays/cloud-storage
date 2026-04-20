@@ -69,7 +69,7 @@ export const StorageNavigationProvider = ({children}) => {
             let content = await sendGetFolderContent(fullPath);
             setFolderContent(content);
 
-            const base = import.meta.env.VITE_BASE;
+            const base = import.meta.env.BASE_URL;
             window.history.pushState(null, "", base + 'files/' + fullPath);
         } catch (error) {
             switch (true) {
@@ -93,7 +93,7 @@ export const StorageNavigationProvider = ({children}) => {
             let content = await sendGetFolderContent(url); //todo add check for 404
             setFolderContent(content);
 
-            const base = import.meta.env.VITE_BASE;
+            const base = import.meta.env.BASE_URL;
             window.history.pushState(null, "", base + 'files/' + url);
         } catch (error) {
             switch (true) {
