@@ -2,11 +2,19 @@ import axios from "axios";
 import {API_FILES} from "../../../../UrlConstants.jsx";
 import bytes from "bytes";
 
+const ALLOWED_CHARS = /^[\p{L}\p{N}._\- ]+$/u;
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 500 * 1024 * 1024;
 
 function formatSize(sizeInBytes) {
     return bytes(sizeInBytes, {unitSeparator: ' '});
+}
+
+function isInvalidFilename(name) {
+    if (!name || name.trim() === '') return true;
+    if (name === '.' || name === '..') return true;
+    if (name.startsWith('.') || name.endsWith('.')) return true;
+    return !ALLOWED_CHARS.test(name);
 }
 
 export async function sendUpload(files, updateDownloadTask, updateTask, uploadTask, currPath) {
@@ -29,6 +37,13 @@ export async function sendUpload(files, updateDownloadTask, updateTask, uploadTa
         updateTask(uploadTask, "error",
             `Общий размер загрузки (${formatSize(totalSize)}) превышает лимит ${formatSize(MAX_TOTAL_SIZE)}`);
         return;
+    }
+
+    for (const {file} of files) {
+        if (isInvalidFilename(file.name)) {
+            updateTask(uploadTask, "error", `Недопустимое имя файла: "${file.name}"`);
+            return;
+        }
     }
 
     console.log("Файлы загружен на фронт: ");

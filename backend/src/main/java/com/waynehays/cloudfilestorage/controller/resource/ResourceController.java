@@ -117,7 +117,7 @@ public class ResourceController implements ResourceControllerApi {
         return uploadService.upload(userDetails.id(), uploadObjects);
     }
 
-    private static String contentDisposition(String filename) {
+    private String contentDisposition(String filename) {
         String asciiFallback = filename.replaceAll("[^\\x20-\\x7E]", "_").replace("\"", "\\\"");
         String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
         return "attachment; filename=\"" + asciiFallback + "\"; filename*=UTF-8''" + encoded;
