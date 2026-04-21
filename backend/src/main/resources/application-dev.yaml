@@ -22,7 +22,5 @@ minio:
     deletion-batch-size: 10
 
 logging:
-  pattern:
-    dateformat: yyyy-MM-dd HH:mm:ss.SSS,Europe/Moscow
   level:
     com.waynehays.cloudfilestorage: DEBUG

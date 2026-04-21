@@ -82,5 +82,7 @@ management:
       show-details: never
 
 logging:
+  pattern:
+    dateformat: yyyy-MM-dd HH:mm:ss.SSS,Europe/Moscow
   level:
     root: INFO
