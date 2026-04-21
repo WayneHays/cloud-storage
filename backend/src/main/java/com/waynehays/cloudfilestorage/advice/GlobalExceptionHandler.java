@@ -86,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                                     @NotNull HttpStatusCode status,
                                                                                     @NotNull WebRequest request) {
         log.warn("Too large size of uploaded resource: {}", getCurrentUserInfo());
-        ErrorDto error = createErrorDto("File size is too large");
+        ErrorDto error = createErrorDto("File size is too large, max file size 500 MB");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
     }
@@ -134,7 +134,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ErrorDto handleResourceStorageLimitException(ResourceStorageLimitException e) {
         log.warn("Not enough storage space for user: {}. Upload size: {}, free space: {}",
                 getCurrentUserInfo(), e.getUploadSize(), e.getFreeSpace());
-        return createErrorDto("Not enough storage space. Free space: " + e.getFreeSpace());
+        return createErrorDto("Not enough storage space. Free: %s, required: %s".formatted(
+                formatBytes(e.getFreeSpace()),
+                formatBytes(e.getUploadSize())
+        ));
     }
 
     @ExceptionHandler(RateLimitException.class)
@@ -220,5 +223,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         public @NotNull String toString() {
             return "user='%s', userId=%s".formatted(username, id != null ? id : "N/A");
         }
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes >= 1024 * 1024 * 1024) {
+            return "%.1f GB".formatted(bytes / (1024.0 * 1024 * 1024));
+        } else if (bytes >= 1024 * 1024) {
+            return "%.1f MB".formatted(bytes / (1024.0 * 1024));
+        }
+        return "%.1f KB".formatted(bytes / 1024.0);
     }
 }

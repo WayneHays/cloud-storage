@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.unit.validator;
 
-import com.waynehays.cloudfilestorage.config.properties.PathLimitsProperties;
+import com.waynehays.cloudfilestorage.config.properties.ResourceLimitsProperties;
 import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
 import com.waynehays.cloudfilestorage.validator.MultipartFileValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.util.unit.DataSize;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,9 +19,14 @@ class MultipartFileValidatorTest {
 
     private MultipartFileValidator validator;
 
+    private static final long MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024L;
+    private static final long VALID_FILE_SIZE = 1024L;
+
     @BeforeEach
     void setUp() {
-        PathLimitsProperties properties = new PathLimitsProperties(500, 200);
+        ResourceLimitsProperties properties = new ResourceLimitsProperties(
+                500, 200, DataSize.ofMegabytes(500)
+        );
         validator = new MultipartFileValidator(properties);
     }
 
@@ -33,7 +39,7 @@ class MultipartFileValidatorTest {
         @DisplayName("Should accept valid filenames")
         void shouldAcceptValidFilenames(String filename) {
             // when & then
-            assertThatCode(() -> validator.validate(filename, "docs/" + filename))
+            assertThatCode(() -> validator.validate(filename, "docs/" + filename, VALID_FILE_SIZE))
                     .doesNotThrowAnyException();
         }
     }
@@ -46,7 +52,7 @@ class MultipartFileValidatorTest {
         @DisplayName("Should reject blank filename")
         void shouldRejectBlankFilename() {
             // when & then
-            assertThatThrownBy(() -> validator.validate("", "docs/"))
+            assertThatThrownBy(() -> validator.validate("", "docs/", VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("no filename");
         }
@@ -55,7 +61,7 @@ class MultipartFileValidatorTest {
         @DisplayName("Should reject null filename")
         void shouldRejectNullFilename() {
             // when & then
-            assertThatThrownBy(() -> validator.validate(null, "docs/file.txt"))
+            assertThatThrownBy(() -> validator.validate(null, "docs/file.txt", VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("no filename");
         }
@@ -65,7 +71,7 @@ class MultipartFileValidatorTest {
         @DisplayName("Should reject filenames with special characters")
         void shouldRejectSpecialCharacters(String filename) {
             // when & then
-            assertThatThrownBy(() -> validator.validate(filename, "docs/" + filename))
+            assertThatThrownBy(() -> validator.validate(filename, "docs/" + filename, VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("invalid characters");
         }
@@ -75,7 +81,7 @@ class MultipartFileValidatorTest {
         @DisplayName("Should reject hidden filenames")
         void shouldRejectHiddenFilenames(String filename) {
             // when & then
-            assertThatThrownBy(() -> validator.validate(filename, "docs/" + filename))
+            assertThatThrownBy(() -> validator.validate(filename, "docs/" + filename, VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("invalid characters");
         }
@@ -87,7 +93,7 @@ class MultipartFileValidatorTest {
             String longFilename = "a".repeat(201) + ".txt";
 
             // when & then
-            assertThatThrownBy(() -> validator.validate(longFilename, "docs/" + longFilename))
+            assertThatThrownBy(() -> validator.validate(longFilename, "docs/" + longFilename, VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("max length");
         }
@@ -105,7 +111,7 @@ class MultipartFileValidatorTest {
             String fullPath = longDir + "file.txt";
 
             // when & then
-            assertThatThrownBy(() -> validator.validate("file.txt", fullPath))
+            assertThatThrownBy(() -> validator.validate("file.txt", fullPath, VALID_FILE_SIZE))
                     .isInstanceOf(MultipartValidationException.class)
                     .hasMessageContaining("max length");
         }
@@ -117,8 +123,33 @@ class MultipartFileValidatorTest {
             String fullPath = "docs/work/file.txt";
 
             // when & then
-            assertThatCode(() -> validator.validate("file.txt", fullPath))
+            assertThatCode(() -> validator.validate("file.txt", fullPath, VALID_FILE_SIZE))
                     .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("File size")
+    class FileSize {
+
+        @Test
+        @DisplayName("Should accept file within size limit")
+        void shouldAcceptFileWithinLimit() {
+            // when & then
+            assertThatCode(() -> validator.validate("file.txt", "docs/file.txt", MAX_FILE_SIZE_BYTES))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("Should reject file exceeding size limit")
+        void shouldRejectFileExceedingLimit() {
+            // given
+            long oversizedFile = MAX_FILE_SIZE_BYTES + 1;
+
+            // when & then
+            assertThatThrownBy(() -> validator.validate("file.txt", "docs/file.txt", oversizedFile))
+                    .isInstanceOf(MultipartValidationException.class)
+                    .hasMessageContaining("exceeds max size");
         }
     }
 }

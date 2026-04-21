@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.unit.validator;
 
 import com.waynehays.cloudfilestorage.annotation.ValidPath;
-import com.waynehays.cloudfilestorage.config.properties.PathLimitsProperties;
+import com.waynehays.cloudfilestorage.config.properties.ResourceLimitsProperties;
 import com.waynehays.cloudfilestorage.validator.PathValidator;
 import jakarta.validation.Payload;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.util.unit.DataSize;
 
 import java.lang.annotation.Annotation;
 
@@ -22,7 +23,8 @@ class PathValidatorTest {
 
     @BeforeEach
     void setUp() {
-        PathLimitsProperties properties = new PathLimitsProperties(500, 200);
+        ResourceLimitsProperties properties = new ResourceLimitsProperties(500, 200,
+                DataSize.ofMegabytes(500));
         validator = new PathValidator(properties);
     }
 
@@ -131,15 +133,29 @@ class PathValidatorTest {
     private ValidPath createAnnotation(boolean mustBeDirectory) {
         return new ValidPath() {
             @Override
-            public String message() { return ""; }
+            public String message() {
+                return "";
+            }
+
             @Override
-            public boolean mustBeDirectory() { return mustBeDirectory; }
+            public boolean mustBeDirectory() {
+                return mustBeDirectory;
+            }
+
             @Override
-            public Class<?>[] groups() { return new Class[0]; }
+            public Class<?>[] groups() {
+                return new Class[0];
+            }
+
             @Override
-            public Class<? extends Payload>[] payload() { return new Class[0]; }
+            public Class<? extends Payload>[] payload() {
+                return new Class[0];
+            }
+
             @Override
-            public Class<? extends Annotation> annotationType() { return ValidPath.class; }
+            public Class<? extends Annotation> annotationType() {
+                return ValidPath.class;
+            }
         };
     }
 }

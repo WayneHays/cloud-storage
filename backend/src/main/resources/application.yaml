@@ -35,10 +35,11 @@ executors:
   move-thread-pool-size: 10
   upload-thread-pool-size: 10
 
-path:
+resource:
   limits:
     max-path-length: 500
     max-filename-length: 255
+    max-file-size: 500MB
 
 rate-limit:
   rules:

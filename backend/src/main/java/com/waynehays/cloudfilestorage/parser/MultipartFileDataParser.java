@@ -24,7 +24,7 @@ public class MultipartFileDataParser {
         String fullPath = PathUtils.combine(finalDirectory, filename);
         String contentType = resolveContentType(file.getContentType());
 
-        validator.validate(originalFilename, fullPath);
+        validator.validate(originalFilename, fullPath, file.getSize());
 
         return new UploadObjectDto(
                 originalFilename,

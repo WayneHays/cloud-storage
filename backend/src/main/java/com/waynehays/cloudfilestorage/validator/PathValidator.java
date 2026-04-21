@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.validator;
 
 import com.waynehays.cloudfilestorage.annotation.ValidPath;
-import com.waynehays.cloudfilestorage.config.properties.PathLimitsProperties;
+import com.waynehays.cloudfilestorage.config.properties.ResourceLimitsProperties;
 import com.waynehays.cloudfilestorage.utils.ValidationUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 public class PathValidator implements ConstraintValidator<ValidPath, String> {
     private static final String SEPARATOR = "/";
 
-    private final PathLimitsProperties limitsProperties;
+    private final ResourceLimitsProperties limitsProperties;
     private boolean mustBeDirectory;
 
     @Override
