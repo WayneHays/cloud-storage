@@ -8,8 +8,8 @@ spring:
       ddl-auto: validate
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+      max-file-size: ${resource.limits.max-file-size}
+      max-request-size: ${resource.limits.max-file-size}
   session:
     timeout: 30m
 
