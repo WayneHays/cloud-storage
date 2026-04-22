@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.controller.resource;
 
+import com.waynehays.cloudfilestorage.parser.UploadRequestParser;
 import com.waynehays.cloudfilestorage.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.dto.request.resource.DeleteRequest;
@@ -9,7 +10,6 @@ import com.waynehays.cloudfilestorage.dto.request.resource.MoveRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.SearchRequest;
 import com.waynehays.cloudfilestorage.dto.request.resource.UploadRequest;
 import com.waynehays.cloudfilestorage.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.parser.MultipartFileDataParser;
 import com.waynehays.cloudfilestorage.security.CustomUserDetails;
 import com.waynehays.cloudfilestorage.service.resource.deletion.ResourceDeletionServiceApi;
 import com.waynehays.cloudfilestorage.service.resource.download.ResourceDownloadServiceApi;
@@ -46,7 +46,7 @@ import java.util.List;
 @RequestMapping("/api/resource")
 @RequiredArgsConstructor
 public class ResourceController implements ResourceControllerApi {
-    private final MultipartFileDataParser multipartFileDataParser;
+    private final UploadRequestParser uploadRequestParser;
     private final ResourceDeletionServiceApi deletionService;
     private final ResourceDownloadServiceApi downloadService;
     private final ResourceInfoServiceApi infoService;
@@ -111,9 +111,7 @@ public class ResourceController implements ResourceControllerApi {
     public List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                             @Valid UploadRequest request,
                                             @RequestParam("files") List<MultipartFile> files) {
-        List<UploadObjectDto> uploadObjects = files.stream()
-                .map(file -> multipartFileDataParser.parse(file, request.path()))
-                .toList();
+        List<UploadObjectDto> uploadObjects = uploadRequestParser.parseAndValidate(files, request.path());
         return uploadService.upload(userDetails.id(), uploadObjects);
     }
 

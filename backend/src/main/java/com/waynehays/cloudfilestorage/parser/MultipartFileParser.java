@@ -3,17 +3,15 @@ package com.waynehays.cloudfilestorage.parser;
 import com.waynehays.cloudfilestorage.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.exception.MultipartValidationException;
 import com.waynehays.cloudfilestorage.utils.PathUtils;
-import com.waynehays.cloudfilestorage.validator.MultipartFileValidator;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 @Component
 @RequiredArgsConstructor
-public class MultipartFileDataParser {
+public class MultipartFileParser {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-
-    private final MultipartFileValidator validator;
 
     public UploadObjectDto parse(MultipartFile file, String directory) {
         String originalFilename = extractOriginalFilename(file);
@@ -23,8 +21,6 @@ public class MultipartFileDataParser {
         String finalDirectory = PathUtils.combine(directory, nestedDirectory);
         String fullPath = PathUtils.combine(finalDirectory, filename);
         String contentType = resolveContentType(file.getContentType());
-
-        validator.validate(originalFilename, fullPath, file.getSize());
 
         return new UploadObjectDto(
                 originalFilename,
@@ -40,7 +36,7 @@ public class MultipartFileDataParser {
     private String extractOriginalFilename(MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
 
-        if (originalFilename == null) {
+        if (StringUtils.isBlank(originalFilename)) {
             throw new MultipartValidationException("Uploaded file has no filename");
         }
 
