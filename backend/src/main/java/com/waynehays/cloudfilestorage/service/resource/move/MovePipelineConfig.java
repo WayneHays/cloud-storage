@@ -1,9 +1,5 @@
-package com.waynehays.cloudfilestorage.config;
+package com.waynehays.cloudfilestorage.service.resource.move;
 
-import com.waynehays.cloudfilestorage.service.resource.move.MoveMetadataStep;
-import com.waynehays.cloudfilestorage.service.resource.move.MoveStep;
-import com.waynehays.cloudfilestorage.service.resource.move.MoveStorageStep;
-import com.waynehays.cloudfilestorage.service.resource.move.ValidateMoveStep;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
