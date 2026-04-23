@@ -60,7 +60,7 @@ resilience4j:
         max-attempts: 3
         wait-duration: 500ms
         retry-exceptions:
-          - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
+          - com.waynehays.cloudfilestorage.shared.exception.ResourceStorageTransientException
         ignore-exceptions:
           - io.github.resilience4j.circuitbreaker.CallNotPermittedException
   circuitbreaker:
@@ -72,7 +72,7 @@ resilience4j:
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 5
         record-exceptions:
-          - com.waynehays.cloudfilestorage.exception.ResourceStorageTransientException
+          - com.waynehays.cloudfilestorage.shared.exception.ResourceStorageTransientException
 management:
   endpoints:
     web:

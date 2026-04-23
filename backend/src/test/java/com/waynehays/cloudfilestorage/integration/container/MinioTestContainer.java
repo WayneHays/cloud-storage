@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.integration.container;
 
-import com.waynehays.cloudfilestorage.config.properties.MinioStorageProperties;
+import com.waynehays.cloudfilestorage.storage.minio.config.MinioStorageProperties;
 import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
