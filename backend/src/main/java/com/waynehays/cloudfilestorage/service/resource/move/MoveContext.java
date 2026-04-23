@@ -1,23 +1,44 @@
 package com.waynehays.cloudfilestorage.service.resource.move;
 
+import com.waynehays.cloudfilestorage.dto.internal.metadata.ResourceMetadataDto;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Getter
 class MoveContext {
+
+    @Getter
+    private final Long userId;
+
+    @Getter
+    private final String pathFrom;
+
+    @Getter
+    private final String pathTo;
+
+    @Getter
+    private final ResourceMetadataDto metadata;
+
     private final List<MovedObject> movedObjects = Collections.synchronizedList(new ArrayList<>());
 
-    void addMovedObject(String pathFrom, String pathTo) {
-        movedObjects.add(new MovedObject(pathFrom, pathTo));
+    MoveContext(Long userId, String pathFrom, String pathTo, ResourceMetadataDto metadata) {
+        this.userId = userId;
+        this.pathFrom = pathFrom;
+        this.pathTo = pathTo;
+        this.metadata = metadata;
     }
 
-    List<MovedObject> getMovedObjects() {
-        return List.copyOf(movedObjects);
+    boolean isFile() {
+        return metadata.isFile();
     }
 
-    record MovedObject(String pathFrom, String pathTo){
+    void addMovedObject(String from, String to) {
+        movedObjects.add(new MovedObject(from, to));
+    }
+
+    MoveRollbackSnapshot rollbackSnapshot() {
+        return new MoveRollbackSnapshot(userId, List.copyOf(movedObjects));
     }
 }
