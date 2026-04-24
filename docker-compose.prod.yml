@@ -93,7 +93,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768m
+          memory: 1g
 
   frontend:
     image: ghcr.io/waynehays/cloud-file-storage-frontend:latest
