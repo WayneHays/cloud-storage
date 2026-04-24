@@ -19,7 +19,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128m
+          memory: 256m
 
   redis:
     image: redis:8.6.0
@@ -35,7 +35,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 32m
+          memory: 64m
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
@@ -57,7 +57,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128m
+          memory: 256m
 
   backend:
     image: ghcr.io/waynehays/cloud-file-storage-backend:latest
@@ -93,7 +93,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512m
+          memory: 768m
 
   frontend:
     image: ghcr.io/waynehays/cloud-file-storage-frontend:latest
