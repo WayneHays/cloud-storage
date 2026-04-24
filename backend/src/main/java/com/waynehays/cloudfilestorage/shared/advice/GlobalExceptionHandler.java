@@ -46,7 +46,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                             @NotNull HttpHeaders headers,
                                                                             @NotNull HttpStatusCode status,
                                                                             @NotNull WebRequest request) {
-        log.error("Failed to parse JSON: {}", ex.getMessage());
+        log.warn("Failed to parse JSON for user: {}", getCurrentUserInfo());
         ErrorDto error = createErrorDto("Invalid JSON format");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
@@ -93,8 +93,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(MultipartException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorDto handleMultipartException(MultipartException e) {
-        log.warn("Multipart error: {}, {}", getCurrentUserInfo(), e.getMessage());
+    public ErrorDto handleMultipartException() {
+        log.warn("Multipart error for user: {}", getCurrentUserInfo());
         return createErrorDto("Too many files or invalid upload request");
     }
 
@@ -186,8 +186,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorDto handleBadCredentialsException(BadCredentialsException e) {
-        log.warn("Failed authentication attempt", e);
+    public ErrorDto handleBadCredentialsException() {
+        log.warn("Failed authentication attempt");
         return createErrorDto("Invalid credentials");
     }
 
