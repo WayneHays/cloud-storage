@@ -16,6 +16,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
   redis:
     image: redis:8.6.0
@@ -28,6 +32,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 32m
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
@@ -46,6 +54,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
   backend:
     image: ghcr.io/waynehays/cloud-file-storage-backend:latest
@@ -78,6 +90,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   frontend:
     image: ghcr.io/waynehays/cloud-file-storage-frontend:latest
@@ -150,6 +166,8 @@ services:
     depends_on:
       loki:
         condition: service_healthy
+      prometheus:
+        condition: service_healthy
     networks:
       - cloud-file-storage-net
     healthcheck:
@@ -163,11 +181,39 @@ services:
         limits:
           memory: 256m
 
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./observability/prometheus/config.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - cloud-file-storage-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --tries=1 --spider http://localhost:9090/-/healthy || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=500MB'
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
 volumes:
   postgres_data:
   minio_data:
   loki_data:
   grafana_data:
+  prometheus_data:
 
 networks:
   cloud-file-storage-net:
