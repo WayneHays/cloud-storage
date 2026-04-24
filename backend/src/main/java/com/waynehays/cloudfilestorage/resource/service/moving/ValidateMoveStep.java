@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.resource.service.moving;
 
 import com.waynehays.cloudfilestorage.shared.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

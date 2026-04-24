@@ -1,9 +1,10 @@
-package com.waynehays.cloudfilestorage.resource.service;
+package com.waynehays.cloudfilestorage.resource.service.downloading;
 
 import com.waynehays.cloudfilestorage.resource.archive.ArchiverApi;
 import com.waynehays.cloudfilestorage.resource.archive.ArchiveItem;
 import com.waynehays.cloudfilestorage.resource.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.storage.service.InputStreamSupplier;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageServiceApi;

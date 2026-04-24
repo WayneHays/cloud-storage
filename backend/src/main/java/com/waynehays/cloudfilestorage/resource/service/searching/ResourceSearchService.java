@@ -1,8 +1,9 @@
-package com.waynehays.cloudfilestorage.resource.service;
+package com.waynehays.cloudfilestorage.resource.service.searching;
 
 import com.waynehays.cloudfilestorage.resource.config.SearchProperties;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.storage.minio;
 
-import com.waynehays.cloudfilestorage.storage.minio.MinioKeyResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,8 @@
-package com.waynehays.cloudfilestorage.resource.service;
+package com.waynehays.cloudfilestorage.resource.service.directory;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.shared.utils.PathUtils;

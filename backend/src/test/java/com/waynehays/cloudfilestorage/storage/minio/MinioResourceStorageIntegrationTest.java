@@ -1,9 +1,8 @@
 package com.waynehays.cloudfilestorage.storage.minio;
 
-import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
-import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageOperationException;
-import com.waynehays.cloudfilestorage.storage.minio.MinioResourceStorage;
 import com.waynehays.cloudfilestorage.integration.container.MinioTestContainer;
+import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.storage.dto.StorageItem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;

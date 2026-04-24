@@ -3,7 +3,6 @@ package com.waynehays.cloudfilestorage.resource.service.metadata;
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.resource.entity.ResourceMetadata;
 import com.waynehays.cloudfilestorage.resource.entity.ResourceType;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataService;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceMetadataMapper;

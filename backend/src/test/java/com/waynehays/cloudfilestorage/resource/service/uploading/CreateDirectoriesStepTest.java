@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.resource.dto.internal.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.resource.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

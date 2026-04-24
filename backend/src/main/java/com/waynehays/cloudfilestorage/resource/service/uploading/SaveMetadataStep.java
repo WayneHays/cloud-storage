@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.resource.service.uploading;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.FileRowDto;
 import com.waynehays.cloudfilestorage.resource.mapper.BatchInsertMapper;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

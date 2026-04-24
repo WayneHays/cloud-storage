@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.resource.service;
+package com.waynehays.cloudfilestorage.resource.service.metadata;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.resource.dto.internal.FileRowDto;

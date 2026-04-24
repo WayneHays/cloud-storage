@@ -146,8 +146,8 @@ public abstract class AbstractControllerTest {
                 .cookie(sessionCookie));
     }
 
-    protected long getUsedSpace(String username) {
-        Long userId = userRepository.findByUsername(username)
+    protected long getUsedSpaceForDefaultUser() {
+        Long userId = userRepository.findByUsername(AbstractControllerTest.DEFAULT_USER)
                 .orElseThrow()
                 .getId();
         return quotaRepository.findAll().stream()

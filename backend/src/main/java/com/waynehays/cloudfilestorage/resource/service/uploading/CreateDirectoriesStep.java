@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.resource.dto.internal.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.resource.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

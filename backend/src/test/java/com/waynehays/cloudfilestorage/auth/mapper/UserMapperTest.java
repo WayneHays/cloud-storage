@@ -3,7 +3,6 @@ package com.waynehays.cloudfilestorage.auth.mapper;
 import com.waynehays.cloudfilestorage.auth.dto.request.SignUpRequest;
 import com.waynehays.cloudfilestorage.auth.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.auth.entity.User;
-import com.waynehays.cloudfilestorage.auth.mapper.UserMapper;
 import com.waynehays.cloudfilestorage.auth.security.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

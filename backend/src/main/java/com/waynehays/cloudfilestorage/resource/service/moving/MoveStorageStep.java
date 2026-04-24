@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.resource.service.moving;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.utils.AsyncUtils;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;

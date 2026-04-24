@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.resource.service.uploading;
 
 import com.waynehays.cloudfilestorage.shared.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

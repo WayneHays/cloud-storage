@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.resource.service.moving;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;

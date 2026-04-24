@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.auth.controller;
 
-import com.waynehays.cloudfilestorage.shared.dto.ErrorDto;
 import com.waynehays.cloudfilestorage.auth.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.auth.security.CustomUserDetails;
+import com.waynehays.cloudfilestorage.shared.dto.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

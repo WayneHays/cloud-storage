@@ -1,10 +1,9 @@
 package com.waynehays.cloudfilestorage.quota.service;
 
 import com.waynehays.cloudfilestorage.quota.entity.StorageQuota;
+import com.waynehays.cloudfilestorage.quota.repository.StorageQuotaRepository;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageLimitException;
 import com.waynehays.cloudfilestorage.shared.exception.StorageQuotaNotFoundException;
-import com.waynehays.cloudfilestorage.quota.repository.StorageQuotaRepository;
-import com.waynehays.cloudfilestorage.quota.service.StorageQuotaService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

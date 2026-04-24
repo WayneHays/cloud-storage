@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.resource.entity.ResourceType;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.shared.exception.InvalidMoveException;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceNotFoundException;

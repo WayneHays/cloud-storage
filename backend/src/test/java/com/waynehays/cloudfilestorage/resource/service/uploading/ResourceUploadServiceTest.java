@@ -9,7 +9,7 @@ import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageLimitExcep
 import com.waynehays.cloudfilestorage.shared.exception.ResourceStorageOperationException;
 import com.waynehays.cloudfilestorage.resource.mapper.BatchInsertMapper;
 import com.waynehays.cloudfilestorage.resource.mapper.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.quota.service.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.dto.UserPath;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageServiceApi;

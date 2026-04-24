@@ -2,9 +2,8 @@ package com.waynehays.cloudfilestorage.resource.service.deletion;
 
 import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.resource.entity.ResourceType;
-import com.waynehays.cloudfilestorage.resource.service.ResourceDeletionService;
 import com.waynehays.cloudfilestorage.shared.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.quota.service.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageService;
 import org.junit.jupiter.api.DisplayName;

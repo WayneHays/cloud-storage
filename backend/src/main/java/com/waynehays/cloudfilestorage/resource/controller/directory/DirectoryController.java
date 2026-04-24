@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.resource.dto.request.CreateDirectoryReques
 import com.waynehays.cloudfilestorage.resource.dto.request.GetDirectoryContentRequest;
 import com.waynehays.cloudfilestorage.resource.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.auth.security.CustomUserDetails;
-import com.waynehays.cloudfilestorage.resource.service.DirectoryServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.directory.DirectoryServiceApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

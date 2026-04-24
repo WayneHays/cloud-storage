@@ -643,14 +643,14 @@ class ResourceControllerTest extends AbstractControllerTest {
             // given
             byte[] content = new byte[1000];
             uploadFile(sessionCookie, "", "file.txt", content);
-            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(1000);
+            assertThat(getUsedSpaceForDefaultUser()).isEqualTo(1000);
 
             // when
             deleteResource(sessionCookie, "file.txt")
                     .andExpect(status().isNoContent());
 
             // then
-            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(0);
+            assertThat(getUsedSpaceForDefaultUser()).isEqualTo(0);
         }
 
         @Test
@@ -661,14 +661,14 @@ class ResourceControllerTest extends AbstractControllerTest {
             byte[] content200 = new byte[200];
             uploadFile(sessionCookie, "", "small.txt", content100);
             uploadFile(sessionCookie, "", "large.txt", content200);
-            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(300);
+            assertThat(getUsedSpaceForDefaultUser()).isEqualTo(300);
 
             // when
             deleteResource(sessionCookie, "small.txt")
                     .andExpect(status().isNoContent());
 
             // then
-            assertThat(getUsedSpace(DEFAULT_USER)).isEqualTo(200);
+            assertThat(getUsedSpaceForDefaultUser()).isEqualTo(200);
         }
     }
 }

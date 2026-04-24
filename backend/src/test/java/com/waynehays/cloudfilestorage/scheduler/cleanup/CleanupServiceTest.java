@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.resource.dto.internal.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.quota.dto.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.storage.dto.UserPath;
 import com.waynehays.cloudfilestorage.resource.entity.ResourceType;
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.quota.service.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.storage.service.ResourceStorageServiceApi;
 import org.junit.jupiter.api.DisplayName;

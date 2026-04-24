@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.resource.service.moving;
 
-import com.waynehays.cloudfilestorage.resource.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.resource.service.metadata.ResourceMetadataServiceApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

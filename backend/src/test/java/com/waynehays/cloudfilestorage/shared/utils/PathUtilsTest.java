@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.shared.utils;
 
-import com.waynehays.cloudfilestorage.shared.utils.PathUtils;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
