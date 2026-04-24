@@ -108,7 +108,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
+          source: "docker-compose.prod.yml,observability"
           target: /opt/cloud-file-storage/
           overwrite: true
 
