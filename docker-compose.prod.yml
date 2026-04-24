@@ -188,6 +188,8 @@ services:
     volumes:
       - ./observability/prometheus/config.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
     networks:
       - cloud-file-storage-net
     depends_on:
