@@ -14,7 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
-class ReserveQuotaStepTest {
+class ReserveQuotaStepTest extends BaseUploadStepTest{
 
     @Mock
     private StorageQuotaServiceApi quotaService;
@@ -25,9 +25,9 @@ class ReserveQuotaStepTest {
     @Test
     void execute_shouldReserveSpaceAndMarkQuotaReserved() {
         // given
-        UploadContext context = UploadTestHelper.uploadContext(1L,
-                UploadTestHelper.uploadObject("user/1/file1.txt", 300),
-                UploadTestHelper.uploadObject("user/1/file2.txt", 700)
+        UploadContext context = uploadContext(
+                uploadObject("user/1/file1.txt", 300),
+                uploadObject("user/1/file2.txt", 700)
         );
 
         // when

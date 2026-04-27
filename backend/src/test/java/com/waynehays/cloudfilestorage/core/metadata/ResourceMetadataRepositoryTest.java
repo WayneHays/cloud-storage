@@ -616,6 +616,38 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     class FindMissingPaths {
 
         @Test
+        @DisplayName("Should return missing paths preserving original case")
+        void shouldReturnMissingPathsPreservingCase() {
+            // given
+            ResourceMetadata existing = directory(userId, "Docs/", "", "Docs");
+            em.persistAndFlush(existing);
+
+            Set<String> candidates = Set.of("Docs/", "Photos/Vacation/");
+
+            // when
+            Set<String> missing = repository.findMissingPaths(userId, candidates);
+
+            // then
+            assertThat(missing).containsExactly("Photos/Vacation/");
+        }
+
+        @Test
+        @DisplayName("Should match case-insensitively but return original case")
+        void shouldMatchCaseInsensitivelyButReturnOriginalCase() {
+            // given
+            ResourceMetadata existing = directory(userId, "docs/", "", "docs");
+            em.persistAndFlush(existing);
+
+            Set<String> candidates = Set.of("Docs/", "DOCS/", "Photos/");
+
+            // when
+            Set<String> missing = repository.findMissingPaths(userId, candidates);
+
+            // then
+            assertThat(missing).containsExactly("Photos/");
+        }
+
+        @Test
         @DisplayName("Should return all paths when nothing of them found in database")
         void shouldReturnAllPaths_whenNoneExistInDatabase() {
             // given

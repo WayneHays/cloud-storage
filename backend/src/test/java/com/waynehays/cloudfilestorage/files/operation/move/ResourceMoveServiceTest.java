@@ -36,19 +36,19 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceMoveServiceTest {
+    private static final Long USER_ID = 1L;
 
     @Mock
     private ResourceStorageServiceApi storageService;
 
     @Mock
-    private ResourceDtoMapper mapper;
+    private ResourceDtoMapper resourceDtoMapper;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
 
-    private ResourceMoveService service;
+    private ResourceMoveService moveService;
 
-    private static final Long USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -58,7 +58,7 @@ class ResourceMoveServiceTest {
                 new MoveStorageStep(storageService, metadataService, moveExecutor),
                 new MoveMetadataStep(metadataService)
         );
-        service = new ResourceMoveService(steps, metadataService, mapper);
+        moveService = new ResourceMoveService(steps, metadataService, resourceDtoMapper);
     }
 
     @Nested
@@ -75,10 +75,10 @@ class ResourceMoveServiceTest {
 
             when(metadataService.findOrThrow(USER_ID, "docs/file.txt")).thenReturn(file);
             when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(false);
-            when(mapper.fileFromPath("images/file.txt", 100L)).thenReturn(expected);
+            when(resourceDtoMapper.fileFromPath("images/file.txt", 100L)).thenReturn(expected);
 
             // when
-            ResourceDto result = service.move(USER_ID, "docs/file.txt", "images/file.txt");
+            ResourceDto result = moveService.move(USER_ID, "docs/file.txt", "images/file.txt");
 
             // then
             InOrder inOrder = inOrder(storageService, metadataService);
@@ -106,10 +106,10 @@ class ResourceMoveServiceTest {
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(false);
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/")).thenReturn(List.of(file));
-            when(mapper.directoryFromPath("images/")).thenReturn(expected);
+            when(resourceDtoMapper.directoryFromPath("images/")).thenReturn(expected);
 
             // when
-            ResourceDto result = service.move(USER_ID, "docs/", "images/");
+            ResourceDto result = moveService.move(USER_ID, "docs/", "images/");
 
             // then
             verify(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
@@ -140,7 +140,7 @@ class ResourceMoveServiceTest {
                     .when(storageService).moveObject(USER_ID, "docs/b.txt", "images/b.txt");
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/", "images/"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "images/"))
                     .isInstanceOf(ResourceStorageOperationException.class);
             verify(storageService).moveObject(USER_ID, "images/a.txt", "docs/a.txt");
             verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
@@ -160,7 +160,7 @@ class ResourceMoveServiceTest {
                     .when(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/file.txt", "images/file.txt"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/file.txt", "images/file.txt"))
                     .isInstanceOf(ResourceStorageOperationException.class);
 
             // файл не переместился — rollback не нужен, метаданные не тронуты
@@ -182,7 +182,7 @@ class ResourceMoveServiceTest {
                     .when(metadataService).moveMetadata(USER_ID, "docs/file.txt", "images/file.txt");
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/file.txt", "images/file.txt"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/file.txt", "images/file.txt"))
                     .isInstanceOf(RuntimeException.class);
             verify(storageService).moveObject(USER_ID, "images/file.txt", "docs/file.txt");
         }
@@ -207,7 +207,7 @@ class ResourceMoveServiceTest {
                     .when(storageService).moveObject(USER_ID, "images/a.txt", "docs/a.txt");
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/", "images/"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "images/"))
                     .isInstanceOf(ResourceStorageOperationException.class);
         }
 
@@ -222,11 +222,11 @@ class ResourceMoveServiceTest {
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(false);
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/")).thenReturn(List.of());
-            when(mapper.directoryFromPath("images/")).thenReturn(
+            when(resourceDtoMapper.directoryFromPath("images/")).thenReturn(
                     new ResourceDto("", "images/", null, ResourceType.DIRECTORY));
 
             // when
-            service.move(USER_ID, "docs/", "images/");
+            moveService.move(USER_ID, "docs/", "images/");
 
             // then
             verifyNoInteractions(storageService);
@@ -247,7 +247,7 @@ class ResourceMoveServiceTest {
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/", "file.txt"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "file.txt"))
                     .isInstanceOf(InvalidMoveException.class);
             verify(storageService, never()).moveObject(anyLong(), anyString(), anyString());
         }
@@ -262,7 +262,7 @@ class ResourceMoveServiceTest {
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/", "docs/sub/"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "docs/sub/"))
                     .isInstanceOf(InvalidMoveException.class);
             verify(storageService, never()).moveObject(anyLong(), anyString(), anyString());
         }
@@ -278,7 +278,7 @@ class ResourceMoveServiceTest {
             when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "docs/file.txt", "images/file.txt"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "docs/file.txt", "images/file.txt"))
                     .isInstanceOf(ResourceAlreadyExistsException.class);
             verify(storageService, never()).moveObject(anyLong(), anyString(), anyString());
         }
@@ -291,7 +291,7 @@ class ResourceMoveServiceTest {
                     .thenThrow(new ResourceNotFoundException("Resource not found", "missing.txt"));
 
             // when & then
-            assertThatThrownBy(() -> service.move(USER_ID, "missing.txt", "new.txt"))
+            assertThatThrownBy(() -> moveService.move(USER_ID, "missing.txt", "new.txt"))
                     .isInstanceOf(ResourceNotFoundException.class);
             verify(storageService, never()).moveObject(anyLong(), anyString(), anyString());
         }

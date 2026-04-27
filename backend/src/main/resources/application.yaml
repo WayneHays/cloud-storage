@@ -88,7 +88,7 @@ management:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS, Europe/Moscow} %5level --- [%15.15t] %-40.40logger{39} : [userId=%X{userId}] %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS, Europe/Moscow} %5level --- [%15.15t] %-40.40logger{39} :%replace( [userId=%X{userId}]){' \\[userId=\\]', ''} %msg%n"
   level:
     root: INFO
     org.hibernate.orm.jdbc.error: OFF

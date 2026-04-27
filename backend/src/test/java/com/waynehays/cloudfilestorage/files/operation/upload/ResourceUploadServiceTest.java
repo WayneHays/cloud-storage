@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ResourceUploadServiceTest {
+class ResourceUploadServiceTest extends BaseUploadStepTest{
 
     @Mock
     private BatchInsertMapper batchInsertMapper;
@@ -60,8 +60,6 @@ class ResourceUploadServiceTest {
     private ResourceMetadataServiceApi metadataService;
 
     private ResourceUploadService service;
-
-    private static final Long USER_ID = 1L;
 
     @BeforeEach
     void setUp() {

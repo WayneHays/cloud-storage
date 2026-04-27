@@ -1,43 +1,45 @@
 package com.waynehays.cloudfilestorage.files.operation.move;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static com.waynehays.cloudfilestorage.files.operation.move.MoveTestHelper.USER_ID;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class MoveMetadataStepTest {
+class MoveMetadataStepTest extends BaseMoveStepTest {
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
 
     @InjectMocks
-    private MoveMetadataStep moveMetadataStep;
+    private MoveMetadataStep step;
 
     @Test
-    void execute_shouldUpdateMetadataPathsInDatabase() {
+    @DisplayName("Should update file path in database")
+    void shouldUpdateFilePathInDatabase() {
         // given
-        MoveContext context = MoveTestHelper.fileContext("docs/file.txt", "images/file.txt");
+        MoveContext context = fileContext("docs/file.txt", "images/file.txt");
 
         // when
-        moveMetadataStep.execute(context);
+        step.execute(context);
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/file.txt", "images/file.txt");
     }
 
     @Test
-    void execute_shouldUpdateDirectoryMetadataPathsInDatabase() {
+    @DisplayName("Should update directory path in database")
+    void shouldUpdateDirectoryPathInDatabase() {
         // given
-        MoveContext context = MoveTestHelper.directoryContext("docs/", "images/");
+        MoveContext context = directoryContext("docs/", "images/");
 
         // when
-        moveMetadataStep.execute(context);
+        step.execute(context);
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/", "images/");

@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +17,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SaveMetadataStepTest {
+class SaveMetadataStepTest extends BaseUploadStepTest{
 
     @Mock
     private BatchInsertMapper batchInsertMapper;
@@ -25,53 +26,56 @@ class SaveMetadataStepTest {
     private ResourceMetadataServiceApi metadataService;
 
     @InjectMocks
-    private SaveMetadataStep saveMetadataStep;
+    private SaveMetadataStep step;
 
     @Test
-    void execute_shouldSaveFilesAndRegisterPathsForRollback() {
+    @DisplayName("Should save files and register paths for rollback")
+    void shouldSaveFilesAndRegisterPathsForRollback() {
         // given
-        UploadContext context = UploadTestHelper.uploadContext(1L,
-                UploadTestHelper.uploadObject("user/1/file1.txt", 100),
-                UploadTestHelper.uploadObject("user/1/file2.txt", 200)
+        UploadContext context = uploadContext(
+                uploadObject("user/1/file1.txt", 100),
+                uploadObject("user/1/file2.txt", 200)
         );
         List<FileRowDto> fileRows = List.of(
-                UploadTestHelper.fileRowDto("user/1/file1.txt", "file1.txt"),
-                UploadTestHelper.fileRowDto("user/1/file2.txt", "file2.txt")
+                fileRowDto("user/1/file1.txt", "file1.txt"),
+                fileRowDto("user/1/file2.txt", "file2.txt")
         );
         when(batchInsertMapper.toFileRows(context.getObjects())).thenReturn(fileRows);
 
         // when
-        saveMetadataStep.execute(context);
+        step.execute(context);
 
         // then
-        verify(metadataService).saveFiles(1L, fileRows);
+        verify(metadataService).saveFiles(USER_ID, fileRows);
         assertThat(context.rollbackSnapshot().savedToDbPaths())
                 .containsExactlyInAnyOrder("user/1/file1.txt", "user/1/file2.txt");
     }
 
     @Test
-    void rollback_shouldDeleteSavedPaths_whenPathsExist() {
+    @DisplayName("Should delete saved paths when paths exists")
+    void shouldDeleteSavedPaths_whenPathsExist() {
         // given
         UploadRollbackDto snapshot = new UploadRollbackDto(
-                1L, 0L, false,
+                USER_ID, 0L, false,
                 List.of(),
                 List.of("user/1/file1.txt", "user/1/file2.txt")
         );
 
         // when
-        saveMetadataStep.rollback(snapshot);
+        step.rollback(snapshot);
 
         // then
-        verify(metadataService).deleteByPaths(1L, List.of("user/1/file1.txt", "user/1/file2.txt"));
+        verify(metadataService).deleteByPaths(USER_ID, List.of("user/1/file1.txt", "user/1/file2.txt"));
     }
 
     @Test
-    void rollback_shouldDoNothing_whenNoSavedPaths() {
+    @DisplayName("Should do nothing when no saved paths")
+    void shouldDoNothing_whenNoSavedPaths() {
         // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(1L, 0L, false, List.of(), List.of());
+        UploadRollbackDto snapshot = new UploadRollbackDto(USER_ID, 0L, false, List.of(), List.of());
 
         // when
-        saveMetadataStep.rollback(snapshot);
+        step.rollback(snapshot);
 
         // then
         verifyNoInteractions(metadataService);

@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ValidateStepTest {
+class ValidateStepTest extends BaseUploadStepTest{
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -25,11 +26,12 @@ class ValidateStepTest {
     private ValidateStep validateStep;
 
     @Test
-    void execute_shouldPass_whenNoExistingPaths() {
+    @DisplayName("Should pass when no existing paths")
+    void shouldPass_whenNoExistingPaths() {
         // given
-        UploadContext context = UploadTestHelper.uploadContext(1L,
-                UploadTestHelper.uploadObject("user/1/file1.txt", 100),
-                UploadTestHelper.uploadObject("user/1/file2.txt", 200)
+        UploadContext context = uploadContext(
+                uploadObject("user/1/file1.txt", 100),
+                uploadObject("user/1/file2.txt", 200)
         );
         when(metadataService.findExistingPaths(any(), any())).thenReturn(Set.of());
 
@@ -38,10 +40,11 @@ class ValidateStepTest {
     }
 
     @Test
-    void execute_shouldThrow_whenPathsAlreadyExistInDatabase() {
+    @DisplayName("Should throw when paths already exists in database")
+    void shouldThrow_whenPathsAlreadyExistInDatabase() {
         // given
-        UploadContext context = UploadTestHelper.uploadContext(1L,
-                UploadTestHelper.uploadObject("user/1/file1.txt", 100)
+        UploadContext context = uploadContext(
+                uploadObject("user/1/file1.txt", 100)
         );
         when(metadataService.findExistingPaths(any(), any()))
                 .thenReturn(Set.of("user/1/file1.txt"));

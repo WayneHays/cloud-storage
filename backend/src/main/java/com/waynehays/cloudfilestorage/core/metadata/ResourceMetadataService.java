@@ -89,8 +89,7 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
         if (paths.isEmpty()) {
             return Set.of();
         }
-        Set<String> normalizedPaths = normalizePaths(paths);
-        return repository.findMissingPaths(userId, normalizedPaths);
+        return repository.findMissingPaths(userId, paths);
     }
 
     @Override

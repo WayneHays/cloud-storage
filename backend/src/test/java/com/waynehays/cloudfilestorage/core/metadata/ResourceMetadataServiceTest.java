@@ -190,6 +190,22 @@ class ResourceMetadataServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("Should return paths preserving original case")
+    void shouldPreserveOriginalCase() {
+        // given
+        Set<String> paths = Set.of("Docs/", "Photos/Vacation/");
+        when(repository.findMissingPaths(USER_ID, paths))
+                .thenReturn(Set.of("Docs/", "Photos/Vacation/"));
+
+        // when
+        Set<String> result = service.findMissingPaths(USER_ID, paths);
+
+        // then
+        assertThat(result).containsExactlyInAnyOrder("Docs/", "Photos/Vacation/");
+        verify(repository).findMissingPaths(USER_ID, paths);
+    }
+
     @Nested
     class SaveDirectory {
 
