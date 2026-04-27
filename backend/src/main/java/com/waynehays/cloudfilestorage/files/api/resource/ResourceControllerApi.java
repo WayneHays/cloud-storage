@@ -11,6 +11,7 @@ import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -23,7 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.util.List;
 
-public interface ResourceControllerApi {
+interface ResourceControllerApi {
 
     @Operation(summary = "Get resource info",
             description = "Returns metadata (path, name, size, type) of file or directory by full path")
@@ -31,11 +32,20 @@ public interface ResourceControllerApi {
             @ApiResponse(responseCode = "200", description = "Resource found",
                     content = @Content(schema = @Schema(implementation = ResourceDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "path: Invalid path"}
+                                    """))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Invalid credentials"}
+                                    """))),
             @ApiResponse(responseCode = "404", description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resource not found: 'docs/file.txt'"}
+                                    """)))
     })
     ResourceDto getResourceInfo(@AuthenticationPrincipal CustomUserDetails userDetails,
                                 @Valid GetInfoRequest getInfoRequest);
@@ -45,11 +55,20 @@ public interface ResourceControllerApi {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Resource deleted"),
             @ApiResponse(responseCode = "400", description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "path: Invalid path"}
+                                    """))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Invalid credentials"}
+                                    """))),
             @ApiResponse(responseCode = "404", description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resource not found: 'docs/file.txt'"}
+                                    """)))
     })
     void deleteResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                         @Valid DeleteRequest deleteRequest);
@@ -59,9 +78,15 @@ public interface ResourceControllerApi {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Resource downloading"),
             @ApiResponse(responseCode = "400", description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "path: Invalid path"}
+                                    """))),
             @ApiResponse(responseCode = "404", description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resource not found: 'docs/file.txt'"}
+                                    """)))
     })
     ResponseEntity<StreamingResponseBody> downloadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                            @Valid DownloadRequest downloadRequest);
@@ -71,12 +96,21 @@ public interface ResourceControllerApi {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Resource moved or renamed",
                     content = @Content(schema = @Schema(implementation = ResourceDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid path or move operation",
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Cannot move directory to file: 'docs/' -> 'file.txt'"}
+                                    """))),
             @ApiResponse(responseCode = "404", description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resource not found: 'docs/file.txt'"}
+                                    """))),
             @ApiResponse(responseCode = "409", description = "Resource by target path already exists",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resources already exist: [docs/file.txt]"}
+                                    """)))
     })
     ResourceDto moveOrRenameResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                      @Valid MoveRequest moveRequest);
@@ -87,9 +121,15 @@ public interface ResourceControllerApi {
             @ApiResponse(responseCode = "200", description = "Search completed",
                     content = @Content(schema = @Schema(implementation = ResourceDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid query",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "query: must not be blank"}
+                                    """))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Invalid credentials"}
+                                    """)))
     })
     List<ResourceDto> searchResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                      @Valid SearchRequest searchRequest);
@@ -103,11 +143,20 @@ public interface ResourceControllerApi {
             @ApiResponse(responseCode = "201", description = "Resources uploaded",
                     content = @Content(schema = @Schema(implementation = ResourceDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request or file",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "File size is too large, max file size 500 MB"}
+                                    """))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Invalid credentials"}
+                                    """))),
             @ApiResponse(responseCode = "409", description = "Resource already exists",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Resources already exist: [docs/file.txt]"}
+                                    """)))
     })
     List<ResourceDto> uploadResource(@AuthenticationPrincipal CustomUserDetails userDetails,
                                      @Valid UploadRequest uploadRequest,

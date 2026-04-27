@@ -4,12 +4,13 @@ import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
-public interface UserControllerApi {
+interface UserControllerApi {
 
     @Operation(summary = "Get current user",
             description = "Returns information about currently authenticated user")
@@ -17,7 +18,10 @@ public interface UserControllerApi {
             @ApiResponse(responseCode = "200", description = "User information retrieved",
                     content = @Content(schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class)))
+                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                            examples = @ExampleObject(value = """
+                                    {"message": "Invalid credentials"}
+                                    """)))
     })
     UserDto me(@AuthenticationPrincipal CustomUserDetails userDetails);
 }
