@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-class StorageQuotaReconciliationService implements StorageQuotaReconciliationServiceApi {
-    private final StorageQuotaReconciliationProperties properties;
+class QuotaQuotaReconciliationService implements QuotaReconciliationServiceApi {
+    private final QuotaReconciliationProperties properties;
     private final StorageQuotaServiceApi quotaService;
 
     @Override

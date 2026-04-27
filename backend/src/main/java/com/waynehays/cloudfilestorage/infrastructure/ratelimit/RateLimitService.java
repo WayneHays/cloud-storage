@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-class RateLimiterService implements RateLimiterServiceApi {
+class RateLimitService implements RateLimitServiceApi {
     private final RuleRegistry ruleRegistry;
     private final BucketRegistry bucketRegistry;
 

@@ -6,7 +6,7 @@ import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.quota.exception.QuotaLimitException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
@@ -236,7 +236,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
 
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
-            doThrow(new ResourceStorageOperationException("MinIO error"))
+            doThrow(new ResourceStorageException("MinIO error"))
                     .when(storageService).putObject(
                             USER_ID,
                             object.fullPath(),
@@ -246,7 +246,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
 
             // when & then
             assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
             verify(quotaService).releaseSpace(USER_ID, 100L);
         }
 
@@ -374,7 +374,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
                     eq(object1.size()),
                     eq(object1.contentType()),
                     any());
-            doThrow(new ResourceStorageOperationException("MinIO error"))
+            doThrow(new ResourceStorageException("MinIO error"))
                     .when(storageService).putObject(
                             eq(USER_ID),
                             eq(object2.fullPath()),
@@ -384,7 +384,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
 
             // when & then
             assertThatThrownBy(() -> service.upload(USER_ID, List.of(object1, object2)))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
 
             verify(storageService).deleteObjects(argThat(map ->
                     map.containsKey(USER_ID)

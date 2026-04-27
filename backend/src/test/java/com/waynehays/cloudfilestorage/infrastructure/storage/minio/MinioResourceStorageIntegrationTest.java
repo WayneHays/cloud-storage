@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.MinioTestContainer;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -157,7 +157,7 @@ class MinioResourceStorageIntegrationTest {
 
             // when & then
             assertThatThrownBy(() -> storage.moveObject(source, target))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
             assertThat(storage.getObject(target)).isEmpty();
         }
     }

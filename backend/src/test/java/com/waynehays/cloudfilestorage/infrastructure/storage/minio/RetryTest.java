@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import io.github.resilience4j.retry.RetryRegistry;
@@ -80,7 +80,7 @@ class RetryTest extends AbstractResilence4jTest {
 
         // when & then
         assertThatThrownBy(() -> storage.getObject("key"))
-                .isInstanceOf(ResourceStorageOperationException.class);
+                .isInstanceOf(ResourceStorageException.class);
         verify(minioClient, times(1)).getObject(any(GetObjectArgs.class));
     }
 

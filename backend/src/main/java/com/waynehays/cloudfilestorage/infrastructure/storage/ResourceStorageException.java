@@ -2,13 +2,13 @@ package com.waynehays.cloudfilestorage.infrastructure.storage;
 
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ApplicationException;
 
-public class ResourceStorageOperationException extends ApplicationException {
+public class ResourceStorageException extends ApplicationException {
 
-    public ResourceStorageOperationException(String message) {
+    public ResourceStorageException(String message) {
         super(message);
     }
 
-    public ResourceStorageOperationException(String message, Throwable cause) {
+    public ResourceStorageException(String message, Throwable cause) {
         super(message, cause);
     }
 }

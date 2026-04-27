@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.operation;
 
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ApplicationException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public class AsyncUtils {
             if (cause instanceof ApplicationException ae) {
                 throw ae;
             }
-            throw new ResourceStorageOperationException(errorMessage, cause);
+            throw new ResourceStorageException(errorMessage, cause);
         }
     }
 }

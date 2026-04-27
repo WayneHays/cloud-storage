@@ -7,7 +7,7 @@ import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -136,12 +136,12 @@ class ResourceMoveServiceTest {
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/"))
                     .thenReturn(List.of(file1, file2));
             doNothing().when(storageService).moveObject(USER_ID, "docs/a.txt", "images/a.txt");
-            doThrow(new ResourceStorageOperationException("MinIO error"))
+            doThrow(new ResourceStorageException("MinIO error"))
                     .when(storageService).moveObject(USER_ID, "docs/b.txt", "images/b.txt");
 
             // when & then
             assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "images/"))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
             verify(storageService).moveObject(USER_ID, "images/a.txt", "docs/a.txt");
             verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
         }
@@ -156,12 +156,12 @@ class ResourceMoveServiceTest {
 
             when(metadataService.findOrThrow(USER_ID, "docs/file.txt")).thenReturn(file);
             when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(false);
-            doThrow(new ResourceStorageOperationException("MinIO error"))
+            doThrow(new ResourceStorageException("MinIO error"))
                     .when(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
 
             // when & then
             assertThatThrownBy(() -> moveService.move(USER_ID, "docs/file.txt", "images/file.txt"))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
 
             // файл не переместился — rollback не нужен, метаданные не тронуты
             verify(storageService, never()).moveObject(USER_ID, "images/file.txt", "docs/file.txt");
@@ -201,14 +201,14 @@ class ResourceMoveServiceTest {
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(false);
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/")).thenReturn(List.of(file));
-            doThrow(new ResourceStorageOperationException("DB error"))
+            doThrow(new ResourceStorageException("DB error"))
                     .when(metadataService).moveMetadata(USER_ID, "docs/", "images/");
             doThrow(new RuntimeException("Rollback also failed"))
                     .when(storageService).moveObject(USER_ID, "images/a.txt", "docs/a.txt");
 
             // when & then
             assertThatThrownBy(() -> moveService.move(USER_ID, "docs/", "images/"))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
         }
 
         @Test

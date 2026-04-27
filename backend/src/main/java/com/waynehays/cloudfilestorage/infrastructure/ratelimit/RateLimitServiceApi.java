@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.ratelimit;
 
-interface RateLimiterServiceApi {
+interface RateLimitServiceApi {
 
     RateLimitCheckResult checkRateLimit(RequestData requestData);
 }

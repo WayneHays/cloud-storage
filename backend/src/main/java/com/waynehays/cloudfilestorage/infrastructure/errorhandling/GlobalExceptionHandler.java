@@ -8,7 +8,7 @@ import com.waynehays.cloudfilestorage.files.operation.move.InvalidMoveException;
 import com.waynehays.cloudfilestorage.files.api.resource.UploadValidationException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -200,9 +200,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createErrorDto("Invalid credentials");
     }
 
-    @ExceptionHandler(ResourceStorageOperationException.class)
+    @ExceptionHandler(ResourceStorageException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorDto handleResourceStorageOperationException(ResourceStorageOperationException e) {
+    public ErrorDto handleResourceStorageOperationException(ResourceStorageException e) {
         log.error("Storage operation failed", e);
         return createErrorDto("Failed to process operation");
     }

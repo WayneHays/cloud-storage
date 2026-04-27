@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.files.operation.move;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -75,12 +75,12 @@ class MoveStorageStepTest extends BaseMoveStepTest{
         MoveContext context = directoryContext("docs/", "images/");
         when(metadataService.findFilesByPathPrefix(USER_ID, "docs/"))
                 .thenReturn(List.of(fileMetadata(2L, "docs/file.txt", 100L)));
-        doThrow(new ResourceStorageOperationException("MinIO error"))
+        doThrow(new ResourceStorageException("MinIO error"))
                 .when(storageService).moveObject(USER_ID, "docs/file.txt", "images/file.txt");
 
         // when & then
         assertThatThrownBy(() -> step.execute(context))
-                .isInstanceOf(ResourceStorageOperationException.class);
+                .isInstanceOf(ResourceStorageException.class);
     }
 
     @Test

@@ -25,7 +25,7 @@ class RateLimitServiceTest {
     private BucketRegistry bucketRegistry;
 
     @InjectMocks
-    private RateLimiterService service;
+    private RateLimitService service;
 
     private static final RequestData REQUEST = new RequestData(1L, "/api/resources", "GET");
 

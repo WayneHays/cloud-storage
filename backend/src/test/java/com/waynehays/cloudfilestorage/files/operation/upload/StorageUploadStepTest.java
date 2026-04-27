@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,13 +80,13 @@ class StorageUploadStepTest extends BaseUploadStepTest{
         UploadContext context = uploadContext(
                 uploadObject("user/1/file1.txt", 100)
         );
-        doThrow(new ResourceStorageOperationException("MinIO unavailable", null))
+        doThrow(new ResourceStorageException("MinIO unavailable", null))
                 .when(storageService).putObject(
                         any(), anyString(), anyByte(), anyString(), any());
 
         // when & then
         assertThatThrownBy(() -> step.execute(context))
-                .isInstanceOf(ResourceStorageOperationException.class);
+                .isInstanceOf(ResourceStorageException.class);
     }
 
     @Test

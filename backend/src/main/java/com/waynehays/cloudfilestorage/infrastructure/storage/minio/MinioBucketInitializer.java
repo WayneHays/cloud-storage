@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -34,7 +34,7 @@ class MinioBucketInitializer {
             }
         } catch (Exception e) {
             log.error("Failed to initialize MinIO bucket: {}", bucketName);
-            throw new ResourceStorageOperationException("Failed to initialize MinIO bucket: " + bucketName);
+            throw new ResourceStorageException("Failed to initialize MinIO bucket: " + bucketName);
         }
     }
 }

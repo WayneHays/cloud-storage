@@ -16,7 +16,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 class RateLimitInterceptor implements HandlerInterceptor {
     private static final String HEADER_RATE_LIMIT_REMAINING = "X-Rate-Limit-Remaining";
 
-    private final RateLimiterServiceApi rateLimiter;
+    private final RateLimitServiceApi rateLimiter;
 
     @Override
     public boolean preHandle(@NotNull HttpServletRequest request,

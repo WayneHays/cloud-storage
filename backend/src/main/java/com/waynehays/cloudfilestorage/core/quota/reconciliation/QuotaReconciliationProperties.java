@@ -12,7 +12,7 @@ import java.time.Duration;
 
 @Validated
 @ConfigurationProperties(prefix = "reconciliation")
-record StorageQuotaReconciliationProperties(
+record QuotaReconciliationProperties(
 
         @NotNull(message = "Reconciliation reconciliationInterval must be set")
         @DurationMin(minutes = 1, message = "Reconciliation reconciliationInterval must be >= 1m")

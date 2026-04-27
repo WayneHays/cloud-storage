@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageOperationException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -71,11 +71,11 @@ class MinioResourceStorage implements ResourceStorageApi {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new ResourceStorageOperationException(MSG_FAILED_GET.formatted(objectKey), e);
+            throw new ResourceStorageException(MSG_FAILED_GET.formatted(objectKey), e);
         } catch (IOException e) {
             throw new ResourceStorageTransientException(MSG_FAILED_GET.formatted(objectKey), e);
         } catch (Exception e) {
-            throw new ResourceStorageOperationException(MSG_FAILED_GET.formatted(objectKey), e);
+            throw new ResourceStorageException(MSG_FAILED_GET.formatted(objectKey), e);
         }
     }
 
@@ -105,7 +105,7 @@ class MinioResourceStorage implements ResourceStorageApi {
             throw e;
         } catch (Exception e) {
             rollbackCopy(targetKey);
-            throw new ResourceStorageOperationException("Failed to move object from %s to %s"
+            throw new ResourceStorageException("Failed to move object from %s to %s"
                     .formatted(sourceKey, targetKey), e);
         }
     }
@@ -137,7 +137,7 @@ class MinioResourceStorage implements ResourceStorageApi {
             } catch (IOException e) {
                 throw new ResourceStorageTransientException(MSG_FAILED_DELETE.formatted(prefix), e);
             } catch (Exception e) {
-                throw new ResourceStorageOperationException(MSG_FAILED_DELETE.formatted(prefix), e);
+                throw new ResourceStorageException(MSG_FAILED_DELETE.formatted(prefix), e);
             }
         }
 
@@ -203,7 +203,7 @@ class MinioResourceStorage implements ResourceStorageApi {
 
         if (result.hasFailures()) {
             log.error("Failed to delete objects: {}", result.failedKeys());
-            throw new ResourceStorageOperationException("Failed to delete some objects: " + result.failedKeys());
+            throw new ResourceStorageException("Failed to delete some objects: " + result.failedKeys());
         }
     }
 
@@ -232,7 +232,7 @@ class MinioResourceStorage implements ResourceStorageApi {
         } catch (IOException e) {
             throw new ResourceStorageTransientException(errorMessage, e);
         } catch (Exception e) {
-            throw new ResourceStorageOperationException(errorMessage, e);
+            throw new ResourceStorageException(errorMessage, e);
         }
     }
 }

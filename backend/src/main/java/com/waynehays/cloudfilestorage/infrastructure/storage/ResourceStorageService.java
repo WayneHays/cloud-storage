@@ -27,7 +27,7 @@ class ResourceStorageService implements ResourceStorageServiceApi {
         try (InputStream inputStream = inputStreamSupplier.get()) {
             storage.putObject(inputStream, key, size, contentType);
         } catch (IOException e) {
-            throw new ResourceStorageOperationException("Failed to put object to storage", e);
+            throw new ResourceStorageException("Failed to put object to storage", e);
         }
 
         log.debug("Finished upload object to storage: userId={}, path={}", userId, path);

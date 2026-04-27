@@ -68,7 +68,7 @@ class ResourceStorageServiceTest {
                     () -> {
                         throw new IOException("stream error");
                     }))
-                    .isInstanceOf(ResourceStorageOperationException.class);
+                    .isInstanceOf(ResourceStorageException.class);
         }
     }
 
