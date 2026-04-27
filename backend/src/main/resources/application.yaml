@@ -23,13 +23,15 @@ cleanup:
   interval: 30m
   limit: 50
 
+reconciliation:
+  interval: 1h
+  batch-size: 10
+
 search:
   limit: 100
 
 storage-quota:
   default-limit: 1GB
-  reconciliation-interval: 1h
-  reconciliation-batch-size: 10
 
 executors:
   move-thread-pool-size: 10
@@ -60,7 +62,7 @@ resilience4j:
         max-attempts: 3
         wait-duration: 500ms
         retry-exceptions:
-          - com.waynehays.cloudfilestorage.shared.exception.ResourceStorageTransientException
+          - com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException
         ignore-exceptions:
           - io.github.resilience4j.circuitbreaker.CallNotPermittedException
   circuitbreaker:
@@ -72,7 +74,7 @@ resilience4j:
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 5
         record-exceptions:
-          - com.waynehays.cloudfilestorage.shared.exception.ResourceStorageTransientException
+          - com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException
 management:
   server:
     port: 8081
@@ -86,6 +88,7 @@ management:
 
 logging:
   pattern:
-    dateformat: yyyy-MM-dd HH:mm:ss.SSS,Europe/Moscow
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS, Europe/Moscow} %5level --- [%15.15t] %-40.40logger{39} : [userId=%X{userId}] %msg%n"
   level:
     root: INFO
+    org.hibernate.orm.jdbc.error: OFF
