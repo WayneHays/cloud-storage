@@ -22,7 +22,7 @@ class MoveTestHelper {
                 size, ResourceType.FILE);
     }
 
-    static ResourceMetadataDto dirMetadata(Long id, String path) {
+    private static ResourceMetadataDto dirMetadata(Long id, String path) {
         return new ResourceMetadataDto(id, USER_ID, path,
                 PathUtils.extractParentPath(path), PathUtils.extractFilename(path),
                 null, ResourceType.DIRECTORY);

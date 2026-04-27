@@ -12,7 +12,7 @@ public interface ResourceStorageServiceApi {
 
     void deleteObject(Long userId, String path);
 
-    void deleteObjects(Map<Long, List<String>> pathsByUserId);;
+    void deleteObjects(Map<Long, List<String>> pathsByUserId);
 
     void deleteDirectory(Long userId, String path);
 

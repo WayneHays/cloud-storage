@@ -25,6 +25,9 @@ public class SecurityConfig {
     private static final String PATH_ACTUATOR = "/actuator";
     private static final String PATH_ACTUATOR_HEALTH = PATH_ACTUATOR + "/health";
     private static final String PATH_ACTUATOR_PROMETHEUS = PATH_ACTUATOR + "/prometheus";
+    private static final String PATH_SWAGGER_UI = "/swagger-ui/**";
+    private static final String PATH_SWAGGER_HTML = "/swagger-ui.html";
+    private static final String PATH_API_DOCS = "/v3/api-docs/**";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -32,6 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PATH_SIGN_UP, PATH_SIGN_IN).permitAll()
                         .requestMatchers(PATH_ACTUATOR_HEALTH, PATH_ACTUATOR_PROMETHEUS).permitAll()
+                        .requestMatchers(PATH_SWAGGER_UI, PATH_SWAGGER_HTML, PATH_API_DOCS).permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(e -> e
