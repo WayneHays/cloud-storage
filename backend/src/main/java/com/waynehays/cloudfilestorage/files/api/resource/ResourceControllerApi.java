@@ -1,14 +1,14 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
+import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
 import com.waynehays.cloudfilestorage.files.dto.request.DeleteRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.DownloadRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.GetInfoRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.MoveRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.SearchRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.UploadRequest;
-import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
+import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

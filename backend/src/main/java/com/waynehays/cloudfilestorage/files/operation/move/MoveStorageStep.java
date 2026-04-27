@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.operation.move;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.files.operation.AsyncUtils;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;

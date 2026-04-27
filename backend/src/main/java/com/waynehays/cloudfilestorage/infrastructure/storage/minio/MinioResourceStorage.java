@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.minio.CopyObjectArgs;

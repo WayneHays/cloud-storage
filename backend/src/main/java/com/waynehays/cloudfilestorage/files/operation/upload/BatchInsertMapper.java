@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
-import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
+import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import org.mapstruct.Mapper;
 

@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
+import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
 import com.waynehays.cloudfilestorage.files.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.files.dto.request.DeleteRequest;
@@ -9,7 +10,6 @@ import com.waynehays.cloudfilestorage.files.dto.request.MoveRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.SearchRequest;
 import com.waynehays.cloudfilestorage.files.dto.request.UploadRequest;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
 import com.waynehays.cloudfilestorage.files.operation.delete.ResourceDeletionServiceApi;
 import com.waynehays.cloudfilestorage.files.operation.download.ResourceDownloadServiceApi;
 import com.waynehays.cloudfilestorage.files.operation.info.ResourceInfoServiceApi;

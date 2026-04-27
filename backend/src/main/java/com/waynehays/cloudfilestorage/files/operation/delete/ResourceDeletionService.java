@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation.delete;
 
+import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
