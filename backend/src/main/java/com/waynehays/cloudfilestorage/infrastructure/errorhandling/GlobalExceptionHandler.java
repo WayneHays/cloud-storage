@@ -171,16 +171,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorDto handleResourceAlreadyExistsException(ResourceAlreadyExistsException e) {
         List<String> paths = e.getPaths();
+        int maxPathsToSendWithMessage = 5;
+        String message;
 
-        if (paths.size() <= 5) {
+        if (paths.size() <= maxPathsToSendWithMessage) {
             log.warn("Resources already exist: {}", paths);
+            message = "Resources already exist: %s".formatted(paths);
         } else {
-            log.warn("Resources already exist: count={}, first5={}", paths.size(), paths.subList(0, 5));
+            log.warn("Resources already exist: count={}, first={}",
+                    paths.size(), paths.subList(0, maxPathsToSendWithMessage));
+            message = "Resources already exist: %d files, e.g. %s"
+                    .formatted(paths.size(), paths.subList(0, maxPathsToSendWithMessage));
         }
-
-        String message = paths.size() <= 5
-                ? "Resources already exist: %s".formatted(paths)
-                : "Resources already exist: %d files, e.g. %s".formatted(paths.size(), paths.subList(0, 5));
         return createErrorDto(message);
     }
 
