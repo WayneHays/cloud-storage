@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -169,8 +170,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorDto handleResourceAlreadyExistsException(ResourceAlreadyExistsException e) {
-        log.warn("Resources already exist: {}", e.getPaths());
-        return createErrorDto("Resources already exist: %s".formatted(e.getPaths()));
+        List<String> paths = e.getPaths();
+
+        if (paths.size() <= 5) {
+            log.warn("Resources already exist: {}", paths);
+        } else {
+            log.warn("Resources already exist: count={}, first5={}", paths.size(), paths.subList(0, 5));
+        }
+
+        String message = paths.size() <= 5
+                ? "Resources already exist: %s".formatted(paths)
+                : "Resources already exist: %d files, e.g. %s".formatted(paths.size(), paths.subList(0, 5));
+        return createErrorDto(message);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)

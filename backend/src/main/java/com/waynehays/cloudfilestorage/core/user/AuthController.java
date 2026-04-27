@@ -39,8 +39,6 @@ class AuthController implements AuthControllerApi {
                           HttpServletRequest request,
                           HttpServletResponse response) {
         UserDto registeredUser = userService.signUp(signUpRequest);
-        log.info("User registered: {}", signUpRequest.username());
-
         processLogin(signUpRequest.username(), signUpRequest.password(), request, response);
         return registeredUser;
     }
@@ -66,7 +64,9 @@ class AuthController implements AuthControllerApi {
         securityContextHolderStrategy.setContext(context);
         securityContextRepository.saveContext(context, request, response);
 
-        log.info("User signed in: {}", username);
+        if (authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            log.info("User signed in: id={}, username={}", userDetails.id(), username);
+        }
         return authentication;
     }
 }
