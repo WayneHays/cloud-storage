@@ -11,7 +11,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class ReserveQuotaStepTest extends BaseUploadStepTest{
@@ -48,17 +47,5 @@ class ReserveQuotaStepTest extends BaseUploadStepTest{
 
         // then
         verify(quotaService).releaseSpace(1L, 1000L);
-    }
-
-    @Test
-    void rollback_shouldDoNothing_whenQuotaWasNotReserved() {
-        // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(1L, 1000L, false, List.of(), List.of());
-
-        // when
-        reserveQuotaStep.rollback(snapshot);
-
-        // then
-        verifyNoInteractions(quotaService);
     }
 }

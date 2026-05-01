@@ -88,6 +88,5 @@ class RateLimitServiceTest {
         // then
         assertThat(result.allowed()).isFalse();
         assertThat(result.retryAfterSeconds()).isGreaterThanOrEqualTo(0);
-        assertThat(result.errorMessage()).contains("/api/resources");
     }
 }

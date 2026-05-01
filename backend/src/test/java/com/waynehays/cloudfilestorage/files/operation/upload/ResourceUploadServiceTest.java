@@ -1,15 +1,15 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
-import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.core.quota.exception.QuotaLimitException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.core.quota.exception.QuotaLimitException;
+import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
+import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -213,7 +213,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
 
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
-            doThrow(new QuotaLimitException("Not enough space", 100L, 50L))
+            doThrow(new QuotaLimitException(100L, 50L))
                     .when(quotaService).reserveSpace(USER_ID, 100L);
 
             // when & then
@@ -315,7 +315,7 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
 
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of());
-            doThrow(new QuotaLimitException("Not enough space", 100L, 50L))
+            doThrow(new QuotaLimitException(100L, 50L))
                     .when(quotaService).reserveSpace(USER_ID, 100L);
 
             // when & then

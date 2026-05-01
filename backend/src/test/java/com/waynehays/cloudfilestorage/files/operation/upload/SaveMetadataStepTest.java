@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +13,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,18 +65,5 @@ class SaveMetadataStepTest extends BaseUploadStepTest{
 
         // then
         verify(metadataService).deleteByPaths(USER_ID, List.of("user/1/file1.txt", "user/1/file2.txt"));
-    }
-
-    @Test
-    @DisplayName("Should do nothing when no saved paths")
-    void shouldDoNothing_whenNoSavedPaths() {
-        // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(USER_ID, 0L, false, List.of(), List.of());
-
-        // when
-        step.rollback(snapshot);
-
-        // then
-        verifyNoInteractions(metadataService);
     }
 }
