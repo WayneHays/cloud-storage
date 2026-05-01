@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage.files.operation.move;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.files.operation.AsyncUtils;
+import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ class MoveStorageStep implements MoveStep {
 
     @Override
     public void execute(MoveContext context) {
-        if (context.isMovingFile()) {
+        if (PathUtils.isFile(context.getPathFrom())) {
             moveFile(context);
         } else {
             moveDirectory(context);

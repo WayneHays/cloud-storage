@@ -29,8 +29,7 @@ class UploadRequestValidator {
                 .toList();
 
         if (!errors.isEmpty()) {
-            throw new UploadValidationException(
-                    "Upload objects validation failed: " + String.join("; ", errors));
+            throw new UploadValidationException(errors);
         }
     }
 

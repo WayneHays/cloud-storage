@@ -17,8 +17,11 @@ class ReserveQuotaStep implements UploadStep {
 
     @Override
     public void rollback(UploadRollbackDto snapshot) {
-        if (snapshot.quotaReserved()) {
-            quotaService.releaseSpace(snapshot.userId(), snapshot.totalSize());
-        }
+        quotaService.releaseSpace(snapshot.userId(), snapshot.totalSize());
+    }
+
+    @Override
+    public boolean requiresRollback(UploadRollbackDto snapshot) {
+        return snapshot.quotaReserved();
     }
 }

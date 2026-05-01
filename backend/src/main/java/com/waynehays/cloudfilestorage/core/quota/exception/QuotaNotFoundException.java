@@ -7,8 +7,7 @@ import lombok.Getter;
 public class QuotaNotFoundException extends ApplicationException {
     private final Long userId;
 
-    public QuotaNotFoundException(String message, Long userId) {
-        super(message);
+    public QuotaNotFoundException(Long userId) {
         this.userId = userId;
     }
 }

@@ -11,12 +11,12 @@ import java.util.Set;
 public class PathUtils {
     private static final String SLASH = "/";
 
-    public static String ensureTrailingSlash(String path) {
-        return isDirectory(path) ? path : path + SLASH;
-    }
-
     public static boolean isDirectory(String path) {
         return path.endsWith(SLASH);
+    }
+
+    public static String ensureTrailingSlash(String path) {
+        return isDirectory(path) ? path : path + SLASH;
     }
 
     public static boolean isFile(String path) {

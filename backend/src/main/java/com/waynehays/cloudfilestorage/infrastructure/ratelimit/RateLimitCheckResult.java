@@ -3,8 +3,7 @@ package com.waynehays.cloudfilestorage.infrastructure.ratelimit;
 record RateLimitCheckResult(
         boolean allowed,
         long remainingTokens,
-        long retryAfterSeconds,
-        String errorMessage
+        long retryAfterSeconds
 ) {
 
     boolean isRateLimited() {
@@ -12,14 +11,14 @@ record RateLimitCheckResult(
     }
 
     static RateLimitCheckResult allowed(long remainingTokens) {
-        return new RateLimitCheckResult(true, remainingTokens, 0, null);
+        return new RateLimitCheckResult(true, remainingTokens, 0);
     }
 
-    static RateLimitCheckResult rejected(long retryAfterSeconds, String message) {
-        return new RateLimitCheckResult(false, 0, retryAfterSeconds, message);
+    static RateLimitCheckResult rejected(long retryAfterSeconds) {
+        return new RateLimitCheckResult(false, 0, retryAfterSeconds);
     }
 
     static RateLimitCheckResult unlimited() {
-        return new RateLimitCheckResult(true, -1, 0, null);
+        return new RateLimitCheckResult(true, -1, 0);
     }
 }

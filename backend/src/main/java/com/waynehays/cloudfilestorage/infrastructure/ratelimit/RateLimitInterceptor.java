@@ -41,7 +41,7 @@ class RateLimitInterceptor implements HandlerInterceptor {
             return true;
         } else {
             response.addHeader(HttpHeaders.RETRY_AFTER, String.valueOf(result.retryAfterSeconds()));
-            throw new RateLimitException(result.errorMessage(), endpoint, method, result.retryAfterSeconds());
+            throw new RateLimitException(endpoint, method, result.retryAfterSeconds());
         }
     }
 }

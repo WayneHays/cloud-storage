@@ -30,8 +30,7 @@ class RateLimitService implements RateLimitServiceApi {
         }
 
         long waitSeconds = convertNanosToSeconds(probe.getNanosToWaitForRefill());
-        return RateLimitCheckResult.rejected(waitSeconds,
-                "Too many requests to: " + requestData.endpoint());
+        return RateLimitCheckResult.rejected(waitSeconds);
     }
 
     private long convertNanosToSeconds(long nanoseconds) {

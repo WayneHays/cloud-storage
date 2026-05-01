@@ -22,8 +22,11 @@ class SaveMetadataStep implements UploadStep {
 
     @Override
     public void rollback(UploadRollbackDto snapshot) {
-        if (snapshot.hasSavedToDbPaths()) {
-            metadataService.deleteByPaths(snapshot.userId(), snapshot.savedToDbPaths());
-        }
+        metadataService.deleteByPaths(snapshot.userId(), snapshot.savedToDbPaths());
+    }
+
+    @Override
+    public boolean requiresRollback(UploadRollbackDto snapshot) {
+        return snapshot.hasSavedToDbPaths();
     }
 }

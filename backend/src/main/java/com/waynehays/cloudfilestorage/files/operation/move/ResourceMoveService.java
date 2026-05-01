@@ -25,7 +25,7 @@ class ResourceMoveService implements ResourceMoveServiceApi {
         log.info("Move started: from={}, to={}", pathFrom, pathTo);
 
         ResourceMetadataDto metadata = metadataService.findOrThrow(userId, pathFrom);
-        MoveContext context = new MoveContext(userId, pathFrom, pathTo, metadata);
+        MoveContext context = new MoveContext(userId, pathFrom, pathTo);
         List<MoveStep> executed = new ArrayList<>();
 
         for (MoveStep step : moveSteps) {
@@ -64,7 +64,7 @@ class ResourceMoveService implements ResourceMoveServiceApi {
     }
 
     private ResourceDto buildResult(MoveContext context, ResourceMetadataDto metadata) {
-        return context.isMovingFile()
+        return metadata.isFile()
                 ? mapper.fileFromPath(context.getPathTo(), metadata.size())
                 : mapper.directoryFromPath(context.getPathTo());
     }

@@ -43,7 +43,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                                             @NotNull HttpHeaders headers,
                                                                             @NotNull HttpStatusCode status,
                                                                             @NotNull WebRequest request) {
-        log.warn("Failed to parse JSON");
         ErrorDto error = createErrorDto("Invalid JSON format");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
@@ -60,7 +59,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
 
-        log.warn("Validation failed: {}", message);
         ErrorDto error = createErrorDto(message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(error);
@@ -90,15 +88,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(MultipartException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorDto handleMultipartException() {
-        log.warn("Multipart error");
+    public ErrorDto handleMultipartException(MultipartException e) {
+        log.warn("Multipart error: {}", e.getMessage());
         return createErrorDto("Too many files or invalid upload request");
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorDto handleDataIntegrityViolationException() {
-        log.warn("Data integrity violation");
+    public ErrorDto handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation: {}", e.getMostSpecificCause().getMessage());
         return createErrorDto("Duplicate resource conflict");
     }
 
@@ -108,15 +106,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message = e.getConstraintViolations().stream()
                 .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                 .collect(Collectors.joining("; "));
-        log.warn("Constraint violation: {}", message);
         return createErrorDto(message);
     }
 
     @ExceptionHandler(QuotaNotFoundException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorDto handleStorageQuotaNotFoundException(QuotaNotFoundException e) {
-        log.error("Storage quota not found", e);
+    public ErrorDto handleQuotaNotFoundException(QuotaNotFoundException e) {
+        log.error("Storage quota not found: userId={}", e.getUserId());
         return createErrorDto("Storage quota not configured");
+    }
+
+    @ExceptionHandler(QuotaLimitException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorDto handleQuotaLimitException(QuotaLimitException e) {
+        return createErrorDto("Not enough storage space. Free: %s, required: %s".formatted(
+                formatBytes(e.getFreeSpace()),
+                formatBytes(e.getUploadSize())
+        ));
     }
 
     @ExceptionHandler(ResourceStorageTransientException.class)
@@ -126,44 +132,30 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return createErrorDto("Storage temporarily unavailable, please try again");
     }
 
-    @ExceptionHandler(QuotaLimitException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorDto handleResourceStorageLimitException(QuotaLimitException e) {
-        log.warn("Not enough storage space. Upload size: {}, free space: {}",
-                e.getUploadSize(), e.getFreeSpace());
-        return createErrorDto("Not enough storage space. Free: %s, required: %s".formatted(
-                formatBytes(e.getFreeSpace()),
-                formatBytes(e.getUploadSize())
-        ));
-    }
-
     @ExceptionHandler(RateLimitException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
     public ErrorDto handleRateLimitException(RateLimitException e) {
         log.warn("Rate limit exceeded: endpoint={}, method={}, retryAfter={}s",
                 e.getEndpoint(), e.getHttpMethod(), e.getRetryAfter());
-        return createErrorDto(e.getMessage());
+        return createErrorDto("Too many requests");
     }
 
     @ExceptionHandler(InvalidMoveException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorDto handleInvalidMoveException(InvalidMoveException e) {
-        log.warn("Invalid move: '{}' -> '{}'", e.getFrom(), e.getTo());
-        String clientMessage = "%s: '%s' -> '%s'".formatted(e.getMessage(), e.getFrom(), e.getTo());
-        return createErrorDto(clientMessage);
+        String message = "%s: '%s' -> '%s'".formatted(e.getMessage(), e.getFrom(), e.getTo());
+        return createErrorDto(message);
     }
 
     @ExceptionHandler(UploadValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorDto handleMultipartValidationException(UploadValidationException e) {
-        log.warn("Multipart validation failed: {}", e.getMessage());
+    public ErrorDto handleUploadValidationException(UploadValidationException e) {
         return createErrorDto(e.getMessage());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorDto handleResourceNotFoundException(ResourceNotFoundException e) {
-        log.warn("Resource not found: '{}'", e.getPath());
         return createErrorDto("Resource not found: '%s'".formatted(e.getPath()));
     }
 
@@ -175,11 +167,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message;
 
         if (paths.size() <= maxPathsToSendWithMessage) {
-            log.warn("Resources already exist: {}", paths);
             message = "Resources already exist: %s".formatted(paths);
         } else {
-            log.warn("Resources already exist: count={}, first={}",
-                    paths.size(), paths.subList(0, maxPathsToSendWithMessage));
             message = "Resources already exist: %d files, e.g. %s"
                     .formatted(paths.size(), paths.subList(0, maxPathsToSendWithMessage));
         }
@@ -189,14 +178,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorDto handleUserAlreadyExistsException(UserAlreadyExistsException e) {
-        log.warn("Username already taken: {}", e.getMessage());
         return createErrorDto(e.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorDto handleBadCredentialsException() {
-        log.warn("Failed authentication attempt");
         return createErrorDto("Invalid credentials");
     }
 

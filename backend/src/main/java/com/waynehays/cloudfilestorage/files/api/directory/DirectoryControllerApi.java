@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.api.directory;
 
 import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
-import com.waynehays.cloudfilestorage.files.dto.request.CreateDirectoryRequest;
-import com.waynehays.cloudfilestorage.files.dto.request.GetDirectoryContentRequest;
+import com.waynehays.cloudfilestorage.files.dto.request.directory.CreateDirectoryRequest;
+import com.waynehays.cloudfilestorage.files.dto.request.directory.GetDirectoryContentRequest;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;

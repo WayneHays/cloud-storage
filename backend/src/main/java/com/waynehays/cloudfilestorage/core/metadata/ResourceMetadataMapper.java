@@ -14,13 +14,17 @@ interface ResourceMetadataMapper {
     List<ResourceMetadataDto> toResourceMetadataDto(List<ResourceMetadata> entities);
 
     default ResourceMetadata toDirectoryEntity(Long userId, String path) {
-        String dirPath = PathUtils.ensureTrailingSlash(path);
+        String pathToDirectory = PathUtils.ensureTrailingSlash(path);
+        String normalizedPath = PathUtils.normalizePath(pathToDirectory);
+        String parentPath = PathUtils.extractParentPath(normalizedPath);
+        String displayName = PathUtils.extractDisplayName(pathToDirectory);
+
         ResourceMetadata entity = new ResourceMetadata();
         entity.setUserId(userId);
-        entity.setPath(dirPath);
-        entity.setNormalizedPath(PathUtils.normalizePath(dirPath));
-        entity.setParentPath(PathUtils.extractParentPath(PathUtils.normalizePath(dirPath)));
-        entity.setName(PathUtils.extractDisplayName(dirPath));
+        entity.setPath(pathToDirectory);
+        entity.setNormalizedPath(normalizedPath);
+        entity.setParentPath(parentPath);
+        entity.setName(displayName);
         entity.setType(ResourceType.DIRECTORY);
         entity.setMarkedForDeletion(false);
         return entity;

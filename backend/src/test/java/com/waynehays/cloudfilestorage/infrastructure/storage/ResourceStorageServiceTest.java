@@ -122,7 +122,7 @@ class ResourceStorageServiceTest {
     @DisplayName("deleteDirectory() should resolve key and delete by prefix")
     void deleteDirectory_shouldResolveKeyAndDeleteByPrefix() {
         // when
-        service.deleteDirectory(USER_ID, "docs/");
+        service.deleteByPrefix(USER_ID, "docs/");
 
         // then
         verify(storage).deleteByPrefix("user-1-files/docs/");

@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.files.operation.move;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -18,20 +17,12 @@ class MoveContext {
     @Getter
     private final String pathTo;
 
-    @Getter
-    private final ResourceMetadataDto metadata;
-
     private final List<MovedObject> movedObjects = Collections.synchronizedList(new ArrayList<>());
 
-    MoveContext(Long userId, String pathFrom, String pathTo, ResourceMetadataDto metadata) {
+    MoveContext(Long userId, String pathFrom, String pathTo) {
         this.userId = userId;
         this.pathFrom = pathFrom;
         this.pathTo = pathTo;
-        this.metadata = metadata;
-    }
-
-    boolean isMovingFile() {
-        return metadata.isFile();
     }
 
     void addMovedObject(String from, String to) {

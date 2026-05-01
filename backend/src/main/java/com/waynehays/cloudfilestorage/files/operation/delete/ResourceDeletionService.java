@@ -39,16 +39,16 @@ class ResourceDeletionService implements ResourceDeletionServiceApi {
     }
 
     private void deleteDirectory(Long userId, String path) {
-        log.info("Start delete directory: {}", path);
+        log.info("Start delete directory with content: {}", path);
 
         long totalSize = metadataService.markDirectoryForDeletionAndSumSize(userId, path);
-        storageService.deleteDirectory(userId, path);
+        storageService.deleteByPrefix(userId, path);
         metadataService.deleteDirectoryMetadata(userId, path);
 
         if (totalSize > 0) {
             quotaService.releaseSpace(userId, totalSize);
         }
 
-        log.info("Finished delete directory: {}", path);
+        log.info("Finished delete directory with content: {}", path);
     }
 }

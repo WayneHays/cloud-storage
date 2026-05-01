@@ -32,7 +32,7 @@ class StorageQuotaService implements StorageQuotaServiceApi {
         quota.setStorageLimit(storageLimit);
         repository.saveAndFlush(quota);
 
-        log.info("Storage quota created with limit={}", storageLimit);
+        log.info("Storage quota created: userId={}, limit={}", userId, storageLimit);
     }
 
     @Override
@@ -41,11 +41,11 @@ class StorageQuotaService implements StorageQuotaServiceApi {
         log.info("Start reserve space: bytes={}", bytes);
 
         StorageQuota quota = repository.findByUserIdWithLock(userId)
-                .orElseThrow(() -> new QuotaNotFoundException("Quota not found for user", userId));
+                .orElseThrow(() -> new QuotaNotFoundException(userId));
         long freeSpace = quota.getStorageLimit() - quota.getUsedSpace();
 
         if (bytes > freeSpace) {
-            throw new QuotaLimitException("Not enough storage space", bytes, freeSpace);
+            throw new QuotaLimitException(bytes, freeSpace);
         }
 
         long updatedUsedSpace = quota.getUsedSpace() + bytes;
@@ -61,7 +61,7 @@ class StorageQuotaService implements StorageQuotaServiceApi {
         log.info("Start release space: bytes={}", bytes);
 
         StorageQuota quota = repository.findByUserIdWithLock(userId)
-                .orElseThrow(() -> new QuotaNotFoundException("Quota not found for user", userId));
+                .orElseThrow(() -> new QuotaNotFoundException(userId));
         long updatedUsedSpace = Math.max(0, quota.getUsedSpace() - bytes);
         long freeSpace = quota.getStorageLimit() - updatedUsedSpace;
         quota.setUsedSpace(updatedUsedSpace);

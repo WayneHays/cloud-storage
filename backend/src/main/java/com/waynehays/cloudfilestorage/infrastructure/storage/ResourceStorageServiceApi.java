@@ -14,7 +14,7 @@ public interface ResourceStorageServiceApi {
 
     void deleteObjects(Map<Long, List<String>> pathsByUserId);
 
-    void deleteDirectory(Long userId, String path);
+    void deleteByPrefix(Long userId, String path);
 
     void moveObject(Long userId, String pathFrom, String pathTo);
 }

@@ -8,11 +8,11 @@ abstract class BaseMoveStepTest {
     protected static final Long USER_ID = 1L;
 
     MoveContext fileContext(String pathFrom, String pathTo) {
-        return new MoveContext(USER_ID, pathFrom, pathTo, fileMetadata(1L, pathFrom, 100L));
+        return new MoveContext(USER_ID, pathFrom, pathTo);
     }
 
     MoveContext directoryContext(String pathFrom, String pathTo) {
-        return new MoveContext(USER_ID, pathFrom, pathTo, dirMetadata(1L, pathFrom));
+        return new MoveContext(USER_ID, pathFrom, pathTo);
     }
 
     ResourceMetadataDto fileMetadata(Long id, String path, Long size) {
