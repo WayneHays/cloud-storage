@@ -61,8 +61,4 @@ public class ResourceMetadata {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
-
-    public boolean isFile() {
-        return type.isFile();
-    }
 }
