@@ -28,8 +28,8 @@ class UserService implements UserServiceApi {
 
         try {
             User saved = repository.saveAndFlush(user);
-            eventPublisher.publishEvent(new UserRegisteredEvent(saved.getId()));
             log.info("User registered: userId={}, username={}", user.getId(), user.getUsername());
+            eventPublisher.publishEvent(new UserRegisteredEvent(saved.getId()));
             return mapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Username already taken: " + signUpRequest.username(), e);
