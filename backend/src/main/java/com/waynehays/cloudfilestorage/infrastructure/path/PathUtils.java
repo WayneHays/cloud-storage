@@ -16,7 +16,9 @@ public class PathUtils {
     }
 
     public static String ensureTrailingSlash(String path) {
-        return isDirectory(path) ? path : path + SLASH;
+        return isDirectory(path)
+                ? path
+                : toDirectoryPath(path);
     }
 
     public static boolean isFile(String path) {
@@ -30,7 +32,9 @@ public class PathUtils {
 
         String cleanPath = removeTrailingSlash(path);
         String[] parts = cleanPath.split(SLASH);
-        int limit = isFile(path) ? parts.length - 1 : parts.length;
+        int limit = isFile(path)
+                ? parts.length - 1
+                : parts.length;
 
         Set<String> directories = new LinkedHashSet<>();
         StringBuilder sb = new StringBuilder();
@@ -70,6 +74,18 @@ public class PathUtils {
         return isDirectory(path)
                 ? name + SLASH
                 : name;
+    }
+
+    private static String toDirectoryPath(String filePath) {
+        return filePath + SLASH;
+    }
+
+    private static String toFilePath(String directoryPath) {
+        return directoryPath.substring(0, directoryPath.length() - 1);
+    }
+
+    public static String toOppositeTypePath(String path) {
+        return isFile(path) ? toDirectoryPath(path) : toFilePath(path);
     }
 
     public static String extractDisplayName(String path) {

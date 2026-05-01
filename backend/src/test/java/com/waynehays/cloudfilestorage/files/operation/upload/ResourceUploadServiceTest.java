@@ -86,7 +86,6 @@ class ResourceUploadServiceTest {
             UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
             ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
             when(metadataService.findMissingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
 
@@ -109,8 +108,8 @@ class ResourceUploadServiceTest {
         void shouldThrowWithoutReservingQuota() {
             // given
             UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of("docs/file.txt"));
+            doThrow(new ResourceAlreadyExistsException("Resources already exist", List.of("docs/file.txt")))
+                    .when(metadataService).throwIfAnyExists(eq(USER_ID), any());
 
             // when & then
             assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
@@ -128,7 +127,6 @@ class ResourceUploadServiceTest {
         void shouldRollbackQuotaWhenStorageFails() {
             // given
             UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
             doThrow(new ResourceStorageException("MinIO error"))
                     .when(storageService).putObject(any(), any(), anyLong(), any(), any());
 
@@ -147,7 +145,6 @@ class ResourceUploadServiceTest {
             UploadObjectDto obj2 = uploadObject("key-2", "docs/b.txt", 200);
             ResourceDto dto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L)).thenReturn(dto1);
             doNothing().when(storageService).putObject(eq(USER_ID), eq("key-1"), eq(100L), eq("text/plain"), any());
             doThrow(new ResourceStorageException("MinIO error"))
@@ -176,7 +173,6 @@ class ResourceUploadServiceTest {
             UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
             ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
             when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
             doThrow(new RuntimeException("DB error"))
                     .when(metadataService).saveFiles(eq(USER_ID), anyList());

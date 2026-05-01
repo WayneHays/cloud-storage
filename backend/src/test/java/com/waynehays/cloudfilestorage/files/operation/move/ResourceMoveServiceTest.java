@@ -14,6 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -46,7 +48,7 @@ class ResourceMoveServiceTest {
         ResourceDto expected = new ResourceDto("images/", "file.txt", 100L, ResourceType.FILE);
 
         when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(false);
-        when(metadataService.findOrThrow(USER_ID, "images/file.txt")).thenReturn(moved);
+        when(metadataService.findByPath(USER_ID, "images/file.txt")).thenReturn(moved);
         when(resourceDtoMapper.fileFromPath("images/file.txt", 100L)).thenReturn(expected);
 
         // when
@@ -54,7 +56,7 @@ class ResourceMoveServiceTest {
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/file.txt", "images/file.txt");
-        verify(metadataService).findOrThrow(USER_ID, "images/file.txt");
+        verify(metadataService).findByPath(USER_ID, "images/file.txt");
         assertThat(result).isEqualTo(expected);
     }
 
@@ -72,7 +74,7 @@ class ResourceMoveServiceTest {
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/", "images/");
-        verify(metadataService, never()).findOrThrow(anyLong(), anyString());
+        verify(metadataService, never()).findByPath(anyLong(), anyString());
         assertThat(result).isEqualTo(expected);
     }
 
@@ -117,5 +119,20 @@ class ResourceMoveServiceTest {
         // when & then
         assertThatThrownBy(() -> moveService.move(USER_ID, "missing.txt", "new.txt"))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Should throw when resource with same name but different type exists at target")
+    void shouldThrowWhenConflictingTypeExistsAtTarget() {
+        // given
+        when(metadataService.existsByPath(USER_ID, "report")).thenReturn(false);
+        doThrow(new ResourceAlreadyExistsException(
+                "Resources with same name, but different type already exist", "report/"))
+                .when(metadataService).throwIfAnyConflictingTypeExists(USER_ID, List.of("report"));
+
+        // when & then
+        assertThatThrownBy(() -> moveService.move(USER_ID, "docs/report", "report"))
+                .isInstanceOf(ResourceAlreadyExistsException.class);
+        verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
     }
 }

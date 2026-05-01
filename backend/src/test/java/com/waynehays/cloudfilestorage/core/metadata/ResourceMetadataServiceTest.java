@@ -59,7 +59,7 @@ class ResourceMetadataServiceTest {
     }
 
     @Nested
-    class FindOrThrow {
+    class FindByPath {
 
         @Test
         @DisplayName("Should normalize path and return dto when found")
@@ -75,7 +75,7 @@ class ResourceMetadataServiceTest {
             when(mapper.toResourceMetadataDto(entity)).thenReturn(dto);
 
             // when
-            ResourceMetadataDto result = service.findOrThrow(USER_ID, "Docs/File.txt");
+            ResourceMetadataDto result = service.findByPath(USER_ID, "Docs/File.txt");
 
             // then
             assertThat(result).isEqualTo(dto);
@@ -90,7 +90,7 @@ class ResourceMetadataServiceTest {
                     .thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> service.findOrThrow(USER_ID, "missing.txt"))
+            assertThatThrownBy(() -> service.findByPath(USER_ID, "missing.txt"))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -167,27 +167,6 @@ class ResourceMetadataServiceTest {
 
             // then
             assertThat(result).isEmpty();
-        }
-    }
-
-    @Nested
-    class FindExistingPaths {
-
-        @Test
-        @DisplayName("Should normalize all paths before querying")
-        void shouldNormalizeAllPaths() {
-            // given
-            when(repository.findExistingPaths(USER_ID, Set.of("docs/file.txt", "work/report.txt")))
-                    .thenReturn(Set.of("Docs/File.txt"));
-
-            // when
-            Set<String> result = service.findExistingPaths(USER_ID,
-                    Set.of("Docs/File.txt", "Work/Report.txt"));
-
-            // then
-            assertThat(result).containsExactly("Docs/File.txt");
-            verify(repository).findExistingPaths(USER_ID,
-                    Set.of("docs/file.txt", "work/report.txt"));
         }
     }
 
@@ -388,6 +367,89 @@ class ResourceMetadataServiceTest {
             // then
             assertThat(result.totalSize()).isEqualTo(0L);
             assertThat(result.storageKeys()).isEmpty();
+        }
+    }
+
+    @Nested
+    class ThrowIfAnyExists {
+
+        @Test
+        @DisplayName("Should not throw when no paths exist")
+        void shouldNotThrowWhenNoneExist() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs/file.txt")))
+                    .thenReturn(Set.of());
+
+            // when & then
+            service.throwIfAnyExists(USER_ID, List.of("Docs/File.txt"));
+        }
+
+        @Test
+        @DisplayName("Should throw when some paths already exist")
+        void shouldThrowWhenSomeExist() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs/file.txt", "work/report.txt")))
+                    .thenReturn(Set.of("docs/file.txt"));
+
+            // when & then
+            assertThatThrownBy(() -> service.throwIfAnyExists(USER_ID,
+                    List.of("Docs/File.txt", "Work/Report.txt")))
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
+        }
+    }
+
+    @Nested
+    class ThrowIfAnyConflictingTypeExists {
+
+        @Test
+        @DisplayName("Should not throw when no conflicting types exist")
+        void shouldNotThrowWhenNoConflicts() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs/")))
+                    .thenReturn(Set.of());
+
+            // when & then
+            service.throwIfAnyConflictingTypeExists(USER_ID, List.of("docs"));
+        }
+
+        @Test
+        @DisplayName("Should throw when file exists and directory is being created")
+        void shouldThrowWhenFileConflictsWithDirectory() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs")))
+                    .thenReturn(Set.of("docs"));
+
+            // when & then
+            assertThatThrownBy(() -> service.throwIfAnyConflictingTypeExists(USER_ID,
+                    List.of("docs/")))
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
+        }
+
+        @Test
+        @DisplayName("Should throw when directory exists and file is being uploaded")
+        void shouldThrowWhenDirectoryConflictsWithFile() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("report/")))
+                    .thenReturn(Set.of("report/"));
+
+            // when & then
+            assertThatThrownBy(() -> service.throwIfAnyConflictingTypeExists(USER_ID,
+                    List.of("report")))
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
+        }
+
+        @Test
+        @DisplayName("Should normalize opposite type paths before checking")
+        void shouldNormalizeOppositeTypePaths() {
+            // given
+            when(repository.findExistingPaths(USER_ID, Set.of("docs/report")))
+                    .thenReturn(Set.of());
+
+            // when
+            service.throwIfAnyConflictingTypeExists(USER_ID, List.of("Docs/Report/"));
+
+            // then
+            verify(repository).findExistingPaths(USER_ID, Set.of("docs/report"));
         }
     }
 }

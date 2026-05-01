@@ -60,7 +60,7 @@ class ResourceDownloadServiceTest {
                     1L, USER_ID, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                     2048L, ResourceType.FILE);
 
-            when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
+            when(metadataService.findByPath(USER_ID, "docs/report.pdf")).thenReturn(file);
 
             // when
             DownloadResult result = service.download(USER_ID, "docs/report.pdf");
@@ -85,7 +85,7 @@ class ResourceDownloadServiceTest {
                     2048L, ResourceType.FILE);
             StorageItem item = new StorageItem(new ByteArrayInputStream("content".getBytes()));
 
-            when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
+            when(metadataService.findByPath(USER_ID, "docs/report.pdf")).thenReturn(file);
             when(storageService.getObject(USER_ID, "storage-key")).thenReturn(Optional.of(item));
 
             // when
@@ -107,7 +107,7 @@ class ResourceDownloadServiceTest {
                     1L, USER_ID, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                     2048L, ResourceType.FILE);
 
-            when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
+            when(metadataService.findByPath(USER_ID, "docs/report.pdf")).thenReturn(file);
             when(storageService.getObject(USER_ID, "storage-key"))
                     .thenThrow(new ResourceNotFoundException("Not found in storage", "docs/report.pdf"));
 
@@ -134,7 +134,7 @@ class ResourceDownloadServiceTest {
                     3L, USER_ID, "storage-key", "docs/file.txt", "docs/", "file.txt",
                     100L, ResourceType.FILE);
 
-            when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
+            when(metadataService.findByPath(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/")).thenReturn(List.of(file));
             when(archiver.getExtension()).thenReturn(".zip");
             when(archiver.getContentType()).thenReturn("application/zip");
@@ -160,7 +160,7 @@ class ResourceDownloadServiceTest {
                     3L, USER_ID, "storage-key", "docs/file.txt", "docs/", "file.txt",
                     100L, ResourceType.FILE);
 
-            when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
+            when(metadataService.findByPath(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.findFilesByPathPrefix(USER_ID, "docs/")).thenReturn(List.of(file));
             when(archiver.getExtension()).thenReturn(".zip");
             when(archiver.getContentType()).thenReturn("application/zip");
@@ -182,7 +182,7 @@ class ResourceDownloadServiceTest {
     @DisplayName("Should throw exception when metadata not found in database")
     void shouldThrowWhenResourceNotFound() {
         // given
-        when(metadataService.findOrThrow(USER_ID, "missing.txt"))
+        when(metadataService.findByPath(USER_ID, "missing.txt"))
                 .thenThrow(new ResourceNotFoundException("Resource not found", "missing.txt"));
 
         // when & then

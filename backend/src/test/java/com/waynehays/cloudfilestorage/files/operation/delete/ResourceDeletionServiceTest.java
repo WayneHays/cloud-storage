@@ -53,7 +53,7 @@ class ResourceDeletionServiceTest {
                     1L, USER_ID, "abc-123", "docs/file.txt", "docs/",
                     "file.txt", 500L, ResourceType.FILE);
 
-            when(metadataService.findOrThrow(USER_ID, "docs/file.txt")).thenReturn(file);
+            when(metadataService.findByPath(USER_ID, "docs/file.txt")).thenReturn(file);
 
             // when
             service.delete(USER_ID, "docs/file.txt");
@@ -79,7 +79,7 @@ class ResourceDeletionServiceTest {
                     "docs", null, ResourceType.DIRECTORY);
             DeleteDirectoryResult deleteResult = new DeleteDirectoryResult(1500L, List.of("key-1", "key-2"));
 
-            when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
+            when(metadataService.findByPath(USER_ID, "docs/")).thenReturn(dir);
             when(metadataService.markDirectoryForDeletionAndCollectKeys(USER_ID, "docs/")).thenReturn(deleteResult);
 
             // when
@@ -102,7 +102,7 @@ class ResourceDeletionServiceTest {
                     "empty", null, ResourceType.DIRECTORY);
             DeleteDirectoryResult deleteResult = new DeleteDirectoryResult(0L, List.of());
 
-            when(metadataService.findOrThrow(USER_ID, "empty/")).thenReturn(dir);
+            when(metadataService.findByPath(USER_ID, "empty/")).thenReturn(dir);
             when(metadataService.markDirectoryForDeletionAndCollectKeys(USER_ID, "empty/")).thenReturn(deleteResult);
 
             // when
@@ -118,7 +118,7 @@ class ResourceDeletionServiceTest {
         @DisplayName("Should throw exception when metadata not found")
         void shouldThrowWhenResourceNotFound() {
             // given
-            when(metadataService.findOrThrow(USER_ID, "missing/"))
+            when(metadataService.findByPath(USER_ID, "missing/"))
                     .thenThrow(new ResourceNotFoundException("Resource not found", "missing/"));
 
             // when & then

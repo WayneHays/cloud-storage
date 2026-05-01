@@ -21,7 +21,7 @@ class ResourceDeletionService implements ResourceDeletionServiceApi {
 
     @Override
     public void delete(Long userId, String path) {
-        ResourceMetadataDto metadata = metadataService.findOrThrow(userId, path);
+        ResourceMetadataDto metadata = metadataService.findByPath(userId, path);
 
         if (metadata.isFile()) {
             deleteFile(userId, metadata);

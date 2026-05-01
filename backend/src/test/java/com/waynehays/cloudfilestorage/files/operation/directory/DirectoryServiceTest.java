@@ -151,5 +151,20 @@ class DirectoryServiceTest {
             verify(metadataService).saveDirectory(USER_ID, path);
             assertThat(result).isEqualTo(expected);
         }
+
+        @Test
+        @DisplayName("Should throw when file with same name already exists")
+        void shouldThrowWhenFileWithSameNameExists() {
+            // given
+            String path = "docs/";
+            doThrow(new ResourceAlreadyExistsException(
+                    "Resources with same name, but different type already exist", "docs"))
+                    .when(metadataService).throwIfAnyConflictingTypeExists(USER_ID, List.of(path));
+
+            // when & then
+            assertThatThrownBy(() -> directoryService.createDirectory(USER_ID, path))
+                    .isInstanceOf(ResourceAlreadyExistsException.class);
+            verify(metadataService, never()).saveDirectory(anyLong(), anyString());
+        }
     }
 }

@@ -1,15 +1,11 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -24,10 +20,7 @@ class ValidateStep implements UploadStep {
                 .map(UploadObjectDto::fullPath)
                 .toList();
 
-        Set<String> existing = metadataService.findExistingPaths(userId, new HashSet<>(paths));
-
-        if (!existing.isEmpty()) {
-            throw new ResourceAlreadyExistsException("Resources already exist", new ArrayList<>(existing));
-        }
+        metadataService.throwIfAnyExists(userId, paths);
+        metadataService.throwIfAnyConflictingTypeExists(userId, paths);
     }
 }

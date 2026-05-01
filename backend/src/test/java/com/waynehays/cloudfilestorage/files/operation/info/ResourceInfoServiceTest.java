@@ -40,7 +40,7 @@ class ResourceInfoServiceTest {
                 100L, ResourceType.FILE);
         ResourceDto expected = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 
-        when(metadataService.findOrThrow(USER_ID, "docs/file.txt")).thenReturn(metadata);
+        when(metadataService.findByPath(USER_ID, "docs/file.txt")).thenReturn(metadata);
         when(mapper.fromResourceMetadataDto(metadata)).thenReturn(expected);
 
         // when
@@ -54,7 +54,7 @@ class ResourceInfoServiceTest {
     @DisplayName("Should throw exception when resource not found in database")
     void shouldThrowWhenResourceNotFound() {
         // given
-        when(metadataService.findOrThrow(USER_ID, "missing.txt"))
+        when(metadataService.findByPath(USER_ID, "missing.txt"))
                 .thenThrow(new ResourceNotFoundException("Resource not found", "missing.txt"));
 
         // when & then

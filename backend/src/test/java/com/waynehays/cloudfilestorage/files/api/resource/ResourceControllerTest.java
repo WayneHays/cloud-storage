@@ -198,6 +198,49 @@ class ResourceControllerTest extends AbstractControllerTest {
     }
 
     @Nested
+    class TypeConflictTests {
+
+        @Test
+        @DisplayName("Should return 409 when creating directory with same name as existing file")
+        void shouldReturn409WhenCreatingDirectoryWithSameNameAsFile() throws Exception {
+            // given
+            uploadFileAndExpectIsCreated(sessionCookie, "", "report", "content".getBytes());
+
+            // when & then
+            createDirectory(sessionCookie, "report/")
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when uploading file with same name as existing directory")
+        void shouldReturn409WhenUploadingFileWithSameNameAsDirectory() throws Exception {
+            // given
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
+
+            MockMultipartFile file = multipartFile("docs", "content".getBytes());
+
+            // when & then
+            performUpload(sessionCookie, "", file)
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when moving file to path where directory with same name exists")
+        void shouldReturn409WhenMovingToConflictingType() throws Exception {
+            // given
+            uploadFileAndExpectIsCreated(sessionCookie, "", "report", "content".getBytes());
+            createDirectory(sessionCookie, "docs/")
+                    .andExpect(status().isCreated());
+            uploadFileAndExpectIsCreated(sessionCookie, "docs/", "data", "content".getBytes());
+
+            // when & then
+            moveResource(sessionCookie, "docs/data", "report/")
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Nested
     class GetInfoTests {
 
         @Test

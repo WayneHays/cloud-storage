@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public ResourceMetadataDto findOrThrow(Long userId, String path) {
+    public ResourceMetadataDto findByPath(Long userId, String path) {
         String normalizedPath = normalize(path);
         ResourceMetadata metadata = repository.findByNormalizedPath(userId, normalizedPath)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", path));
@@ -76,16 +77,6 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
     }
 
     @Override
-    public Set<String> findExistingPaths(Long userId, Set<String> paths) {
-        if (paths.isEmpty()) {
-            return Set.of();
-        }
-
-        Set<String> normalizedPaths = normalizePaths(paths);
-        return repository.findExistingPaths(userId, normalizedPaths);
-    }
-
-    @Override
     public Set<String> findMissingPaths(Long userId, Set<String> paths) {
         if (paths.isEmpty()) {
             return Set.of();
@@ -98,6 +89,34 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
     public DeleteDirectoryResult markDirectoryForDeletionAndCollectKeys(Long userId, String path) {
         String normalizedPath = normalize(path);
         return repository.markFilesForDeletionAndCollectKeys(userId, normalizedPath);
+    }
+
+    @Override
+    public void throwIfAnyExists(Long userId, List<String> paths) {
+        Set<String> normalizedPaths = paths.stream()
+                .map(this::normalize)
+                .collect(Collectors.toSet());
+        Set<String> existing = repository.findExistingPaths(userId, normalizedPaths);
+
+        if (!existing.isEmpty()) {
+            throw new ResourceAlreadyExistsException("Resources already exist", new ArrayList<>(existing));
+        }
+    }
+
+    @Override
+    public void throwIfAnyConflictingTypeExists(Long userId, List<String> paths) {
+        Set<String> conflictPaths = paths.stream()
+                .map(PathUtils::toOppositeTypePath)
+                .map(this::normalize)
+                .collect(Collectors.toSet());
+
+        Set<String> conflicts = repository.findExistingPaths(userId, conflictPaths);
+
+        if (!conflicts.isEmpty()) {
+            throw new ResourceAlreadyExistsException(
+                    "Resources with same name, but different type already exist",
+                    new ArrayList<>(conflicts));
+        }
     }
 
     @Override
@@ -192,12 +211,6 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
         log.debug("Start delete metadata by ids={}", ids);
         repository.deleteByIds(ids);
         log.debug("Finished delete metadata by ids={}", ids);
-    }
-
-    private Set<String> normalizePaths(Set<String> paths) {
-        return paths.stream()
-                .map(this::normalize)
-                .collect(Collectors.toSet());
     }
 
     private String normalize(String path) {

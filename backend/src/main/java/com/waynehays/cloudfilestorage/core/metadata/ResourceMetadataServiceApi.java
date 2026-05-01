@@ -12,7 +12,7 @@ public interface ResourceMetadataServiceApi {
 
     boolean existsByPath(Long userid, String path);
 
-    ResourceMetadataDto findOrThrow(Long userId, String path);
+    ResourceMetadataDto findByPath(Long userId, String path);
 
     List<ResourceMetadataDto> findDirectoryContent(Long userId, String directoryPath);
 
@@ -22,11 +22,13 @@ public interface ResourceMetadataServiceApi {
 
     List<ResourceMetadataDto> findFilesMarkedForDeletion(int limit);
 
-    Set<String> findExistingPaths(Long userId, Set<String> paths);
-
     Set<String> findMissingPaths(Long userId, Set<String> paths);
 
     DeleteDirectoryResult markDirectoryForDeletionAndCollectKeys(Long userId, String path);
+
+    void throwIfAnyExists(Long userId, List<String> paths);
+
+    void throwIfAnyConflictingTypeExists(Long userId, List<String> paths);
 
     void saveFiles(Long userId, List<FileRowDto> files);
 

@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ class ResourceMoveService implements ResourceMoveServiceApi {
         log.info("Move completed: from={}, to={}", pathFrom, pathTo);
 
         if (PathUtils.isFile(pathTo)) {
-            ResourceMetadataDto moved = metadataService.findOrThrow(userId, pathTo);
+            ResourceMetadataDto moved = metadataService.findByPath(userId, pathTo);
             return mapper.fileFromPath(pathTo, moved.size());
         }
         return mapper.directoryFromPath(pathTo);
@@ -46,5 +48,7 @@ class ResourceMoveService implements ResourceMoveServiceApi {
         if (metadataService.existsByPath(userId, pathTo)) {
             throw new ResourceAlreadyExistsException("Resource already exists at target path", pathTo);
         }
+
+        metadataService.throwIfAnyConflictingTypeExists(userId, List.of(pathTo));
     }
 }
