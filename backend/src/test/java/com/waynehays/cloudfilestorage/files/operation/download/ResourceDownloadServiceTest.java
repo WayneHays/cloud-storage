@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.files.operation.download;
 
-import com.waynehays.cloudfilestorage.files.dto.internal.DownloadResult;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.files.dto.internal.DownloadResult;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class ResourceDownloadServiceTest {
         void shouldReturnFileResult() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/report.pdf", "docs/", "report.pdf",
+                    1L, USER_ID, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                     2048L, ResourceType.FILE);
 
             when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
@@ -81,12 +81,12 @@ class ResourceDownloadServiceTest {
         void shouldOpenStreamLazily() throws IOException {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/report.pdf", "docs/", "report.pdf",
+                    1L, USER_ID, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                     2048L, ResourceType.FILE);
             StorageItem item = new StorageItem(new ByteArrayInputStream("content".getBytes()));
 
             when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
-            when(storageService.getObject(USER_ID, "docs/report.pdf")).thenReturn(Optional.of(item));
+            when(storageService.getObject(USER_ID, "storage-key")).thenReturn(Optional.of(item));
 
             // when
             DownloadResult result = service.download(USER_ID, "docs/report.pdf");
@@ -95,7 +95,7 @@ class ResourceDownloadServiceTest {
             InputStream stream = ((DownloadResult.File) result).contentSupplier().get();
 
             // then
-            verify(storageService).getObject(USER_ID, "docs/report.pdf");
+            verify(storageService).getObject(USER_ID, "storage-key");
             assertThat(stream).isNotNull();
         }
 
@@ -104,11 +104,11 @@ class ResourceDownloadServiceTest {
         void shouldPropagateNotFoundFromSupplier() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/report.pdf", "docs/", "report.pdf",
+                    1L, USER_ID, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                     2048L, ResourceType.FILE);
 
             when(metadataService.findOrThrow(USER_ID, "docs/report.pdf")).thenReturn(file);
-            when(storageService.getObject(USER_ID, "docs/report.pdf"))
+            when(storageService.getObject(USER_ID, "storage-key"))
                     .thenThrow(new ResourceNotFoundException("Not found in storage", "docs/report.pdf"));
 
             DownloadResult result = service.download(USER_ID, "docs/report.pdf");
@@ -128,10 +128,10 @@ class ResourceDownloadServiceTest {
         void shouldReturnArchiveResult() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
-                    2L, USER_ID, "docs/", "", "docs",
+                    2L, USER_ID, null, "docs/", "", "docs",
                     null, ResourceType.DIRECTORY);
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    3L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                    3L, USER_ID, "storage-key", "docs/file.txt", "docs/", "file.txt",
                     100L, ResourceType.FILE);
 
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
@@ -154,10 +154,10 @@ class ResourceDownloadServiceTest {
         void shouldInvokeArchiverOnWrite() throws IOException {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
-                    2L, USER_ID, "docs/", "", "docs",
+                    2L, USER_ID, null, "docs/", "", "docs",
                     null, ResourceType.DIRECTORY);
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    3L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                    3L, USER_ID, "storage-key", "docs/file.txt", "docs/", "file.txt",
                     100L, ResourceType.FILE);
 
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);

@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class ReserveQuotaStepTest extends BaseUploadStepTest{
+class ReserveQuotaStepTest extends BaseUploadStepTest {
 
     @Mock
     private StorageQuotaServiceApi quotaService;
@@ -25,8 +25,8 @@ class ReserveQuotaStepTest extends BaseUploadStepTest{
     void execute_shouldReserveSpaceAndMarkQuotaReserved() {
         // given
         UploadContext context = uploadContext(
-                uploadObject("user/1/file1.txt", 300),
-                uploadObject("user/1/file2.txt", 700)
+                uploadObject("key-1", "user/1/file1.txt", 300),
+                uploadObject("key-2", "user/1/file2.txt", 700)
         );
 
         // when
@@ -34,7 +34,7 @@ class ReserveQuotaStepTest extends BaseUploadStepTest{
 
         // then
         verify(quotaService).reserveSpace(1L, 1000L);
-        assertThat(context.rollbackSnapshot().quotaReserved()).isTrue();
+        assertThat(context.rollbackDto().quotaReserved()).isTrue();
     }
 
     @Test

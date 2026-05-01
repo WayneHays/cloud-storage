@@ -3,6 +3,7 @@ package com.waynehays.cloudfilestorage;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadata;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.user.User;
+import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -46,12 +47,13 @@ public abstract class AbstractRepositoryTest {
         return user.getId();
     }
 
-    protected ResourceMetadata file(Long userId, String path, String parentPath, String name, long size) {
+    protected ResourceMetadata file(Long userId, String storageKey, String path, String parentPath, String name, long size) {
         ResourceMetadata r = new ResourceMetadata();
         r.setUserId(userId);
+        r.setStorageKey(storageKey);
         r.setPath(path);
-        r.setNormalizedPath(path.toLowerCase());
-        r.setParentPath(parentPath.toLowerCase());
+        r.setNormalizedPath(PathUtils.normalizePath(path));
+        r.setParentPath(PathUtils.normalizePath(parentPath));
         r.setName(name);
         r.setType(ResourceType.FILE);
         r.setSize(size);

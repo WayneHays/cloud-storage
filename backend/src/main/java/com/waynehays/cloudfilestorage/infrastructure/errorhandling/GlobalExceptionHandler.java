@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExi
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.core.quota.exception.QuotaLimitException;
 import com.waynehays.cloudfilestorage.core.quota.exception.QuotaNotFoundException;
-import com.waynehays.cloudfilestorage.core.user.UserAlreadyExistsException;
+import com.waynehays.cloudfilestorage.core.user.exception.UserAlreadyExistsException;
 import com.waynehays.cloudfilestorage.files.api.resource.UploadValidationException;
 import com.waynehays.cloudfilestorage.files.operation.move.InvalidMoveException;
 import com.waynehays.cloudfilestorage.infrastructure.ratelimit.RateLimitException;

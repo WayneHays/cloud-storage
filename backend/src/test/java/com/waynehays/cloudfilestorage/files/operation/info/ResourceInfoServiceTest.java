@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.files.operation.info;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +36,7 @@ class ResourceInfoServiceTest {
     void shouldReturnMappedResource() {
         // given
         ResourceMetadataDto metadata = new ResourceMetadataDto(
-                1L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                1L, USER_ID, "storage-key","docs/file.txt", "docs/", "file.txt",
                 100L, ResourceType.FILE);
         ResourceDto expected = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 

@@ -1,11 +1,11 @@
-package com.waynehays.cloudfilestorage.core.user.dto.request;
+package com.waynehays.cloudfilestorage.core.user.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record SignUpRequest(
+public record SignInRequest(
 
         @Schema(description = "Username, 3-50 characters, letters, digits, underscore only", example = "wayne_hays")
         @NotBlank(message = "Username must not be empty")

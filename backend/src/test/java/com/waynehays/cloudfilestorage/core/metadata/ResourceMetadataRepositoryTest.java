@@ -1,8 +1,9 @@
 package com.waynehays.cloudfilestorage.core.metadata;
 
+import com.waynehays.cloudfilestorage.AbstractRepositoryTest;
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
-import com.waynehays.cloudfilestorage.AbstractRepositoryTest;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,7 +47,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return true when resource exists")
         void shouldReturnTrueWhenExists() {
             // given
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when & then
@@ -64,7 +65,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return false for other user's resource")
         void shouldReturnFalseForOtherUser() {
             // given
-            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(otherUserId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when & then
@@ -75,7 +76,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should find resource regardless of original path case")
         void shouldFindCaseInsensitive() {
             // given
-            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
+            em.persist(file(userId, "key", "Docs/File.txt", "docs/", "File.txt", 10));
             em.flush();
 
             // when & then
@@ -90,7 +91,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return resource when found")
         void shouldReturnWhenFound() {
             // given
-            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
+            em.persist(file(userId, "key", "Docs/File.txt", "docs/", "File.txt", 10));
             em.flush();
 
             // when
@@ -113,7 +114,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should exclude resources marked for deletion")
         void shouldExcludeMarkedForDeletion() {
             // given
-            ResourceMetadata deleted = file(userId, "docs/file.txt", "docs/", "file.txt", 10);
+            ResourceMetadata deleted = file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10);
             deleted.setMarkedForDeletion(true);
             em.persist(deleted);
             em.flush();
@@ -131,10 +132,10 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldReturnDirectChildren() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
-            em.persist(file(userId, "docs/b.txt", "docs/", "b.txt", 20));
+            em.persist(file(userId, "key1", "docs/a.txt", "docs/", "a.txt", 10));
+            em.persist(file(userId, "key2", "docs/b.txt", "docs/", "b.txt", 20));
             em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
-            em.persist(file(userId, "docs/sub/deep.txt", "docs/sub/", "deep.txt", 30));
+            em.persist(file(userId, "key3", "docs/sub/deep.txt", "docs/sub/", "deep.txt", 30));
             em.flush();
 
             // when
@@ -151,7 +152,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldReturnRootResources() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            em.persist(file(userId, "root.txt", "", "root.txt", 10));
+            em.persist(file(userId, "key", "root.txt", "", "root.txt", 10));
             em.flush();
 
             // when
@@ -166,10 +167,10 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldExcludeMarkedForDeletion() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            ResourceMetadata deleted = file(userId, "docs/deleted.txt", "docs/", "deleted.txt", 10);
+            ResourceMetadata deleted = file(userId, "key", "docs/deleted.txt", "docs/", "deleted.txt", 10);
             deleted.setMarkedForDeletion(true);
             em.persist(deleted);
-            em.persist(file(userId, "docs/active.txt", "docs/", "active.txt", 20));
+            em.persist(file(userId, "key1", "docs/active.txt", "docs/", "active.txt", 20));
             em.flush();
 
             // when
@@ -188,8 +189,8 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return paths that exist in database")
         void shouldReturnExistingPaths() {
             // given
-            em.persist(file(userId, "Docs/A.txt", "docs/", "A.txt", 10));
-            em.persist(file(userId, "Docs/B.txt", "docs/", "B.txt", 20));
+            em.persist(file(userId, "key1", "Docs/A.txt", "docs/", "A.txt", 10));
+            em.persist(file(userId, "key2", "Docs/B.txt", "docs/", "B.txt", 20));
             em.flush();
 
             // when
@@ -204,7 +205,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return original path case, not normalized")
         void shouldReturnOriginalCase() {
             // given
-            em.persist(file(userId, "Docs/MyFile.txt", "docs/", "MyFile.txt", 10));
+            em.persist(file(userId, "key", "Docs/MyFile.txt", "docs/", "MyFile.txt", 10));
             em.flush();
 
             // when
@@ -218,7 +219,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should exclude resources marked for deletion")
         void shouldExcludeMarkedForDeletion() {
             // given
-            ResourceMetadata deleted = file(userId, "docs/deleted.txt", "docs/", "deleted.txt", 10);
+            ResourceMetadata deleted = file(userId, "key", "docs/deleted.txt", "docs/", "deleted.txt", 10);
             deleted.setMarkedForDeletion(true);
             em.persist(deleted);
             em.flush();
@@ -238,7 +239,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should delete existing file")
         void shouldDeleteExistingFile() {
             // given
-            em.persist(file(userId, "Docs/File.txt", "docs/", "File.txt", 10));
+            em.persist(file(userId, "key", "Docs/File.txt", "docs/", "File.txt", 10));
             em.flush();
 
             // when
@@ -266,8 +267,8 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should not delete other user's file")
         void shouldNotDeleteOtherUsersFile() {
             // given
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
-            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(otherUserId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -286,9 +287,9 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldDeleteDirectoryAndContents() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
+            em.persist(file(userId, "key1", "docs/a.txt", "docs/", "a.txt", 10));
             em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
-            em.persist(file(userId, "docs/sub/b.txt", "docs/sub/", "b.txt", 20));
+            em.persist(file(userId, "key2", "docs/sub/b.txt", "docs/sub/", "b.txt", 20));
             em.flush();
 
             // when
@@ -326,7 +327,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(directory(userId, "work/", "", "work"));
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -347,7 +348,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldMoveFileToRoot() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -386,8 +387,8 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(directory(userId, "archive/", "", "archive"));
-            em.persist(file(userId, "docs/a.txt", "docs/", "a.txt", 10));
-            em.persist(file(userId, "docs/b.txt", "docs/", "b.txt", 20));
+            em.persist(file(userId, "key1", "docs/a.txt", "docs/", "a.txt", 10));
+            em.persist(file(userId, "key2", "docs/b.txt", "docs/", "b.txt", 20));
             em.flush();
 
             // when
@@ -416,7 +417,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(directory(userId, "docs/sub/", "docs/", "sub"));
-            em.persist(file(userId, "docs/sub/deep.txt", "docs/sub/", "deep.txt", 10));
+            em.persist(file(userId, "key", "docs/sub/deep.txt", "docs/sub/", "deep.txt", 10));
             em.persist(directory(userId, "archive/", "", "archive"));
             em.flush();
 
@@ -459,7 +460,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "archive/", "", "archive"));
             em.persist(directory(userId, "archive/docs/", "archive/", "docs"));
-            em.persist(file(userId, "archive/docs/file.txt", "archive/docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "archive/docs/file.txt", "archive/docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -495,7 +496,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(directory(otherUserId, "docs/", "", "docs"));
-            em.persist(file(otherUserId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(otherUserId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -513,7 +514,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
             em.persist(directory(userId, "docs-backup/", "", "docs-backup"));
-            em.persist(file(userId, "docs-backup/file.txt", "docs-backup/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs-backup/file.txt", "docs-backup/", "file.txt", 10));
             em.flush();
 
             // when
@@ -530,7 +531,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldUpdateNormalizedPath() {
             // given
             em.persist(directory(userId, "docs/", "", "docs"));
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -556,7 +557,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should mark resource for deletion")
         void shouldMarkForDeletion() {
             // given
-            em.persist(file(userId, "docs/file.txt", "docs/", "file.txt", 10));
+            em.persist(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 10));
             em.flush();
 
             // when
@@ -575,9 +576,9 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should delete multiple resources by normalized paths")
         void shouldDeleteMultiplePaths() {
             // given
-            em.persist(file(userId, "a.txt", "", "a.txt", 10));
-            em.persist(file(userId, "b.txt", "", "b.txt", 20));
-            em.persist(file(userId, "c.txt", "", "c.txt", 30));
+            em.persist(file(userId, "key1", "a.txt", "", "a.txt", 10));
+            em.persist(file(userId, "key2", "b.txt", "", "b.txt", 20));
+            em.persist(file(userId, "key3", "c.txt", "", "c.txt", 30));
             em.flush();
 
             // when
@@ -597,8 +598,8 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should delete resources by ids")
         void shouldDeleteByIds() {
             // given
-            ResourceMetadata f1 = file(userId, "a.txt", "", "a.txt", 10);
-            ResourceMetadata f2 = file(userId, "b.txt", "", "b.txt", 20);
+            ResourceMetadata f1 = file(userId, "key1", "a.txt", "", "a.txt", 10);
+            ResourceMetadata f2 = file(userId, "key2", "b.txt", "", "b.txt", 20);
             em.persist(f1);
             em.persist(f2);
             em.flush();
@@ -679,7 +680,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldReturnEmptySet_whenAllPathsExist() {
             // given
             em.persistAndFlush(directory(userId, "docs/", "", "docs"));
-            em.persistAndFlush(file(userId, "docs/file.txt", "docs/", "file.txt", 100L));
+            em.persistAndFlush(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 100L));
             Set<String> candidates = Set.of("docs/", "docs/file.txt");
 
             // when
@@ -823,8 +824,8 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldSaveAllFiles() {
             // given
             List<FileRowDto> files = List.of(
-                    new FileRowDto("docs/a.txt", "docs/a.txt", "docs/", "a.txt", 100L),
-                    new FileRowDto("docs/b.txt", "docs/b.txt", "docs/", "b.txt", 200L)
+                    new FileRowDto("key-123", "docs/a.txt", "docs/a.txt", "docs/", "a.txt", 100L),
+                    new FileRowDto("key-456", "docs/b.txt", "docs/b.txt", "docs/", "b.txt", 200L)
             );
 
             // when
@@ -844,7 +845,7 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldSaveWithCorrectTypeAndSize() {
             // given
             List<FileRowDto> files = List.of(
-                    new FileRowDto("docs/file.txt", "docs/file.txt", "docs/", "file.txt", 512L)
+                    new FileRowDto("key-123", "docs/file.txt", "docs/file.txt", "docs/", "file.txt", 512L)
             );
 
             // when
@@ -873,22 +874,23 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
     }
 
     @Nested
-    class MarkForDeletionAndSumSize {
+    class MarkForDeletionAndCollectKeys {
 
         @Test
         @DisplayName("Should mark files for deletion and return their summary size")
         void shouldMarkFilesAndReturnTotalSize() {
             // given
-            em.persistAndFlush(file(userId, "docs/a.txt", "docs/", "a.txt", 100L));
-            em.persistAndFlush(file(userId, "docs/b.txt", "docs/", "b.txt", 200L));
+            em.persistAndFlush(file(userId, "key1", "docs/a.txt", "docs/", "a.txt", 100L));
+            em.persistAndFlush(file(userId, "key2", "docs/b.txt", "docs/", "b.txt", 200L));
 
             // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
+            DeleteDirectoryResult result = repository.markFilesForDeletionAndCollectKeys(userId, "docs/");
             em.flush();
             em.clear();
 
             // then
-            assertThat(totalSize).isEqualTo(300L);
+            assertThat(result.totalSize()).isEqualTo(300L);
+            assertThat(result.storageKeys().size()).isEqualTo(2);
             List<ResourceMetadata> marked = getSavedList();
             assertThat(marked).allMatch(ResourceMetadata::isMarkedForDeletion);
         }
@@ -897,16 +899,16 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should mark only files under prefix when other files exists too")
         void shouldMarkOnlyFilesUnderPrefix_whenOtherFilesExist() {
             // given
-            em.persistAndFlush(file(userId, "docs/file.txt", "docs/", "file.txt", 100L));
-            em.persistAndFlush(file(userId, "images/photo.jpg", "images/", "photo.jpg", 500L));
+            em.persistAndFlush(file(userId, "key1", "docs/file.txt", "docs/", "file.txt", 100L));
+            em.persistAndFlush(file(userId, "key2", "images/photo.jpg", "images/", "photo.jpg", 500L));
 
             // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
+            DeleteDirectoryResult result = repository.markFilesForDeletionAndCollectKeys(userId, "docs/");
             em.flush();
             em.clear();
 
             // then
-            assertThat(totalSize).isEqualTo(100L);
+            assertThat(result.totalSize()).isEqualTo(100L);
             List<ResourceMetadata> all = getSavedList();
             assertThat(all).filteredOn(r -> r.getPath().startsWith("docs/"))
                     .allMatch(ResourceMetadata::isMarkedForDeletion);
@@ -919,15 +921,16 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         void shouldNotMarkDirectories_whenPrefixMatchesDirectoryToo() {
             // given
             em.persistAndFlush(directory(userId, "docs/", "", "docs"));
-            em.persistAndFlush(file(userId, "docs/file.txt", "docs/", "file.txt", 100L));
+            em.persistAndFlush(file(userId, "key", "docs/file.txt", "docs/", "file.txt", 100L));
 
             // when
-            repository.markForDeletionAndSumSize(userId, "docs/");
+            DeleteDirectoryResult result = repository.markFilesForDeletionAndCollectKeys(userId, "docs/");
             em.flush();
             em.clear();
 
             // then
             List<ResourceMetadata> all = getSavedList();
+            assertThat(result.storageKeys().size()).isEqualTo(1);
             assertThat(all).filteredOn(r -> r.getType() == ResourceType.DIRECTORY)
                     .noneMatch(ResourceMetadata::isMarkedForDeletion);
         }
@@ -936,26 +939,26 @@ class ResourceMetadataRepositoryTest extends AbstractRepositoryTest {
         @DisplayName("Should return zero when no files under prefix found")
         void shouldReturnZero_whenNoFilesUnderPrefix() {
             // given & when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
+            DeleteDirectoryResult result = repository.markFilesForDeletionAndCollectKeys(userId, "docs/");
 
             // then
-            assertThat(totalSize).isZero();
+            assertThat(result.storageKeys().size()).isZero();
         }
 
         @Test
         @DisplayName("Should not count already marked for deletion files when they match prefix too")
         void shouldNotCountAlreadyMarkedFiles_whenTheyMatchPrefix() {
             // given
-            ResourceMetadata file = file(userId, "docs/old.txt", "docs/", "old.txt", 900L);
+            ResourceMetadata file = file(userId, "key1", "docs/old.txt", "docs/", "old.txt", 900L);
             file.setMarkedForDeletion(true);
             em.persistAndFlush(file);
-            em.persistAndFlush(file(userId, "docs/new.txt", "docs/", "new.txt", 100L));
+            em.persistAndFlush(file(userId, "key2", "docs/new.txt", "docs/", "new.txt", 100L));
 
             // when
-            long totalSize = repository.markForDeletionAndSumSize(userId, "docs/");
+            DeleteDirectoryResult result = repository.markFilesForDeletionAndCollectKeys(userId, "docs/");
 
             // then
-            assertThat(totalSize).isEqualTo(1000L);
+            assertThat(result.totalSize()).isEqualTo(1000L);
         }
     }
 }

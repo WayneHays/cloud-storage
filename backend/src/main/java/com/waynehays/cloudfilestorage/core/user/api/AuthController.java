@@ -1,7 +1,10 @@
-package com.waynehays.cloudfilestorage.core.user;
+package com.waynehays.cloudfilestorage.core.user.api;
 
-import com.waynehays.cloudfilestorage.core.user.dto.request.SignInRequest;
-import com.waynehays.cloudfilestorage.core.user.dto.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
+import com.waynehays.cloudfilestorage.core.user.UserMapper;
+import com.waynehays.cloudfilestorage.core.user.UserServiceApi;
+import com.waynehays.cloudfilestorage.core.user.api.dto.SignInRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.SignUpRequest;
 import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 class AuthController implements AuthControllerApi {
-    private final UserMapper mapper;
+    private final UserMapper userMapper;
     private final UserServiceApi userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
@@ -50,7 +53,7 @@ class AuthController implements AuthControllerApi {
                           HttpServletResponse response) {
         Authentication authentication = processLogin(signInRequest.username(), signInRequest.password(), request, response);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return mapper.toDto(userDetails);
+        return userMapper.toDto(userDetails);
     }
 
     private Authentication processLogin(String username, String password,
@@ -65,7 +68,7 @@ class AuthController implements AuthControllerApi {
         securityContextRepository.saveContext(context, request, response);
 
         if (authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
-            log.info("User signed in: id={}, username={}", userDetails.id(), username);
+            log.info("User signed in: userId={}, username={}", userDetails.id(), username);
         }
         return authentication;
     }

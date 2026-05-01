@@ -18,7 +18,7 @@ class UploadContext {
     private final long totalSize;
 
     private final List<ResourceDto> result = Collections.synchronizedList(new ArrayList<>());
-    private final List<String> uploadedToStoragePaths = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> uploadedStorageKeys = Collections.synchronizedList(new ArrayList<>());
     private final List<String> savedToDbPaths = Collections.synchronizedList(new ArrayList<>());
 
     private volatile boolean quotaReserved;
@@ -49,20 +49,20 @@ class UploadContext {
         savedToDbPaths.add(path);
     }
 
-    void addUploadedToStoragePath(String path) {
-        uploadedToStoragePaths.add(path);
+    void addUploadedStorageKey(String key) {
+        uploadedStorageKeys.add(key);
     }
 
     void markQuotaReserved() {
         quotaReserved = true;
     }
 
-    UploadRollbackDto rollbackSnapshot() {
+    UploadRollbackDto rollbackDto() {
         return new UploadRollbackDto(
                 userId,
                 totalSize,
                 quotaReserved,
-                List.copyOf(uploadedToStoragePaths),
+                List.copyOf(uploadedStorageKeys),
                 List.copyOf(savedToDbPaths)
         );
     }

@@ -2,10 +2,8 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
-import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.core.quota.exception.QuotaLimitException;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
@@ -22,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,357 +34,132 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ResourceUploadServiceTest extends BaseUploadStepTest{
+class ResourceUploadServiceTest {
+    private static final Long USER_ID = 1L;
 
     @Mock
-    private BatchInsertMapper batchInsertMapper;
-
-    @Mock
-    private ResourceDtoMapper resourceDtoMapper;
-
-    @Mock
-    private ResourceStorageServiceApi storageService;
+    private ResourceMetadataServiceApi metadataService;
 
     @Mock
     private StorageQuotaServiceApi quotaService;
 
     @Mock
-    private ResourceMetadataServiceApi metadataService;
+    private ResourceStorageServiceApi storageService;
+
+    @Mock
+    private ResourceDtoMapper resourceDtoMapper;
+
+    @Mock
+    private BatchInsertMapper batchInsertMapper;
 
     private ResourceUploadService service;
 
     @BeforeEach
     void setUp() {
-        ExecutorService uploadExecutor = Executors.newSingleThreadExecutor();
         List<UploadStep> steps = List.of(
                 new ValidateStep(metadataService),
                 new ReserveQuotaStep(quotaService),
-                new StorageUploadStep(storageService, resourceDtoMapper, uploadExecutor),
+                new StorageUploadStep(storageService, resourceDtoMapper,
+                        Executors.newSingleThreadExecutor()),
                 new SaveMetadataStep(batchInsertMapper, metadataService),
                 new CreateDirectoriesStep(batchInsertMapper, resourceDtoMapper, metadataService)
         );
         service = new ResourceUploadService(steps);
     }
 
+    private UploadObjectDto uploadObject(String storageKey, String fullPath, long size) {
+        return new UploadObjectDto(
+                storageKey, "file.txt", "file.txt", "", fullPath,
+                size, "text/plain", InputStream::nullInputStream);
+    }
+
     @Nested
     class SuccessfulUpload {
 
         @Test
-        @DisplayName("Should reserve quota, upload resource and save metadata")
-        void shouldUploadResource() {
+        @DisplayName("Should execute all steps and return results")
+        void shouldExecuteAllStepsAndReturnResults() {
             // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/file.txt", "file.txt", 100L, ResourceType.FILE);
+            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
+            ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of("docs/"));
-            when(resourceDtoMapper.directoriesFromPaths(anySet()))
-                    .thenReturn(List.of());
-            when(batchInsertMapper.toDirectoryRows(anySet()))
-                    .thenReturn(List.of());
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
+            when(metadataService.findMissingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
 
             // when
-            List<ResourceDto> result = service.upload(USER_ID, List.of(object));
+            List<ResourceDto> result = service.upload(USER_ID, List.of(obj));
 
             // then
+            assertThat(result).containsExactly(dto);
             verify(quotaService).reserveSpace(USER_ID, 100L);
-            verify(storageService).putObject(
-                    USER_ID,
-                    object.fullPath(),
-                    object.size(),
-                    object.contentType(),
-                    object.inputStreamSupplier());
+            verify(storageService).putObject(eq(USER_ID), eq("key-1"), eq(100L), eq("text/plain"), any());
             verify(metadataService).saveFiles(eq(USER_ID), anyList());
-            assertThat(result).contains(fileDto);
-        }
-
-        @Test
-        @DisplayName("Should upload multiple files and return all results")
-        void shouldUploadMultipleFiles() {
-            // given
-            UploadObjectDto object1 = new UploadObjectDto(
-                    "a.txt", "a.txt", "docs/", "docs/a.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            UploadObjectDto object2 = new UploadObjectDto(
-                    "b.txt", "b.txt", "work/", "work/b.txt",
-                    200L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
-            ResourceDto fileDto2 = new ResourceDto("work/", "b.txt", 200L, ResourceType.FILE);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L))
-                    .thenReturn(fileDto1);
-            when(resourceDtoMapper.fileFromPath("work/b.txt", 200L))
-                    .thenReturn(fileDto2);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-
-            // when
-            List<ResourceDto> result = service.upload(USER_ID, List.of(object1, object2));
-
-            // then
-            verify(quotaService).reserveSpace(USER_ID, 300L);
-            verify(storageService).putObject(
-                    USER_ID,
-                    object1.fullPath(),
-                    object1.size(),
-                    object1.contentType(),
-                    object1.inputStreamSupplier());
-            verify(storageService).putObject(
-                    USER_ID,
-                    object2.fullPath(),
-                    object2.size(),
-                    object2.contentType(),
-                    object2.inputStreamSupplier());
-            assertThat(result).containsExactlyInAnyOrder(fileDto1, fileDto2);
-        }
-
-        @Test
-        @DisplayName("Should skip directory creation when uploading file to root")
-        void shouldSkipDirectoryCreationWhenUploadingToRoot() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "", "file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("", "file.txt", 100L, ResourceType.FILE);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-
-            // when
-            List<ResourceDto> result = service.upload(USER_ID, List.of(object));
-
-            // then
-            verify(metadataService, never()).findMissingPaths(anyLong(), anySet());
-            verify(metadataService, never()).saveDirectories(anyLong(), anyList());
-            assertThat(result).containsExactly(fileDto);
         }
     }
 
     @Nested
-    class Validation {
+    class ValidationFailure {
 
         @Test
-        @DisplayName("Should throw exception when resource already exists")
-        void shouldThrowWhenExists() {
+        @DisplayName("Should throw and not reserve quota when duplicates found")
+        void shouldThrowWithoutReservingQuota() {
             // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-
+            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
             when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
                     .thenReturn(Set.of("docs/file.txt"));
 
             // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
                     .isInstanceOf(ResourceAlreadyExistsException.class);
-            verifyNoInteractions(quotaService);
-            verifyNoInteractions(storageService);
-        }
-
-        @Test
-        @DisplayName("Should throw exception when not enough storage space")
-        void shouldThrowWhenNotEnoughQuota() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            doThrow(new QuotaLimitException(100L, 50L))
-                    .when(quotaService).reserveSpace(USER_ID, 100L);
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(QuotaLimitException.class);
-            verifyNoInteractions(storageService);
+            verify(quotaService, never()).reserveSpace(anyLong(), anyLong());
+            verify(storageService, never()).putObject(any(), any(), anyLong(), any(), any());
         }
     }
 
     @Nested
-    class Rollback {
+    class StorageFailure {
 
         @Test
-        @DisplayName("Should rollback storage when storage save fails")
-        void shouldRollbackOnStorageFailure() {
+        @DisplayName("Should rollback quota when storage upload fails")
+        void shouldRollbackQuotaWhenStorageFails() {
             // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
+            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
             doThrow(new ResourceStorageException("MinIO error"))
-                    .when(storageService).putObject(
-                            USER_ID,
-                            object.fullPath(),
-                            object.size(),
-                            object.contentType(),
-                            object.inputStreamSupplier());
+                    .when(storageService).putObject(any(), any(), anyLong(), any(), any());
 
             // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
                     .isInstanceOf(ResourceStorageException.class);
             verify(quotaService).releaseSpace(USER_ID, 100L);
-        }
-
-        @Test
-        @DisplayName("Should rollback metadata and storage when metadata save fails")
-        void shouldRollbackOnMetadataFailure() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            doThrow(new RuntimeException("DB error"))
-                    .when(metadataService).saveFiles(eq(USER_ID), anyList());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(RuntimeException.class);
-            verify(storageService).deleteObjects(anyMap());
-            verify(quotaService).releaseSpace(USER_ID, 100L);
-        }
-
-        @Test
-        @DisplayName("Should rollback files, storage and quota when directory save fails")
-        void shouldRollbackWhenDirectorySaveFails() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of("docs/"));
-            when(batchInsertMapper.toDirectoryRows(anySet()))
-                    .thenReturn(List.of());
-            doThrow(new RuntimeException("DB error"))
-                    .when(metadataService).saveDirectories(eq(USER_ID), anyList());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(RuntimeException.class);
-            verify(metadataService).deleteByPaths(eq(USER_ID), anyList());
-            verify(storageService).deleteObjects(anyMap());
-            verify(quotaService).releaseSpace(USER_ID, 100L);
-        }
-
-        @Test
-        @DisplayName("Should not release quota when reservation itself failed")
-        void shouldNotReleaseQuotaWhenReservationFailed() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            doThrow(new QuotaLimitException(100L, 50L))
-                    .when(quotaService).reserveSpace(USER_ID, 100L);
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(QuotaLimitException.class);
-            verify(quotaService, never()).releaseSpace(anyLong(), anyLong());
-            verifyNoInteractions(storageService);
-        }
-
-        @Test
-        @DisplayName("Should continue rollback when storage cleanup fails")
-        void shouldContinueRollbackWhenStorageCleanupFails() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            doThrow(new RuntimeException("DB error"))
-                    .when(metadataService).saveFiles(eq(USER_ID), anyList());
-            doThrow(new RuntimeException("Storage cleanup also failed"))
-                    .when(storageService).deleteObjects(anyMap());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object)))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("DB error");
-            verify(quotaService).releaseSpace(USER_ID, 100L);
+            verify(metadataService, never()).saveFiles(anyLong(), anyList());
         }
 
         @Test
         @DisplayName("Should rollback partially uploaded files when one storage upload fails")
         void shouldRollbackPartialStorageUpload() {
             // given
-            UploadObjectDto object1 = new UploadObjectDto(
-                    "a.txt", "a.txt", "docs/", "docs/a.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            UploadObjectDto object2 = new UploadObjectDto(
-                    "b.txt", "b.txt", "docs/", "docs/b.txt",
-                    200L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
+            UploadObjectDto obj1 = uploadObject("key-1", "docs/a.txt", 100);
+            UploadObjectDto obj2 = uploadObject("key-2", "docs/b.txt", 200);
+            ResourceDto dto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
 
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L))
-                    .thenReturn(fileDto1);
-            doNothing().when(storageService).putObject(
-                    eq(USER_ID),
-                    eq(object1.fullPath()),
-                    eq(object1.size()),
-                    eq(object1.contentType()),
-                    any());
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L)).thenReturn(dto1);
+            doNothing().when(storageService).putObject(eq(USER_ID), eq("key-1"), eq(100L), eq("text/plain"), any());
             doThrow(new ResourceStorageException("MinIO error"))
-                    .when(storageService).putObject(
-                            eq(USER_ID),
-                            eq(object2.fullPath()),
-                            eq(object2.size()),
-                            eq(object2.contentType()),
-                            any());
+                    .when(storageService).putObject(eq(USER_ID), eq("key-2"), eq(200L), eq("text/plain"), any());
 
             // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(object1, object2)))
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj1, obj2)))
                     .isInstanceOf(ResourceStorageException.class);
 
             verify(storageService).deleteObjects(argThat(map ->
                     map.containsKey(USER_ID)
-                    && map.get(USER_ID).contains("docs/a.txt")
+                    && map.get(USER_ID).contains("key-1")
             ));
             verify(quotaService).releaseSpace(USER_ID, 300L);
             verify(metadataService, never()).saveFiles(anyLong(), anyList());
@@ -396,65 +167,29 @@ class ResourceUploadServiceTest extends BaseUploadStepTest{
     }
 
     @Nested
-    class CreateMissingDirectories {
+    class MetadataFailure {
 
         @Test
-        @DisplayName("Should save only missing directories")
-        void shouldSaveOnlyMissingDirectories() {
+        @DisplayName("Should rollback storage and quota when metadata save fails")
+        void shouldRollbackStorageAndQuotaWhenMetadataFails() {
             // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/sub/", "docs/sub/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/sub/", "file.txt", 100L, ResourceType.FILE);
-            List<DirectoryRowDto> missingRows = List.of(
-                    new DirectoryRowDto("docs/sub/","docs/sub/", "docs/", "sub")
-            );
+            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
+            ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
 
-            when(resourceDtoMapper.fileFromPath("docs/sub/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of("docs/sub/"));
-            when(batchInsertMapper.toDirectoryRows(Set.of("docs/sub/")))
-                    .thenReturn(missingRows);
-            when(resourceDtoMapper.directoriesFromPaths(anySet()))
-                    .thenReturn(List.of());
+            when(metadataService.findExistingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
+            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
+            doThrow(new RuntimeException("DB error"))
+                    .when(metadataService).saveFiles(eq(USER_ID), anyList());
 
-            // when
-            service.upload(USER_ID, List.of(object));
+            // when & then
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
+                    .isInstanceOf(RuntimeException.class);
 
-            // then
-            verify(batchInsertMapper).toDirectoryRows(Set.of("docs/sub/"));
-            verify(metadataService).saveDirectories(USER_ID, missingRows);
-        }
-
-        @Test
-        @DisplayName("Should not save directories when all already exists")
-        void shouldNotSaveDirectoriesWhenAllAlreadyExists() {
-            // given
-            UploadObjectDto object = new UploadObjectDto(
-                    "file.txt", "file.txt", "docs/", "docs/file.txt",
-                    100L, "text/plain", InputStream::nullInputStream);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L))
-                    .thenReturn(fileDto);
-            when(batchInsertMapper.toFileRows(anyList()))
-                    .thenReturn(List.of());
-            when(metadataService.findExistingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
-                    .thenReturn(Set.of());
-
-            // when
-            service.upload(USER_ID, List.of(object));
-
-            // then
-            verify(metadataService, never()).saveDirectories(anyLong(), anyList());
-            verify(batchInsertMapper, never()).toDirectoryRows(anySet());
+            verify(storageService).deleteObjects(argThat(map ->
+                    map.containsKey(USER_ID)
+                    && map.get(USER_ID).contains("key-1")
+            ));
+            verify(quotaService).releaseSpace(USER_ID, 100L);
         }
     }
 }

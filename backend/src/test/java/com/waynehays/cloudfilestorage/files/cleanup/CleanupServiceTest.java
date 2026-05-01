@@ -1,10 +1,10 @@
 package com.waynehays.cloudfilestorage.files.cleanup;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.core.quota.dto.SpaceReleaseDto;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.core.quota.dto.SpaceReleaseDto;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,8 +46,8 @@ class CleanupServiceTest {
     @InjectMocks
     private CleanupService service;
 
-    private ResourceMetadataDto file(Long id, Long userId, String path, long size) {
-        return new ResourceMetadataDto(id, userId, path, "parent/", "name", size, ResourceType.FILE);
+    private ResourceMetadataDto file(Long id, Long userId, String storageKey, String path, long size) {
+        return new ResourceMetadataDto(id, userId, storageKey, path, "parent/", "name", size, ResourceType.FILE);
     }
 
     @Nested
@@ -74,8 +74,8 @@ class CleanupServiceTest {
         @DisplayName("Should delete from storage, release quotas and delete metadata")
         void shouldCleanupSuccessfully() {
             // given
-            ResourceMetadataDto file1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto file2 = file(2L, 10L, "b.txt", 200L);
+            ResourceMetadataDto file1 = file(1L, 10L, "key1","a.txt", 100L);
+            ResourceMetadataDto file2 = file(2L, 10L, "key2","b.txt", 200L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(file1, file2))
                     .thenReturn(List.of());
@@ -88,7 +88,7 @@ class CleanupServiceTest {
             ArgumentCaptor<Map<Long, List<String>>> storageCaptor = ArgumentCaptor.forClass(Map.class);
             verify(storageService).deleteObjects(storageCaptor.capture());
             assertThat(storageCaptor.getValue())
-                    .containsExactlyEntriesOf(Map.of(10L, List.of("a.txt", "b.txt")));
+                    .containsExactlyEntriesOf(Map.of(10L, List.of("key1", "key2")));
 
             ArgumentCaptor<List<SpaceReleaseDto>> quotaCaptor = ArgumentCaptor.captor();
             verify(quotaService).batchReleaseUsedSpace(quotaCaptor.capture());
@@ -102,9 +102,9 @@ class CleanupServiceTest {
         @DisplayName("Should group paths by userId for storage deletion")
         void shouldGroupPathsByUserId() {
             // given
-            ResourceMetadataDto u1f1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto u2f1 = file(2L, 20L, "b.txt", 200L);
-            ResourceMetadataDto u1f2 = file(3L, 10L, "c.txt", 300L);
+            ResourceMetadataDto u1f1 = file(1L, 10L, "key1", "a.txt", 100L);
+            ResourceMetadataDto u2f1 = file(2L, 20L, "key2", "b.txt", 200L);
+            ResourceMetadataDto u1f2 = file(3L, 10L, "key3", "c.txt", 300L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(u1f1, u2f1, u1f2))
                     .thenReturn(List.of());
@@ -115,8 +115,8 @@ class CleanupServiceTest {
             // then
             verify(storageService).deleteObjects(argThat(map ->
                     map.size() == 2
-                    && map.get(10L).containsAll(List.of("a.txt", "c.txt"))
-                    && map.get(20L).contains("b.txt")
+                    && map.get(10L).containsAll(List.of("key1", "key3"))
+                    && map.get(20L).contains("key2")
             ));
         }
 
@@ -124,9 +124,9 @@ class CleanupServiceTest {
         @DisplayName("Should group quotas by user when releasing space")
         void shouldGroupQuotasByUser() {
             // given
-            ResourceMetadataDto u1f1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto u1f2 = file(2L, 10L, "b.txt", 200L);
-            ResourceMetadataDto u2f1 = file(3L, 20L, "c.txt", 500L);
+            ResourceMetadataDto u1f1 = file(1L, 10L, "key1","a.txt", 100L);
+            ResourceMetadataDto u1f2 = file(2L, 10L, "key2","b.txt", 200L);
+            ResourceMetadataDto u2f1 = file(3L, 20L, "key3","c.txt", 500L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(u1f1, u1f2, u2f1))
                     .thenReturn(List.of());
@@ -152,9 +152,9 @@ class CleanupServiceTest {
         @DisplayName("Should loop until batch smaller than limit is returned")
         void shouldLoopUntilPartialBatch() {
             // given
-            ResourceMetadataDto f1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto f2 = file(2L, 10L, "b.txt", 200L);
-            ResourceMetadataDto f3 = file(3L, 10L, "c.txt", 300L);
+            ResourceMetadataDto f1 = file(1L, 10L, "key1","a.txt", 100L);
+            ResourceMetadataDto f2 = file(2L, 10L, "key2","b.txt", 200L);
+            ResourceMetadataDto f3 = file(3L, 10L, "key3","c.txt", 300L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(f1, f2))
                     .thenReturn(List.of(f3));
@@ -192,7 +192,7 @@ class CleanupServiceTest {
         @DisplayName("Should skip quotas and metadata operations when storage delete fails")
         void shouldSkipWhenStorageFails() {
             // given
-            ResourceMetadataDto f1 = file(1L, 10L, "a.txt", 100L);
+            ResourceMetadataDto f1 = file(1L, 10L, "key1","a.txt", 100L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(f1));
             doThrow(new RuntimeException("MinIO error"))
@@ -211,8 +211,8 @@ class CleanupServiceTest {
         @DisplayName("Should stop pagination loop when storage fails")
         void shouldStopLoopOnStorageFailure() {
             // given
-            ResourceMetadataDto f1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto f2 = file(2L, 10L, "b.txt", 200L);
+            ResourceMetadataDto f1 = file(1L, 10L, "key1","a.txt", 100L);
+            ResourceMetadataDto f2 = file(2L, 10L, "key2","b.txt", 200L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(f1, f2));
             doThrow(new RuntimeException("MinIO error"))
@@ -229,7 +229,7 @@ class CleanupServiceTest {
         @DisplayName("Should still delete metadata when quota release fails")
         void shouldContinueWhenQuotaReleaseFails() {
             // given
-            ResourceMetadataDto f1 = file(1L, 10L, "a.txt", 100L);
+            ResourceMetadataDto f1 = file(1L, 10L, "key1","a.txt", 100L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(f1))
                     .thenReturn(List.of());
@@ -249,8 +249,8 @@ class CleanupServiceTest {
         @DisplayName("Should stop pagination loop when metadata delete fails")
         void shouldStopLoopOnMetadataDeleteFailure() {
             // given
-            ResourceMetadataDto f1 = file(1L, 10L, "a.txt", 100L);
-            ResourceMetadataDto f2 = file(2L, 10L, "b.txt", 200L);
+            ResourceMetadataDto f1 = file(1L, 10L, "key1","a.txt", 100L);
+            ResourceMetadataDto f2 = file(2L, 10L, "key2","b.txt", 200L);
             when(metadataService.findFilesMarkedForDeletion(CLEANUP_LIMIT))
                     .thenReturn(List.of(f1, f2));
             doThrow(new RuntimeException("DB error"))

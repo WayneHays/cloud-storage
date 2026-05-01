@@ -1,5 +1,6 @@
-package com.waynehays.cloudfilestorage.core.user;
+package com.waynehays.cloudfilestorage.core.user.api;
 
+import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
 import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;

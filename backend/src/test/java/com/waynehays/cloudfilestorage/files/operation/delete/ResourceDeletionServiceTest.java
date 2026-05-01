@@ -2,6 +2,7 @@ package com.waynehays.cloudfilestorage.files.operation.delete;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
 import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
@@ -14,6 +15,9 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
@@ -42,15 +46,12 @@ class ResourceDeletionServiceTest {
     class DeleteFile {
 
         @Test
-        @DisplayName("""
-                Should mark for deletion, then delete from storage, then delete metadata from database,
-                then release quota
-                """)
+        @DisplayName("Should mark for deletion, delete from storage by storageKey, delete metadata, release quota")
         void shouldCorrectlyDeleteFile() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/file.txt", "docs/", "file.txt",
-                    500L, ResourceType.FILE);
+                    1L, USER_ID, "abc-123", "docs/file.txt", "docs/",
+                    "file.txt", 500L, ResourceType.FILE);
 
             when(metadataService.findOrThrow(USER_ID, "docs/file.txt")).thenReturn(file);
 
@@ -60,7 +61,7 @@ class ResourceDeletionServiceTest {
             // then
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
             inOrder.verify(metadataService).markForDeletion(USER_ID, "docs/file.txt");
-            inOrder.verify(storageService).deleteObject(USER_ID, "docs/file.txt");
+            inOrder.verify(storageService).deleteObject(USER_ID, "abc-123");
             inOrder.verify(metadataService).deleteFileByPath(USER_ID, "docs/file.txt");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 500L);
         }
@@ -70,47 +71,46 @@ class ResourceDeletionServiceTest {
     class DeleteDirectory {
 
         @Test
-        @DisplayName("""
-                Should mark for deletion and sum content sizes,
-                then delete from storage, then delete metadata from database, then release quota
-                """)
-        void shouldMarkAndSumThenDeleteFromStorageThenDeleteMetadataThenReleaseQuota() {
+        @DisplayName("Should collect storage keys, delete from storage by keys, delete metadata, release quota")
+        void shouldCollectKeysThenDeleteFromStorageThenDeleteMetadataThenReleaseQuota() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
-                    2L, USER_ID, "docs/", "", "docs",
-                    null, ResourceType.DIRECTORY);
+                    2L, USER_ID, null, "docs/", "",
+                    "docs", null, ResourceType.DIRECTORY);
+            DeleteDirectoryResult deleteResult = new DeleteDirectoryResult(1500L, List.of("key-1", "key-2"));
 
             when(metadataService.findOrThrow(USER_ID, "docs/")).thenReturn(dir);
-            when(metadataService.markDirectoryForDeletionAndSumSize(USER_ID, "docs/")).thenReturn(1500L);
+            when(metadataService.markDirectoryForDeletionAndCollectKeys(USER_ID, "docs/")).thenReturn(deleteResult);
 
             // when
             service.delete(USER_ID, "docs/");
 
             // then
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
-            inOrder.verify(metadataService).markDirectoryForDeletionAndSumSize(USER_ID, "docs/");
-            inOrder.verify(storageService).deleteByPrefix(USER_ID, "docs/");
+            inOrder.verify(metadataService).markDirectoryForDeletionAndCollectKeys(USER_ID, "docs/");
+            inOrder.verify(storageService).deleteObjects(Map.of(USER_ID, List.of("key-1", "key-2")));
             inOrder.verify(metadataService).deleteDirectoryMetadata(USER_ID, "docs/");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 1500L);
         }
 
         @Test
-        @DisplayName("Should not release quota space when directory is empty")
-        void shouldSkipReleaseSpaceWhenDirectoryIsEmpty() {
+        @DisplayName("Should not call storage or release quota when directory is empty")
+        void shouldSkipStorageAndQuotaWhenDirectoryIsEmpty() {
             // given
             ResourceMetadataDto dir = new ResourceMetadataDto(
-                    2L, USER_ID, "empty/", "", "empty",
-                    null, ResourceType.DIRECTORY);
+                    2L, USER_ID, null, "empty/", "",
+                    "empty", null, ResourceType.DIRECTORY);
+            DeleteDirectoryResult deleteResult = new DeleteDirectoryResult(0L, List.of());
 
             when(metadataService.findOrThrow(USER_ID, "empty/")).thenReturn(dir);
-            when(metadataService.markDirectoryForDeletionAndSumSize(USER_ID, "empty/")).thenReturn(0L);
+            when(metadataService.markDirectoryForDeletionAndCollectKeys(USER_ID, "empty/")).thenReturn(deleteResult);
 
             // when
             service.delete(USER_ID, "empty/");
 
             // then
-            verify(storageService).deleteByPrefix(USER_ID, "empty/");
             verify(metadataService).deleteDirectoryMetadata(USER_ID, "empty/");
+            verifyNoInteractions(storageService);
             verifyNoInteractions(quotaService);
         }
 

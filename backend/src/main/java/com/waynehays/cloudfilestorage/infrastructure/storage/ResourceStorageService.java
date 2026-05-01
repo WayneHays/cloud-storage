@@ -19,10 +19,10 @@ class ResourceStorageService implements ResourceStorageServiceApi {
     private final ResourceStorageApi storage;
 
     @Override
-    public void putObject(Long userId, String path, long size, String contentType, InputStreamSupplier inputStreamSupplier) {
-        log.debug("Start upload object to storage: path={}", path);
+    public void putObject(Long userId, String storageKey, long size, String contentType, InputStreamSupplier inputStreamSupplier) {
+        log.debug("Start upload object to storage: path={}", storageKey);
 
-        String key = resolveKey(userId, path);
+        String key = resolveKey(userId, storageKey);
 
         try (InputStream inputStream = inputStreamSupplier.get()) {
             storage.putObject(inputStream, key, size, contentType);
@@ -30,23 +30,23 @@ class ResourceStorageService implements ResourceStorageServiceApi {
             throw new ResourceStorageException("Failed to put object to storage", e);
         }
 
-        log.debug("Finished upload object to storage: path={}", path);
+        log.debug("Finished upload object to storage: path={}", storageKey);
     }
 
     @Override
-    public Optional<StorageItem> getObject(Long userId, String path) {
-        String key = resolveKey(userId, path);
+    public Optional<StorageItem> getObject(Long userId, String storageKey) {
+        String key = resolveKey(userId, storageKey);
         return storage.getObject(key);
     }
 
     @Override
-    public void deleteObject(Long userId, String path) {
-        log.debug("Start delete object from storage: path={}", path);
+    public void deleteObject(Long userId, String storageKey) {
+        log.debug("Start delete object from storage: path={}", storageKey);
 
-        String key = resolveKey(userId, path);
+        String key = resolveKey(userId, storageKey);
         storage.deleteObject(key);
 
-        log.debug("Finished delete object from storage: path={}", path);
+        log.debug("Finished delete object from storage: path={}", storageKey);
     }
 
     @Override
@@ -60,27 +60,6 @@ class ResourceStorageService implements ResourceStorageServiceApi {
         storage.deleteList(keys);
 
         log.debug("Finished batch delete objects from storage: {} objects removed", keys.size());
-    }
-
-    @Override
-    public void deleteByPrefix(Long userId, String path) {
-        log.debug("Start delete objects by key prefix from storage");
-
-        String key = resolveKey(userId, path);
-        storage.deleteByPrefix(key);
-
-        log.debug("Finished delete objects by key prefix from storage");
-    }
-
-    @Override
-    public void moveObject(Long userId, String pathFrom, String pathTo) {
-        log.debug("Start move object in storage: from={}, to={}", pathFrom, pathTo);
-
-        String keyFrom = resolveKey(userId, pathFrom);
-        String keyTo = resolveKey(userId, pathTo);
-        storage.moveObject(keyFrom, keyTo);
-
-        log.debug("Finished move object in storage: from={}, to={}", pathFrom, pathTo);
     }
 
     private String resolveKey(Long userId, String path) {

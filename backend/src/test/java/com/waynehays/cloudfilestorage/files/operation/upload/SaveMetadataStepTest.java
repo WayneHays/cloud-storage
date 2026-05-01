@@ -16,7 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SaveMetadataStepTest extends BaseUploadStepTest{
+class SaveMetadataStepTest extends BaseUploadStepTest {
 
     @Mock
     private BatchInsertMapper batchInsertMapper;
@@ -28,16 +28,16 @@ class SaveMetadataStepTest extends BaseUploadStepTest{
     private SaveMetadataStep step;
 
     @Test
-    @DisplayName("Should save files and register paths for rollback")
+    @DisplayName("Should save files with storageKeys and register paths for rollback")
     void shouldSaveFilesAndRegisterPathsForRollback() {
         // given
         UploadContext context = uploadContext(
-                uploadObject("user/1/file1.txt", 100),
-                uploadObject("user/1/file2.txt", 200)
+                uploadObject("key-1", "user/1/file1.txt", 100),
+                uploadObject("key-2", "user/1/file2.txt", 200)
         );
         List<FileRowDto> fileRows = List.of(
-                fileRowDto("user/1/file1.txt", "file1.txt"),
-                fileRowDto("user/1/file2.txt", "file2.txt")
+                fileRowDto("user/1/file1.txt", "file1.txt", "key-1"),
+                fileRowDto("user/1/file2.txt", "file2.txt", "key-2")
         );
         when(batchInsertMapper.toFileRows(context.getObjects())).thenReturn(fileRows);
 
@@ -46,12 +46,12 @@ class SaveMetadataStepTest extends BaseUploadStepTest{
 
         // then
         verify(metadataService).saveFiles(USER_ID, fileRows);
-        assertThat(context.rollbackSnapshot().savedToDbPaths())
+        assertThat(context.rollbackDto().savedToDbPaths())
                 .containsExactlyInAnyOrder("user/1/file1.txt", "user/1/file2.txt");
     }
 
     @Test
-    @DisplayName("Should delete saved paths when paths exists")
+    @DisplayName("Should delete saved paths on rollback")
     void shouldDeleteSavedPaths_whenPathsExist() {
         // given
         UploadRollbackDto snapshot = new UploadRollbackDto(

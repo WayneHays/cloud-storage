@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.core.metadata;
 
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 
@@ -14,5 +15,5 @@ interface ResourceMetadataRepositoryCustom {
 
     void batchSaveFiles(Long userId, List<FileRowDto> files);
 
-    long markForDeletionAndSumSize(Long userId, String prefix);
+    DeleteDirectoryResult markFilesForDeletionAndCollectKeys(Long userId, String normalizedPath);
 }

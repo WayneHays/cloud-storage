@@ -117,24 +117,4 @@ class ResourceStorageServiceTest {
                 && keys.contains("user-2-files/c.txt")
         ));
     }
-
-    @Test
-    @DisplayName("deleteDirectory() should resolve key and delete by prefix")
-    void deleteDirectory_shouldResolveKeyAndDeleteByPrefix() {
-        // when
-        service.deleteByPrefix(USER_ID, "docs/");
-
-        // then
-        verify(storage).deleteByPrefix("user-1-files/docs/");
-    }
-
-    @Test
-    @DisplayName("moveObject() should resolve key from and key to and move")
-    void moveObject_shouldResolveBothKeysAndMove() {
-        // when
-        service.moveObject(USER_ID, "docs/file.txt", "images/file.txt");
-
-        // then
-        verify(storage).moveObject("user-1-files/docs/file.txt", "user-1-files/images/file.txt");
-    }
 }

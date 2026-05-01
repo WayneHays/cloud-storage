@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.files.dto.request.resource;
+package com.waynehays.cloudfilestorage.files.api.resource.dto;
 
 import com.waynehays.cloudfilestorage.infrastructure.path.ValidPath;
 import jakarta.validation.constraints.NotBlank;

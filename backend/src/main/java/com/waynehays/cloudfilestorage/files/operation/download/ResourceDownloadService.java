@@ -31,20 +31,22 @@ class ResourceDownloadService implements ResourceDownloadServiceApi {
         String resourceName = PathUtils.extractDisplayName(path);
 
         if (metadata.isFile()) {
-            return downloadFile(userId, path, resourceName);
+            return downloadFile(userId, metadata, resourceName);
         } else {
             return downloadDirectory(userId, path, resourceName);
         }
     }
 
-    private DownloadResult downloadFile(Long userId, String path, String filename) {
-        log.info("Start prepare file for download: {}", path);
+    private DownloadResult downloadFile(Long userId, ResourceMetadataDto metadata, String filename) {
+        log.info("Start prepare file for download: {}", metadata.path());
 
         InputStreamSupplier contentSupplier = () -> {
-            Optional<StorageItem> item = storageService.getObject(userId, path);
+            Optional<StorageItem> item = storageService.getObject(userId, metadata.storageKey());
+
             if (item.isEmpty()) {
-                log.error("Data inconsistency: file exists in metadata but not in storage: {}", path);
-                throw new ResourceNotFoundException("Resource not found in storage", path);
+                log.error("Data inconsistency: file exists in metadata but not in storage: path={}, storageKey={}",
+                        metadata.path(), metadata.storageKey());
+                throw new ResourceNotFoundException("Resource not found in storage", metadata.path());
             }
             return item.get().inputStream();
         };
@@ -77,7 +79,7 @@ class ResourceDownloadService implements ResourceDownloadServiceApi {
         return new ArchiveItem(
                 entryName,
                 dto.size(),
-                () -> storageService.getObject(userId, dto.path())
+                () -> storageService.getObject(userId, dto.storageKey())
                         .orElseThrow(() -> new ResourceNotFoundException("Resource not found in storage", dto.path()))
                         .inputStream());
     }

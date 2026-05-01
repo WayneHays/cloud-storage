@@ -1,7 +1,7 @@
-package com.waynehays.cloudfilestorage.core.user;
+package com.waynehays.cloudfilestorage.core.user.api;
 
-import com.waynehays.cloudfilestorage.core.user.dto.request.SignInRequest;
-import com.waynehays.cloudfilestorage.core.user.dto.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.SignInRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.SignUpRequest;
 import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
 import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
 import io.swagger.v3.oas.annotations.Operation;

@@ -2,21 +2,18 @@ package com.waynehays.cloudfilestorage.files.operation.move;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 class ResourceMoveService implements ResourceMoveServiceApi {
-    private final List<MoveStep> moveSteps;
     private final ResourceMetadataServiceApi metadataService;
     private final ResourceDtoMapper mapper;
 
@@ -24,48 +21,30 @@ class ResourceMoveService implements ResourceMoveServiceApi {
     public ResourceDto move(Long userId, String pathFrom, String pathTo) {
         log.info("Move started: from={}, to={}", pathFrom, pathTo);
 
-        ResourceMetadataDto metadata = metadataService.findOrThrow(userId, pathFrom);
-        MoveContext context = new MoveContext(userId, pathFrom, pathTo);
-        List<MoveStep> executed = new ArrayList<>();
-
-        for (MoveStep step : moveSteps) {
-            try {
-                step.execute(context);
-                executed.add(step);
-            } catch (Exception e) {
-                log.warn("Move failed at step={}, initiating rollback",
-                        step.getClass().getSimpleName());
-                MoveRollbackDto snapshot = context.rollbackSnapshot();
-
-                if (step.requiresRollback(snapshot)) {
-                    executed.add(step);
-                }
-
-                rollback(executed, snapshot);
-                throw e;
-            }
-        }
+        validate(userId, pathFrom, pathTo);
+        metadataService.moveMetadata(userId, pathFrom, pathTo);
 
         log.info("Move completed: from={}, to={}", pathFrom, pathTo);
-        return buildResult(context, metadata);
+
+        if (PathUtils.isFile(pathTo)) {
+            ResourceMetadataDto moved = metadataService.findOrThrow(userId, pathTo);
+            return mapper.fileFromPath(pathTo, moved.size());
+        }
+        return mapper.directoryFromPath(pathTo);
     }
 
-    private void rollback(List<MoveStep> executed, MoveRollbackDto snapshot) {
-        ListIterator<MoveStep> iterator = executed.listIterator(executed.size());
-        while (iterator.hasPrevious()) {
-            MoveStep step = iterator.previous();
-            try {
-                step.rollback(snapshot);
-            } catch (Exception e) {
-                log.error("Rollback failed at step={}",
-                        step.getClass().getSimpleName(), e);
+    private void validate(Long userId, String pathFrom, String pathTo) {
+        if (PathUtils.isDirectory(pathFrom)) {
+            if (PathUtils.isFile(pathTo)) {
+                throw new InvalidMoveException("Cannot move directory to file", pathFrom, pathTo);
+            }
+            if (pathTo.startsWith(pathFrom)) {
+                throw new InvalidMoveException("Cannot move directory into itself", pathFrom, pathTo);
             }
         }
-    }
 
-    private ResourceDto buildResult(MoveContext context, ResourceMetadataDto metadata) {
-        return metadata.isFile()
-                ? mapper.fileFromPath(context.getPathTo(), metadata.size())
-                : mapper.directoryFromPath(context.getPathTo());
+        if (metadataService.existsByPath(userId, pathTo)) {
+            throw new ResourceAlreadyExistsException("Resource already exists at target path", pathTo);
+        }
     }
 }

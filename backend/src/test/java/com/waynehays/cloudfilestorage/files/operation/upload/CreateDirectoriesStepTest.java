@@ -69,7 +69,7 @@ class CreateDirectoriesStepTest extends BaseUploadStepTest {
 
         // then
         verify(metadataService).saveDirectories(USER_ID, directoryRows);
-        assertThat(context.rollbackSnapshot().savedToDbPaths())
+        assertThat(context.rollbackDto().savedToDbPaths())
                 .containsExactlyInAnyOrder("user/1/a/", "user/1/a/b/");
         assertThat(context.getResult()).containsAll(dirDtos);
     }

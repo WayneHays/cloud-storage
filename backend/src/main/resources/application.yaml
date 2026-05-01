@@ -34,7 +34,6 @@ storage-quota:
   default-limit: 1GB
 
 executors:
-  move-thread-pool-size: 10
   upload-thread-pool-size: 10
 
 resource:

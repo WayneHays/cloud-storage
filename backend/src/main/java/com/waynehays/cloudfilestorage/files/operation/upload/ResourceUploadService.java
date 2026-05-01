@@ -30,7 +30,7 @@ class ResourceUploadService implements ResourceUploadServiceApi {
             } catch (Exception e) {
                 log.warn("Upload failed at step={}, initiating rollback",
                         step.getClass().getSimpleName());
-                UploadRollbackDto snapshot = context.rollbackSnapshot();
+                UploadRollbackDto snapshot = context.rollbackDto();
 
                 if (step.requiresRollback(snapshot)) {
                     executed.add(step);

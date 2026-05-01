@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -30,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class StorageUploadStepTest extends BaseUploadStepTest{
+class StorageUploadStepTest extends BaseUploadStepTest {
 
     @Mock
     private ResourceStorageServiceApi storageService;
@@ -49,12 +48,12 @@ class StorageUploadStepTest extends BaseUploadStepTest{
     }
 
     @Test
-    @DisplayName("Should upload all files and populate result")
+    @DisplayName("Should upload all files by storageKey and populate result")
     void shouldUploadAllFilesAndPopulateResult() {
         // given
         UploadContext context = uploadContext(
-                uploadObject("user/1/file1.txt", 100),
-                uploadObject("user/1/file2.txt", 200)
+                uploadObject("key-1", "user/1/file1.txt", 100),
+                uploadObject("key-2", "user/1/file2.txt", 200)
         );
         ResourceDto dto1 = fileDto("user/1/", "file1.txt", 100);
         ResourceDto dto2 = fileDto("user/1/", "file2.txt", 200);
@@ -69,8 +68,8 @@ class StorageUploadStepTest extends BaseUploadStepTest{
         verify(storageService, times(2))
                 .putObject(eq(USER_ID), anyString(), anyLong(), anyString(), any());
         assertThat(context.getResult()).containsExactlyInAnyOrder(dto1, dto2);
-        assertThat(context.rollbackSnapshot().uploadedToStoragePaths())
-                .containsExactlyInAnyOrder("user/1/file1.txt", "user/1/file2.txt");
+        assertThat(context.rollbackDto().uploadedStorageKeys())
+                .containsExactlyInAnyOrder("key-1", "key-2");
     }
 
     @Test
@@ -78,11 +77,11 @@ class StorageUploadStepTest extends BaseUploadStepTest{
     void shouldThrow_whenStorageOperationFails() {
         // given
         UploadContext context = uploadContext(
-                uploadObject("user/1/file1.txt", 100)
+                uploadObject("key-1", "user/1/file1.txt", 100)
         );
         doThrow(new ResourceStorageException("MinIO unavailable", null))
                 .when(storageService).putObject(
-                        any(), anyString(), anyByte(), anyString(), any());
+                        any(), anyString(), anyLong(), anyString(), any());
 
         // when & then
         assertThatThrownBy(() -> step.execute(context))
@@ -90,12 +89,12 @@ class StorageUploadStepTest extends BaseUploadStepTest{
     }
 
     @Test
-    @DisplayName("Should delete uploaded objects when paths exists")
-    void shouldDeleteUploadedObjects_whenPathsExist() {
+    @DisplayName("Should delete uploaded objects by storageKeys on rollback")
+    void shouldDeleteUploadedObjects_whenKeysExist() {
         // given
         UploadRollbackDto snapshot = new UploadRollbackDto(
                 USER_ID, 0L, false,
-                List.of("user/1/file1.txt", "user/1/file2.txt"),
+                List.of("key-1", "key-2"),
                 List.of()
         );
 
@@ -105,13 +104,13 @@ class StorageUploadStepTest extends BaseUploadStepTest{
         // then
         verify(storageService).deleteObjects(argThat(map ->
                 map.size() == 1
-                && map.get(1L).containsAll(List.of("user/1/file1.txt", "user/1/file2.txt"))
+                && map.get(USER_ID).containsAll(List.of("key-1", "key-2"))
         ));
     }
 
     @Test
-    @DisplayName("Should return false when no uploaded paths")
-    void shouldReturnFalse_whenNoUploadedPaths() {
+    @DisplayName("Should return false when no uploaded keys")
+    void shouldReturnFalse_whenNoUploadedKeys() {
         // given
         UploadRollbackDto snapshot = new UploadRollbackDto(
                 USER_ID, 0L, false, List.of(), List.of());

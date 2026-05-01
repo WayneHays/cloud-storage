@@ -15,6 +15,7 @@ interface BatchInsertMapper {
     default FileRowDto toFileRow(UploadObjectDto uploadObject) {
         String path = uploadObject.fullPath();
         return new FileRowDto(
+                uploadObject.storageKey(),
                 path,
                 PathUtils.normalizePath(path),
                 PathUtils.normalizePath(PathUtils.extractParentPath(path)),

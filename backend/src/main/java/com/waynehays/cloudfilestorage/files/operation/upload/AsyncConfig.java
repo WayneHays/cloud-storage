@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.files.operation;
+package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -11,11 +11,6 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 class AsyncConfig {
     private final ExecutorProperties properties;
-
-    @Bean
-    ExecutorService moveExecutor() {
-        return Executors.newFixedThreadPool(properties.moveThreadPoolSize());
-    }
 
     @Bean
     ExecutorService uploadExecutor() {

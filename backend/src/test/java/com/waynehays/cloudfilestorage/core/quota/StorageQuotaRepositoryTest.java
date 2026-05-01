@@ -43,9 +43,10 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
                 .getSingleResult();
     }
 
-    private void persistFile(Long userId, String path, long size) {
+    private void persistFile(Long userId, String storageKey, String path, long size) {
         em.persist(file(
                 userId,
+                storageKey,
                 path,
                 PathUtils.extractParentPath(path),
                 PathUtils.extractDisplayName(path),
@@ -215,8 +216,8 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
         void shouldSetUsedSpaceToSumOfFileSizes() {
             // given
             em.persist(quota(userId, 0));
-            persistFile(userId, "docs/a.txt", 100);
-            persistFile(userId, "docs/b.txt", 250);
+            persistFile(userId, "key1", "docs/a.txt", 100);
+            persistFile(userId, "key2", "docs/b.txt", 250);
 
             // when
             repository.reconcileUsedSpace(List.of(userId));
@@ -230,7 +231,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
         void shouldCorrectOverestimatedUsedSpace() {
             // given
             em.persist(quota(userId, 500));
-            persistFile(userId, "file.txt", 100);
+            persistFile(userId, "key1", "file.txt", 100);
 
             // when
             repository.reconcileUsedSpace(List.of(userId));
@@ -244,8 +245,8 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
         void shouldCorrectUnderestimatedUsedSpace() {
             // given
             em.persist(quota(userId, 50));
-            persistFile(userId, "a.txt", 100);
-            persistFile(userId, "b.txt", 200);
+            persistFile(userId, "key1", "a.txt", 100);
+            persistFile(userId, "key2", "b.txt", 200);
 
             // when
             repository.reconcileUsedSpace(List.of(userId));
@@ -273,10 +274,11 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
         void shouldExcludeFilesMarkedForDeletion() {
             // given
             em.persist(quota(userId, 0));
-            persistFile(userId, "active.txt", 100);
+            persistFile(userId, "key1", "active.txt", 100);
 
             String filename = "deleted.txt";
-            ResourceMetadata metadata = file(userId, filename, PathUtils.extractParentPath(filename),
+            ResourceMetadata metadata = file(userId, "key2", filename,
+                    PathUtils.extractParentPath(filename),
                     PathUtils.extractDisplayName(filename), 500);
             metadata.setMarkedForDeletion(true);
             em.persist(metadata);
@@ -295,7 +297,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(quota(userId, 0));
             em.persist(directory(userId, "docs/", "", "docs"));
-            persistFile(userId, "docs/file.txt", 100);
+            persistFile(userId, "key1", "docs/file.txt", 100);
 
             // when
             repository.reconcileUsedSpace(List.of(userId));
@@ -310,8 +312,8 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(quota(userId, 0));
             em.persist(quota(otherUserId, 999));
-            persistFile(userId, "a.txt", 100);
-            persistFile(otherUserId, "b.txt", 200);
+            persistFile(userId, "key1", "a.txt", 100);
+            persistFile(otherUserId, "key1", "b.txt", 200);
 
             // when
             repository.reconcileUsedSpace(List.of(userId, otherUserId));
@@ -327,7 +329,7 @@ class StorageQuotaRepositoryTest extends AbstractRepositoryTest {
             // given
             em.persist(quota(userId, 0));
             em.persist(quota(otherUserId, 999));
-            persistFile(userId, "a.txt", 100);
+            persistFile(userId, "key1", "a.txt", 100);
 
             // when
             repository.reconcileUsedSpace(List.of(userId));

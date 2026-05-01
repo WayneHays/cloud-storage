@@ -36,7 +36,7 @@ class UploadRequestValidatorTest {
     }
 
     private UploadObjectDto uploadObject(String filename, String fullPath, long size) {
-        return new UploadObjectDto(filename, filename, "", fullPath, size,
+        return new UploadObjectDto("storage-key", filename, filename, "", fullPath, size,
                 "text/plain", InputStream::nullInputStream);
     }
 

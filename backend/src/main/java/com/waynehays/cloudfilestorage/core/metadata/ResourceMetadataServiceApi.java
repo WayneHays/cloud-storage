@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.core.metadata;
 
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
@@ -25,7 +26,7 @@ public interface ResourceMetadataServiceApi {
 
     Set<String> findMissingPaths(Long userId, Set<String> paths);
 
-    long markDirectoryForDeletionAndSumSize(Long userId, String path);
+    DeleteDirectoryResult markDirectoryForDeletionAndCollectKeys(Long userId, String path);
 
     void saveFiles(Long userId, List<FileRowDto> files);
 

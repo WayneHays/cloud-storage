@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.api.directory;
 
 import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
-import com.waynehays.cloudfilestorage.files.dto.request.directory.CreateDirectoryRequest;
-import com.waynehays.cloudfilestorage.files.dto.request.directory.GetDirectoryContentRequest;
+import com.waynehays.cloudfilestorage.files.api.directory.dto.CreateDirectoryRequest;
+import com.waynehays.cloudfilestorage.files.api.directory.dto.GetDirectoryContentRequest;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.files.operation.directory.DirectoryServiceApi;
 import jakarta.validation.Valid;

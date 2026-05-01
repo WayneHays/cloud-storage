@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-storage-key-to-resource-metadata
+      author: waynehays
+      changes:
+        - addColumn:
+            tableName: resource_metadata
+            columns:
+              - column:
+                  name: storage_key
+                  type: varchar(36)
+                  constraints:
+                    nullable: true
+        - sql:
+            comment: "Files must have a storage key"
+            sql: >
+              ALTER TABLE resource_metadata
+              ADD CONSTRAINT chk_resource_metadata_file_has_storage_key
+              CHECK (type != 'FILE' OR storage_key IS NOT NULL)
+
+        - sql:
+            comment: "Directories must not have a storage key"
+            sql: >
+              ALTER TABLE resource_metadata
+              ADD CONSTRAINT chk_resource_metadata_directory_no_storage_key
+              CHECK (type != 'DIRECTORY' OR storage_key IS NULL)
+
+        - addUniqueConstraint:
+            tableName: resource_metadata
+            columnNames: user_id, storage_key
+            constraintName: uq_resource_metadata_user_id_storage_key

@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation;
 
+import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -21,7 +21,7 @@ class ResourceDtoMapperTest {
     void shouldMapFileWithOriginalName() {
         // given
         ResourceMetadataDto dto = new ResourceMetadataDto(
-                1L, 10L, "docs/report.pdf", "docs/", "report.pdf",
+                1L, 10L, "storage-key", "docs/report.pdf", "docs/", "report.pdf",
                 2048L, ResourceType.FILE);
 
         // when
@@ -39,7 +39,7 @@ class ResourceDtoMapperTest {
     void shouldAppendSlashToDirectoryName() {
         // given
         ResourceMetadataDto dto = new ResourceMetadataDto(
-                2L, 10L, "docs/", "", "docs/",
+                2L, 10L, "storage-key", "docs/", "", "docs/",
                 null, ResourceType.DIRECTORY);
 
         // when

@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.files.operation.directory;
 
-import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
+import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,10 +49,10 @@ class DirectoryServiceTest {
         void shouldReturnMappedResources() {
             // given
             ResourceMetadataDto file = new ResourceMetadataDto(
-                    1L, USER_ID, "docs/file.txt", "docs/", "file.txt",
+                    1L, USER_ID, "storage-key", "docs/file.txt", "docs/", "file.txt",
                     100L, ResourceType.FILE);
             ResourceMetadataDto dir = new ResourceMetadataDto(
-                    2L, USER_ID, "docs/sub/", "docs/", "sub",
+                    2L, USER_ID, null, "docs/sub/", "docs/", "sub",
                     null, ResourceType.DIRECTORY);
             ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
             ResourceDto dirDto = new ResourceDto("docs/", "sub/", null, ResourceType.DIRECTORY);

@@ -24,7 +24,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
                                    @Param("normalizedPath") String normalizedPath);
 
     @Query("""
-            SELECT r FROM ResourceMetadata r
+            SELECT r
+            FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND r.normalizedPath = :normalizedPath
             AND r.markedForDeletion = false
@@ -33,7 +34,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
                                                     @Param("normalizedPath") String normalizedPath);
 
     @Query("""
-            SELECT r FROM ResourceMetadata r
+            SELECT r
+            FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND r.parentPath = :parentPath
             AND r.markedForDeletion = false
@@ -42,7 +44,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
                                             @Param("parentPath") String parentPath);
 
     @Query("""
-            SELECT r FROM ResourceMetadata r
+            SELECT r
+            FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))
             AND r.markedForDeletion = false
@@ -60,7 +63,8 @@ public interface ResourceMetadataRepository extends JpaRepository<ResourceMetada
     List<ResourceMetadata> findFilesMarkedForDeletion(Pageable pageable);
 
     @Query("""
-            SELECT r FROM ResourceMetadata r
+            SELECT r
+            FROM ResourceMetadata r
             WHERE r.userId = :userId
             AND r.normalizedPath LIKE CONCAT(:normalizedPrefix, '%')
             AND r.type = 'FILE'

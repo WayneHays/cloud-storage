@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changelogs/002_create_resource_metadata_table.yaml
   - include:
       file: db/changelog/changelogs/003_create_storage_quotas_table.yaml
+  - include:
+      file: db/changelog/changelogs/004_add_storage_key_to_resource_metadata_table.yaml

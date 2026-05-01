@@ -69,11 +69,11 @@ class CleanupService implements CleanupServiceApi {
         Map<Long, List<String>> byUser = files.stream()
                 .collect(Collectors.groupingBy(
                         ResourceMetadataDto::userId,
-                        Collectors.mapping(ResourceMetadataDto::path, Collectors.toList())
+                        Collectors.mapping(ResourceMetadataDto::storageKey, Collectors.toList())
                 ));
         storageService.deleteObjects(byUser);
     }
-
+    
     private void releaseQuotas(List<ResourceMetadataDto> files) {
         List<SpaceReleaseDto> spaceToRelease = files.stream()
                 .collect(Collectors.collectingAndThen(

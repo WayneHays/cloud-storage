@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.core.metadata;
 
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
@@ -94,8 +95,9 @@ class ResourceMetadataService implements ResourceMetadataServiceApi {
 
     @Override
     @Transactional
-    public long markDirectoryForDeletionAndSumSize(Long userId, String path) {
-        return repository.markForDeletionAndSumSize(userId, normalize(path));
+    public DeleteDirectoryResult markDirectoryForDeletionAndCollectKeys(Long userId, String path) {
+        String normalizedPath = normalize(path);
+        return repository.markFilesForDeletionAndCollectKeys(userId, normalizedPath);
     }
 
     @Override

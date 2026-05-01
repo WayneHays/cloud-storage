@@ -5,6 +5,7 @@ import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 public record ResourceMetadataDto(
         Long id,
         Long userId,
+        String storageKey,
         String path,
         String parentPath,
         String name,

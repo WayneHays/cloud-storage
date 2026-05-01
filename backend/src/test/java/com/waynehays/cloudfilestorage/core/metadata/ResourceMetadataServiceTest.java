@@ -1,5 +1,6 @@
 package com.waynehays.cloudfilestorage.core.metadata;
 
+import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
@@ -66,7 +67,7 @@ class ResourceMetadataServiceTest {
             // given
             ResourceMetadata entity = new ResourceMetadata();
             ResourceMetadataDto dto = new ResourceMetadataDto(
-                    1L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
+                    1L, USER_ID, "storage-key", "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
             when(repository.findByNormalizedPath(USER_ID, "docs/file.txt"))
@@ -103,7 +104,7 @@ class ResourceMetadataServiceTest {
             // given
             ResourceMetadata fileEntity = new ResourceMetadata();
             ResourceMetadataDto fileDto = new ResourceMetadataDto(
-                    2L, USER_ID, "Docs/File.txt", "docs/", "File.txt",
+                    2L, USER_ID, "storage-key", "Docs/File.txt", "docs/", "File.txt",
                     100L, ResourceType.FILE);
 
             when(repository.findByParentPath(USER_ID, "docs/"))
@@ -354,35 +355,39 @@ class ResourceMetadataServiceTest {
     }
 
     @Nested
-    class MarkForDeletionAndSumFileSize {
+    class MarkFilesForDeletionAndCollectKeys {
 
         @Test
-        @DisplayName("Should normalize path and return sum")
-        void shouldNormalizeAndReturnSum() {
+        @DisplayName("Should normalize path and return result with total size and storage keys")
+        void shouldNormalizeAndReturnResult() {
             // given
-            when(repository.markForDeletionAndSumSize(USER_ID, "docs/"))
-                    .thenReturn(500L);
+            DeleteDirectoryResult expected = new DeleteDirectoryResult(300L, List.of("key1", "key2"));
+            when(repository.markFilesForDeletionAndCollectKeys(USER_ID, "docs/"))
+                    .thenReturn(expected);
 
             // when
-            long result = service.markDirectoryForDeletionAndSumSize(USER_ID, "Docs/");
+            DeleteDirectoryResult result = service.markDirectoryForDeletionAndCollectKeys(USER_ID, "Docs/");
 
             // then
-            assertThat(result).isEqualTo(500L);
-            verify(repository).markForDeletionAndSumSize(USER_ID, "docs/");
+            assertThat(result.totalSize()).isEqualTo(300L);
+            assertThat(result.storageKeys()).containsExactly("key1", "key2");
+            verify(repository).markFilesForDeletionAndCollectKeys(USER_ID, "docs/");
         }
 
         @Test
-        @DisplayName("Should return zero when no files found")
-        void shouldReturnZeroWhenNoFiles() {
+        @DisplayName("Should return zero size and empty keys when no files found")
+        void shouldReturnEmptyWhenNoFiles() {
             // given
-            when(repository.markForDeletionAndSumSize(USER_ID, "empty/"))
-                    .thenReturn(0L);
+            DeleteDirectoryResult expected = new DeleteDirectoryResult(0L, List.of());
+            when(repository.markFilesForDeletionAndCollectKeys(USER_ID, "empty/"))
+                    .thenReturn(expected);
 
             // when
-            long result = service.markDirectoryForDeletionAndSumSize(USER_ID, "empty/");
+            DeleteDirectoryResult result = service.markDirectoryForDeletionAndCollectKeys(USER_ID, "empty/");
 
             // then
-            assertThat(result).isEqualTo(0L);
+            assertThat(result.totalSize()).isEqualTo(0L);
+            assertThat(result.storageKeys()).isEmpty();
         }
     }
 }

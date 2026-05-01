@@ -17,8 +17,9 @@ abstract class BaseUploadStepTest {
         return new UploadContext(USER_ID, List.of(objects));
     }
 
-    UploadObjectDto uploadObject(String fullPath, long size) {
+    UploadObjectDto uploadObject(String storageKey, String fullPath, long size) {
         return new UploadObjectDto(
+                storageKey,
                 "file.txt",
                 "file.txt",
                 PathUtils.extractParentPath(fullPath),
@@ -37,8 +38,9 @@ abstract class BaseUploadStepTest {
         return new ResourceDto(path, name, null, ResourceType.DIRECTORY);
     }
 
-    FileRowDto fileRowDto(String path, String name) {
+    FileRowDto fileRowDto(String storageKey, String path, String name) {
         return new FileRowDto(
+                storageKey,
                 path,
                 path.toLowerCase(),
                 PathUtils.extractParentPath(path),

@@ -6,11 +6,11 @@ record UploadRollbackDto(
         Long userId,
         long totalSize,
         boolean quotaReserved,
-        List<String> uploadedToStoragePaths,
+        List<String> uploadedStorageKeys,
         List<String> savedToDbPaths
 ) {
-    boolean hasUploadedToStoragePaths() {
-        return !uploadedToStoragePaths.isEmpty();
+    boolean hasUploadedStorageKeys() {
+        return !uploadedStorageKeys.isEmpty();
     }
 
     boolean hasSavedToDbPaths() {

@@ -1,7 +1,8 @@
 package com.waynehays.cloudfilestorage.core.user;
 
-import com.waynehays.cloudfilestorage.core.user.dto.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.SignUpRequest;
 import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.core.user.exception.UserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
