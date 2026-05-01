@@ -68,12 +68,17 @@ public class PathUtils {
         return FilenameUtils.getPath(cleanPath);
     }
 
-    public static String extractFilename(String path) {
+    public static String extractName(String path) {
         String cleanPath = removeTrailingSlash(path);
         String name = FilenameUtils.getName(cleanPath);
         return isDirectory(path)
                 ? name + SLASH
                 : name;
+    }
+
+    public static String extractDisplayName(String path) {
+        String cleanPath = removeTrailingSlash(path);
+        return FilenameUtils.getName(cleanPath);
     }
 
     private static String toDirectoryPath(String filePath) {
@@ -86,11 +91,6 @@ public class PathUtils {
 
     public static String toOppositeTypePath(String path) {
         return isFile(path) ? toDirectoryPath(path) : toFilePath(path);
-    }
-
-    public static String extractDisplayName(String path) {
-        String cleanPath = removeTrailingSlash(path);
-        return FilenameUtils.getName(cleanPath);
     }
 
     public static String combine(String base, String sub) {

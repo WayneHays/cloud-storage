@@ -25,7 +25,7 @@ class MultipartFileParser {
         String storageKey = UUID.randomUUID().toString();
         String originalFilename = extractOriginalFilename(file);
         String normalizedFilename = PathUtils.normalizeSeparators(originalFilename);
-        String filename = PathUtils.extractFilename(normalizedFilename);
+        String filename = PathUtils.extractName(normalizedFilename);
         String nestedDirectory = PathUtils.extractParentPath(normalizedFilename);
         String finalDirectory = PathUtils.combine(directory, nestedDirectory);
         String fullPath = PathUtils.combine(finalDirectory, filename);

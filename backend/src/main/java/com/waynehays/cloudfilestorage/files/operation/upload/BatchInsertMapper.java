@@ -19,7 +19,7 @@ interface BatchInsertMapper {
                 path,
                 PathUtils.normalizePath(path),
                 PathUtils.normalizePath(PathUtils.extractParentPath(path)),
-                PathUtils.extractFilename(path),
+                PathUtils.extractName(path),
                 uploadObject.size()
         );
     }
@@ -29,7 +29,7 @@ interface BatchInsertMapper {
                 path,
                 PathUtils.normalizePath(path),
                 PathUtils.normalizePath(PathUtils.extractParentPath(path)),
-                PathUtils.extractFilename(path)
+                PathUtils.extractName(path)
         );
     }
 

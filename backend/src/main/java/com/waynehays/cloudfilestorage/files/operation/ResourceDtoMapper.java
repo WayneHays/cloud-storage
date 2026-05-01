@@ -22,11 +22,11 @@ public interface ResourceDtoMapper {
     }
 
     default ResourceDto fileFromPath(String path, Long size) {
-        return createDto(path, PathUtils.extractFilename(path), size,ResourceType.FILE);
+        return createDto(path, PathUtils.extractName(path), size,ResourceType.FILE);
     }
 
     default ResourceDto directoryFromPath(String path) {
-        String name = PathUtils.ensureTrailingSlash(PathUtils.extractFilename(path));
+        String name = PathUtils.ensureTrailingSlash(PathUtils.extractName(path));
         return createDto(path, name, null, ResourceType.DIRECTORY);
     }
 

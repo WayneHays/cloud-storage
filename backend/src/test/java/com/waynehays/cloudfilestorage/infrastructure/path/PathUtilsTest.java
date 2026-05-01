@@ -170,25 +170,25 @@ class PathUtilsTest {
         @Test
         @DisplayName("Should extract filename from file path")
         void shouldExtractFilename() {
-            assertThat(PathUtils.extractFilename("docs/file.txt")).isEqualTo("file.txt");
+            assertThat(PathUtils.extractName("docs/file.txt")).isEqualTo("file.txt");
         }
 
         @Test
         @DisplayName("Should extract directory name from directory path")
         void shouldExtractDirectoryName() {
-            assertThat(PathUtils.extractFilename("docs/sub/")).isEqualTo("sub/");
+            assertThat(PathUtils.extractName("docs/sub/")).isEqualTo("sub/");
         }
 
         @Test
         @DisplayName("Should extract filename from root-level file")
         void shouldExtractRootLevelFilename() {
-            assertThat(PathUtils.extractFilename("file.txt")).isEqualTo("file.txt");
+            assertThat(PathUtils.extractName("file.txt")).isEqualTo("file.txt");
         }
 
         @Test
         @DisplayName("Should extract directory name from root-level directory")
         void shouldExtractRootLevelDirectoryName() {
-            assertThat(PathUtils.extractFilename("docs/")).isEqualTo("docs/");
+            assertThat(PathUtils.extractName("docs/")).isEqualTo("docs/");
         }
     }
 
@@ -229,6 +229,22 @@ class PathUtilsTest {
         @DisplayName("Should return empty string when base directory and filename are empty")
         void shouldHandleBothEmpty() {
             assertThat(PathUtils.combine("", "")).isEmpty();
+        }
+    }
+
+    @Nested
+    class ToOppositeTypePath {
+
+        @Test
+        @DisplayName("Should convert file path to directory path")
+        void shouldConvertFileToDirectory() {
+            assertThat(PathUtils.toOppositeTypePath("docs")).isEqualTo("docs/");
+        }
+
+        @Test
+        @DisplayName("Should convert directory path to file path")
+        void shouldConvertDirectoryToFile() {
+            assertThat(PathUtils.toOppositeTypePath("docs/")).isEqualTo("docs");
         }
     }
 }

@@ -28,7 +28,7 @@ class DirectoryControllerTest extends AbstractControllerTest {
             // given
             String path = "docs/";
             String parentPath = PathUtils.extractParentPath(path);
-            String name = PathUtils.extractFilename(path);
+            String name = PathUtils.extractName(path);
 
             // when & then
             createDirectory(sessionCookie, path)
@@ -48,7 +48,7 @@ class DirectoryControllerTest extends AbstractControllerTest {
 
             String nestedPath = "docs/work/";
             String parentPath = PathUtils.extractParentPath(nestedPath);
-            String name = PathUtils.extractFilename(nestedPath);
+            String name = PathUtils.extractName(nestedPath);
 
             // when & then
             createDirectory(sessionCookie, nestedPath)
