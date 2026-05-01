@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.core.quota.reconciliation;
 
-interface QuotaReconciliationServiceApi {
+interface StorageQuotaReconciliationServiceApi {
 
     void reconcileStorageQuotas();
 }

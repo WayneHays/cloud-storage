@@ -26,13 +26,13 @@ import static org.mockito.Mockito.when;
 class QuotaReconciliationServiceTest {
 
     @Mock
-    private QuotaReconciliationProperties properties;
+    private StorageQuotaReconciliationProperties properties;
 
     @Mock
     private StorageQuotaServiceApi quotaService;
 
     @InjectMocks
-    private QuotaQuotaReconciliationService service;
+    private StorageQuotaReconciliationService service;
 
     @Nested
     class SuccessfulReconciliation {

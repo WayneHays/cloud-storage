@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-class QuotaReconciliationJob implements SchedulingConfigurer {
-    private final QuotaReconciliationProperties properties;
-    private final QuotaReconciliationServiceApi service;
+class StorageQuotaReconciliationJob implements SchedulingConfigurer {
+    private final StorageQuotaReconciliationProperties properties;
+    private final StorageQuotaReconciliationServiceApi service;
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
