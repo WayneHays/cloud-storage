@@ -47,6 +47,7 @@ class ResourceMoveServiceTest {
                 "file.txt", 100L, ResourceType.FILE);
         ResourceDto expected = new ResourceDto("images/", "file.txt", 100L, ResourceType.FILE);
 
+        when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(true);
         when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(false);
         when(metadataService.findByPath(USER_ID, "images/file.txt")).thenReturn(moved);
         when(resourceDtoMapper.fileFromPath("images/file.txt", 100L)).thenReturn(expected);
@@ -100,6 +101,7 @@ class ResourceMoveServiceTest {
     @DisplayName("Should throw when target path already exists")
     void shouldThrowWhenTargetAlreadyExists() {
         // given
+        when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(true);
         when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(true);
 
         // when & then
@@ -133,6 +135,18 @@ class ResourceMoveServiceTest {
         // when & then
         assertThatThrownBy(() -> moveService.move(USER_ID, "docs/report", "report"))
                 .isInstanceOf(ResourceAlreadyExistsException.class);
+        verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should throw when target parent directory does not exist")
+    void shouldThrowWhenTargetParentNotFound() {
+        // given
+        when(metadataService.existsByPath(USER_ID, "nonexistent/")).thenReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> moveService.move(USER_ID, "file.txt", "nonexistent/file.txt"))
+                .isInstanceOf(ResourceNotFoundException.class);
         verify(metadataService, never()).moveMetadata(anyLong(), anyString(), anyString());
     }
 }

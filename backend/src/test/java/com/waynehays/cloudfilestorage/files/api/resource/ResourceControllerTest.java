@@ -241,6 +241,46 @@ class ResourceControllerTest extends AbstractControllerTest {
     }
 
     @Nested
+    class EdgeCaseTests {
+
+        @Test
+        @DisplayName("Should return 404 when moving file to non-existent directory")
+        void shouldReturn404WhenMovingToNonExistentDirectory() throws Exception {
+            // given
+            uploadFileAndExpectIsCreated(sessionCookie, "", "file.txt", "content".getBytes());
+
+            // when & then
+            moveResource(sessionCookie, "file.txt", "nonexistent/file.txt")
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Should return 404 when creating nested directory with missing parent")
+        void shouldReturn404WhenCreatingNestedDirectoryWithMissingParent() throws Exception {
+            // when & then
+            createDirectory(sessionCookie, "a/b/")
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Should create all ancestor directories when uploading to deep path")
+        void shouldCreateAllAncestorDirectoriesOnUpload() throws Exception {
+            // given
+            createDirectory(sessionCookie, "a/")
+                    .andExpect(status().isCreated());
+
+            // when
+            uploadFileAndExpectIsCreated(sessionCookie, "a/b/c/", "file.txt", "content".getBytes());
+
+            // then
+            getResource(sessionCookie, "a/b/")
+                    .andExpect(status().isOk());
+            getResource(sessionCookie, "a/b/c/")
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
     class GetInfoTests {
 
         @Test
