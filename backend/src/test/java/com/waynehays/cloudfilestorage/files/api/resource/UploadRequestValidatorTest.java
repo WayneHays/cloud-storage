@@ -1,6 +1,5 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
 import com.waynehays.cloudfilestorage.infrastructure.path.ResourceLimitsProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -145,7 +144,7 @@ class UploadRequestValidatorTest {
 
             // when & then
             assertThatThrownBy(() -> validator.validate(objects))
-                    .isInstanceOf(ResourceAlreadyExistsException.class);
+                    .isInstanceOf(UploadValidationException.class);
         }
 
         @Test
@@ -160,7 +159,7 @@ class UploadRequestValidatorTest {
 
             // when & then
             assertThatThrownBy(() -> validator.validate(objects))
-                    .isInstanceOf(ResourceAlreadyExistsException.class);
+                    .isInstanceOf(UploadValidationException.class);
         }
     }
 
