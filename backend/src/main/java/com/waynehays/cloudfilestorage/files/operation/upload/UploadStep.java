@@ -2,11 +2,11 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 interface UploadStep {
 
-    void execute(UploadContext context);
+    void execute(Context context);
 
-    default void rollback(UploadRollbackDto snapshot) {}
+    default void rollback(RollbackDto snapshot) {}
 
-    default boolean requiresRollback(UploadRollbackDto snapshot) {
+    default boolean requiresRollback(RollbackDto snapshot) {
         return false;
     }
 }

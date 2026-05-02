@@ -14,19 +14,19 @@ class SaveMetadataStep implements UploadStep {
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
-    public void execute(UploadContext context) {
+    public void execute(Context context) {
         List<FileRowDto> newFiles = batchInsertMapper.toFileRows(context.getObjects());
         metadataService.saveFiles(context.getUserId(), newFiles);
-        context.getObjects().forEach(o -> context.addSavedToDbPath(o.fullPath()));
+        context.markAllPathsSavedToDb();
     }
 
     @Override
-    public void rollback(UploadRollbackDto snapshot) {
-        metadataService.deleteByPaths(snapshot.userId(), snapshot.savedToDbPaths());
+    public void rollback(RollbackDto rollbackDto) {
+        metadataService.deleteByPaths(rollbackDto.userId(), rollbackDto.savedToDbPaths());
     }
 
     @Override
-    public boolean requiresRollback(UploadRollbackDto snapshot) {
-        return snapshot.hasSavedToDbPaths();
+    public boolean requiresRollback(RollbackDto rollbackDto) {
+        return rollbackDto.hasSavedToDbPaths();
     }
 }

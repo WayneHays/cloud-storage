@@ -31,7 +31,7 @@ class SaveMetadataStepTest extends BaseUploadStepTest {
     @DisplayName("Should save files with storageKeys and register paths for rollback")
     void shouldSaveFilesAndRegisterPathsForRollback() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 100),
                 uploadObject("key-2", "user/1/file2.txt", 200)
         );
@@ -54,7 +54,7 @@ class SaveMetadataStepTest extends BaseUploadStepTest {
     @DisplayName("Should delete saved paths on rollback")
     void shouldDeleteSavedPaths_whenPathsExist() {
         // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(
+        RollbackDto snapshot = new RollbackDto(
                 USER_ID, 0L, false,
                 List.of(),
                 List.of("user/1/file1.txt", "user/1/file2.txt")

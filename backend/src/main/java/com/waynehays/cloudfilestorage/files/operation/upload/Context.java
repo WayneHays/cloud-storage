@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class UploadContext {
+class Context {
     private final List<UploadObjectDto> objects;
 
     @Getter
@@ -23,17 +23,17 @@ class UploadContext {
 
     private volatile boolean quotaReserved;
 
-    UploadContext(Long userId, List<UploadObjectDto> objects) {
+    Context(Long userId, List<UploadObjectDto> objects) {
         this.userId = userId;
         this.objects = List.copyOf(objects);
         this.totalSize = objects.stream().mapToLong(UploadObjectDto::size).sum();
     }
 
-    void addResult(List<ResourceDto> items) {
+    void addToResult(List<ResourceDto> items) {
         result.addAll(items);
     }
 
-    void addResult(ResourceDto item) {
+    void addToResult(ResourceDto item) {
         result.add(item);
     }
 
@@ -43,6 +43,12 @@ class UploadContext {
 
     List<UploadObjectDto> getObjects() {
         return List.copyOf(objects);
+    }
+
+    List<String> getAllPaths() {
+        return objects.stream()
+                .map(UploadObjectDto::fullPath)
+                .toList();
     }
 
     void addSavedToDbPath(String path) {
@@ -57,8 +63,12 @@ class UploadContext {
         quotaReserved = true;
     }
 
-    UploadRollbackDto rollbackDto() {
-        return new UploadRollbackDto(
+    void markAllPathsSavedToDb() {
+        objects.forEach(o -> savedToDbPaths.add(o.fullPath()));
+    }
+
+    RollbackDto rollbackDto() {
+        return new RollbackDto(
                 userId,
                 totalSize,
                 quotaReserved,

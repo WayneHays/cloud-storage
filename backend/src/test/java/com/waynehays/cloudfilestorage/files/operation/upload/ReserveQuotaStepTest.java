@@ -24,7 +24,7 @@ class ReserveQuotaStepTest extends BaseUploadStepTest {
     @Test
     void execute_shouldReserveSpaceAndMarkQuotaReserved() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 300),
                 uploadObject("key-2", "user/1/file2.txt", 700)
         );
@@ -40,7 +40,7 @@ class ReserveQuotaStepTest extends BaseUploadStepTest {
     @Test
     void rollback_shouldReleaseSpace_whenQuotaWasReserved() {
         // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(1L, 1000L, true, List.of(), List.of());
+        RollbackDto snapshot = new RollbackDto(1L, 1000L, true, List.of(), List.of());
 
         // when
         reserveQuotaStep.rollback(snapshot);

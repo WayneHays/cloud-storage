@@ -26,13 +26,13 @@ class MinioHealthIndicator implements HealthIndicator {
 
             if (!exists) {
                 return Health.down()
-                        .withDetail("bucket", bucketName)
+                        .withDetail(key, bucketName)
                         .withDetail("reason", "bucket does not exist")
                         .build();
             }
 
             return Health.up()
-                    .withDetail("bucket", bucketName)
+                    .withDetail(key, bucketName)
                     .build();
         } catch (Exception e) {
             return Health.down(e)

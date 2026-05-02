@@ -51,7 +51,7 @@ class StorageUploadStepTest extends BaseUploadStepTest {
     @DisplayName("Should upload all files by storageKey and populate result")
     void shouldUploadAllFilesAndPopulateResult() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 100),
                 uploadObject("key-2", "user/1/file2.txt", 200)
         );
@@ -76,7 +76,7 @@ class StorageUploadStepTest extends BaseUploadStepTest {
     @DisplayName("Should throw when storage operation fails")
     void shouldThrow_whenStorageOperationFails() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 100)
         );
         doThrow(new ResourceStorageException("MinIO unavailable", null))
@@ -92,7 +92,7 @@ class StorageUploadStepTest extends BaseUploadStepTest {
     @DisplayName("Should delete uploaded objects by storageKeys on rollback")
     void shouldDeleteUploadedObjects_whenKeysExist() {
         // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(
+        RollbackDto snapshot = new RollbackDto(
                 USER_ID, 0L, false,
                 List.of("key-1", "key-2"),
                 List.of()
@@ -112,7 +112,7 @@ class StorageUploadStepTest extends BaseUploadStepTest {
     @DisplayName("Should return false when no uploaded keys")
     void shouldReturnFalse_whenNoUploadedKeys() {
         // given
-        UploadRollbackDto snapshot = new UploadRollbackDto(
+        RollbackDto snapshot = new RollbackDto(
                 USER_ID, 0L, false, List.of(), List.of());
 
         // when & then

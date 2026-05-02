@@ -6,15 +6,11 @@ import java.util.Optional;
 
 public interface ResourceStorageApi {
 
-    Optional<StorageItem> getObject(String objectKey);
+    Optional<StorageItem> getObject(String storageKey);
 
-    void putObject(InputStream inputStream, String objectKey, long size, String contentType);
+    void putObject(InputStream inputStream, String storageKey, long size, String contentType);
 
-    void moveObject(String sourceKey, String targetKey);
+    void deleteObject(String storageKey);
 
-    void deleteObject(String objectKey);
-
-    void deleteByPrefix(String prefix);
-
-    void deleteList(List<String> keys);
+    void deleteList(List<String> storageKeys);
 }

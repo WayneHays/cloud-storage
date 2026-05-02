@@ -43,9 +43,9 @@ class CreateDirectoriesStepTest extends BaseUploadStepTest {
     @DisplayName("Should create missing directories and register paths for rollback")
     void shouldCreateMissingDirectoriesAndRegisterPathsForRollback() {
         // given
-        UploadContext context = uploadContext();
+        Context context = uploadContext();
         ResourceDto file = fileDto("user/1/a/b/", "file.txt", 100);
-        context.addResult(file);
+        context.addToResult(file);
 
         Set<String> missingPaths = Set.of("user/1/a/", "user/1/a/b/");
         List<DirectoryRowDto> directoryRows = List.of(
@@ -78,7 +78,7 @@ class CreateDirectoriesStepTest extends BaseUploadStepTest {
     @DisplayName("Should do nothing when result is empty")
     void shouldDoNothing_whenResultIsEmpty() {
         // given
-        UploadContext context = uploadContext();
+        Context context = uploadContext();
 
         // when
         step.execute(context);
@@ -91,9 +91,9 @@ class CreateDirectoriesStepTest extends BaseUploadStepTest {
     @DisplayName("Should do nothing when all directories already exists")
     void shouldDoNothing_whenAllDirectoriesAlreadyExist() {
         // given
-        UploadContext context = uploadContext();
+        Context context = uploadContext();
         ResourceDto file = fileDto("user/1/a/", "file.txt", 100);
-        context.addResult(file);
+        context.addToResult(file);
 
         when(metadataService.findMissingPaths(eq(USER_ID), any()))
                 .thenReturn(Set.of());
@@ -109,9 +109,9 @@ class CreateDirectoriesStepTest extends BaseUploadStepTest {
     @DisplayName("Should create directories with original case names")
     void shouldCreateDirectoriesWithOriginalCaseNames() {
         // given
-        UploadContext context = uploadContext();
+        Context context = uploadContext();
         ResourceDto file = fileDto("MyDocs/Work/", "report.txt", 100L);
-        context.addResult(file);
+        context.addToResult(file);
 
         when(metadataService.findMissingPaths(eq(USER_ID), anySet()))
                 .thenReturn(Set.of("MyDocs/", "MyDocs/Work/"));

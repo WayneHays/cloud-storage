@@ -1,7 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.MinioTestContainer;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -18,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MinioResourceStorageIntegrationTest {
     private static final String TEST_CONTENT_TYPE = "text/plain";
@@ -127,42 +125,6 @@ class MinioResourceStorageIntegrationTest {
     }
 
     @Nested
-    @DisplayName("moveObject")
-    class MoveObject {
-
-        @Test
-        @DisplayName("Should move object to new key and delete source")
-        void shouldMoveObject() throws Exception {
-            // given
-            String source = "user-1-files/a.txt";
-            String target = "user-1-files/b.txt";
-            put(source, "content");
-
-            // when
-            storage.moveObject(source, target);
-
-            // then
-            assertThat(storage.getObject(source)).isEmpty();
-            Optional<StorageItem> moved = storage.getObject(target);
-            assertThat(moved).isPresent();
-            assertThat(read(moved.get().inputStream())).isEqualTo("content");
-        }
-
-        @Test
-        @DisplayName("Should throw when source not exists")
-        void shouldThrow_WhenSourceNotExists() {
-            // given
-            String source = "user-1-files/missing.txt";
-            String target = "user-1-files/target.txt";
-
-            // when & then
-            assertThatThrownBy(() -> storage.moveObject(source, target))
-                    .isInstanceOf(ResourceStorageException.class);
-            assertThat(storage.getObject(target)).isEmpty();
-        }
-    }
-
-    @Nested
     @DisplayName("deleteObject")
     class DeleteObject {
 
@@ -189,49 +151,6 @@ class MinioResourceStorageIntegrationTest {
             // when & then
             storage.deleteObject(missing);
             assertThat(storage.getObject(missing)).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("deleteByPrefix")
-    class DeleteByPrefix {
-
-        @Test
-        @DisplayName("Should delete all objects by prefix")
-        void shouldDeleteAllObjectsByPrefix() {
-            // given
-            String key1 = "user-1-files/dir/a.txt";
-            String key2 = "user-1-files/dir/b.txt";
-            String key3 = "user-1-files/dir/sub/c.txt";
-            String key4 = "user-1-files/other.txt";
-            put(key1, "a");
-            put(key2, "b");
-            put(key3, "c");
-            put(key4, "other");
-
-            // when
-            storage.deleteByPrefix("user-1-files/dir/");
-
-            // then
-            assertThat(storage.getObject(key1)).isEmpty();
-            assertThat(storage.getObject(key2)).isEmpty();
-            assertThat(storage.getObject(key3)).isEmpty();
-            assertThat(storage.getObject(key4)).isPresent();
-        }
-
-
-        @Test
-        @DisplayName("Should do nothing when prefix not exists")
-        void shouldDoNothing_WhenPrefixNotExists() {
-            // given
-            String key = "user-1-files/file.txt";
-            put(key, "content");
-
-            // when
-            storage.deleteByPrefix("user-1-files/nonexistent/");
-
-            // then
-            assertThat(storage.getObject(key)).isPresent();
         }
     }
 

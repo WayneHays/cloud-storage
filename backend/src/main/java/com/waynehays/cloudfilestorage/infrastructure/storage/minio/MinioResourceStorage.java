@@ -6,10 +6,7 @@ import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTran
 import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.minio.CopyObjectArgs;
-import io.minio.CopySource;
 import io.minio.GetObjectArgs;
-import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
@@ -18,7 +15,6 @@ import io.minio.Result;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
-import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +35,6 @@ class MinioResourceStorage implements ResourceStorageApi {
     private static final String MSG_FAILED_GET = "Failed to get object with key: %s";
     private static final String MSG_FAILED_DELETE = "Failed to delete object with key: %s";
     private static final String MSG_FAILED_PUT = "Failed to put object with key: %s";
-    private static final String MSG_FAILED_COPY = "Failed to copy object from %s to %s";
 
     private final MinioClient minioClient;
     private final MinioStorageProperties properties;
@@ -58,12 +53,12 @@ class MinioResourceStorage implements ResourceStorageApi {
     @Override
     @Retry(name = RETRY_NAME)
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
-    public Optional<StorageItem> getObject(String objectKey) {
+    public Optional<StorageItem> getObject(String storageKey) {
         try {
             InputStream inputStream = minioClient.getObject(
                     GetObjectArgs.builder()
                             .bucket(properties.bucketName())
-                            .object(objectKey)
+                            .object(storageKey)
                             .build()
             );
             return Optional.of(new StorageItem(inputStream));
@@ -71,84 +66,47 @@ class MinioResourceStorage implements ResourceStorageApi {
             if ("NoSuchKey".equals(e.errorResponse().code())) {
                 return Optional.empty();
             }
-            throw new ResourceStorageException(MSG_FAILED_GET.formatted(objectKey), e);
+            throw new ResourceStorageException(MSG_FAILED_GET.formatted(storageKey), e);
         } catch (IOException e) {
-            throw new ResourceStorageTransientException(MSG_FAILED_GET.formatted(objectKey), e);
+            throw new ResourceStorageTransientException(MSG_FAILED_GET.formatted(storageKey), e);
         } catch (Exception e) {
-            throw new ResourceStorageException(MSG_FAILED_GET.formatted(objectKey), e);
+            throw new ResourceStorageException(MSG_FAILED_GET.formatted(storageKey), e);
         }
     }
 
     @Override
-    public void putObject(InputStream inputStream, String objectKey, long size, String contentType) {
+    public void putObject(InputStream inputStream, String storageKey, long size, String contentType) {
         executeWithExceptionHandling(
                 () -> minioClient.putObject(
                         PutObjectArgs.builder()
                                 .bucket(properties.bucketName())
-                                .object(objectKey)
+                                .object(storageKey)
                                 .stream(inputStream, size, -1)
                                 .contentType(contentType)
                                 .build()),
-                MSG_FAILED_PUT.formatted(objectKey)
+                MSG_FAILED_PUT.formatted(storageKey)
         );
     }
 
     @Override
     @Retry(name = RETRY_NAME)
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
-    public void moveObject(String sourceKey, String targetKey) {
-        copyObject(sourceKey, targetKey);
-        try {
-            deleteObject(sourceKey);
-        } catch (ResourceStorageTransientException e) {
-            rollbackCopy(targetKey);
-            throw e;
-        } catch (Exception e) {
-            rollbackCopy(targetKey);
-            throw new ResourceStorageException("Failed to move object from %s to %s"
-                    .formatted(sourceKey, targetKey), e);
-        }
-    }
-
-    @Override
-    @Retry(name = RETRY_NAME)
-    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
-    public void deleteObject(String objectKey) {
+    public void deleteObject(String storageKey) {
         executeWithExceptionHandling(
                 () -> minioClient.removeObject(
                         RemoveObjectArgs.builder()
                                 .bucket(properties.bucketName())
-                                .object(objectKey)
+                                .object(storageKey)
                                 .build()),
-                MSG_FAILED_DELETE.formatted(objectKey)
+                MSG_FAILED_DELETE.formatted(storageKey)
         );
     }
 
     @Override
     @Retry(name = RETRY_NAME)
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
-    public void deleteByPrefix(String prefix) {
-        List<String> keys = new ArrayList<>();
-        Iterable<Result<Item>> objects = getListByPrefix(prefix);
-
-        for (Result<Item> result : objects) {
-            try {
-                keys.add(result.get().objectName());
-            } catch (IOException e) {
-                throw new ResourceStorageTransientException(MSG_FAILED_DELETE.formatted(prefix), e);
-            } catch (Exception e) {
-                throw new ResourceStorageException(MSG_FAILED_DELETE.formatted(prefix), e);
-            }
-        }
-
-        deleteList(keys);
-    }
-
-    @Override
-    @Retry(name = RETRY_NAME)
-    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
-    public void deleteList(List<String> keys) {
-        List<DeleteObject> objects = keys.stream()
+    public void deleteList(List<String> storageKeys) {
+        List<DeleteObject> objects = storageKeys.stream()
                 .map(DeleteObject::new)
                 .toList();
         int batchSize = properties.deletionBatchSize();
@@ -157,38 +115,6 @@ class MinioResourceStorage implements ResourceStorageApi {
             List<DeleteObject> batch = objects.subList(i, Math.min(i + batchSize, objects.size()));
             flushDeleteBatch(new ArrayList<>(batch));
         }
-    }
-
-    private void copyObject(String sourceKey, String targetKey) {
-        executeWithExceptionHandling(
-                () -> minioClient.copyObject(CopyObjectArgs.builder()
-                        .bucket(properties.bucketName())
-                        .object(targetKey)
-                        .source(CopySource.builder()
-                                .bucket(properties.bucketName())
-                                .object(sourceKey)
-                                .build())
-                        .build()),
-                MSG_FAILED_COPY.formatted(sourceKey, targetKey)
-        );
-    }
-
-    private void rollbackCopy(String targetKey) {
-        try {
-            deleteObject(targetKey);
-        } catch (Exception e) {
-            log.warn("Failed to rollback copy: {}", targetKey, e);
-        }
-    }
-
-    private Iterable<Result<Item>> getListByPrefix(String prefix) {
-        return minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(properties.bucketName())
-                        .prefix(prefix)
-                        .recursive(true)
-                        .build()
-        );
     }
 
     private void flushDeleteBatch(List<DeleteObject> batch) {

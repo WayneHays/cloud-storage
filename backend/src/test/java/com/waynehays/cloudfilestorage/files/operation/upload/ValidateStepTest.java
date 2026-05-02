@@ -29,7 +29,7 @@ class ValidateStepTest extends BaseUploadStepTest {
     @DisplayName("Should pass when no duplicates and no type conflicts")
     void shouldPassWhenNoDuplicatesAndNoConflicts() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 100),
                 uploadObject("key-2", "user/1/file2.txt", 200)
         );
@@ -42,7 +42,7 @@ class ValidateStepTest extends BaseUploadStepTest {
     @DisplayName("Should throw when paths already exist")
     void shouldThrowWhenPathsAlreadyExist() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/file1.txt", 100)
         );
         doThrow(new ResourceAlreadyExistsException("Resources already exist", List.of("user/1/file1.txt")))
@@ -57,7 +57,7 @@ class ValidateStepTest extends BaseUploadStepTest {
     @DisplayName("Should throw when directory with same name exists")
     void shouldThrowWhenConflictingTypeExists() {
         // given
-        UploadContext context = uploadContext(
+        Context context = uploadContext(
                 uploadObject("key-1", "user/1/report", 100)
         );
         doThrow(new ResourceAlreadyExistsException(

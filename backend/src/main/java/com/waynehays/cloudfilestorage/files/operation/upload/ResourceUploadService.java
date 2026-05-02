@@ -20,23 +20,23 @@ class ResourceUploadService implements ResourceUploadServiceApi {
     public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
         log.info("Upload started: files count={}", objects.size());
 
-        UploadContext context = new UploadContext(userId, objects);
-        List<UploadStep> executed = new ArrayList<>();
+        Context context = new Context(userId, objects);
+        List<UploadStep> executedSteps = new ArrayList<>();
 
         for (UploadStep step : uploadSteps) {
             try {
                 step.execute(context);
-                executed.add(step);
+                executedSteps.add(step);
             } catch (Exception e) {
                 log.warn("Upload failed at step={}, initiating rollback",
                         step.getClass().getSimpleName());
-                UploadRollbackDto snapshot = context.rollbackDto();
+                RollbackDto rollbackDto = context.rollbackDto();
 
-                if (step.requiresRollback(snapshot)) {
-                    executed.add(step);
+                if (step.requiresRollback(rollbackDto)) {
+                    executedSteps.add(step);
                 }
 
-                rollback(executed, snapshot);
+                rollback(executedSteps, rollbackDto);
                 throw e;
             }
         }
@@ -45,12 +45,12 @@ class ResourceUploadService implements ResourceUploadServiceApi {
         return context.getResult();
     }
 
-    private void rollback(List<UploadStep> executed, UploadRollbackDto snapshot) {
-        ListIterator<UploadStep> iterator = executed.listIterator(executed.size());
+    private void rollback(List<UploadStep> executedSteps, RollbackDto rollbackDto) {
+        ListIterator<UploadStep> iterator = executedSteps.listIterator(executedSteps.size());
         while (iterator.hasPrevious()) {
             UploadStep step = iterator.previous();
             try {
-                step.rollback(snapshot);
+                step.rollback(rollbackDto);
             } catch (Exception e) {
                 log.error("Rollback failed at step={}",
                         step.getClass().getSimpleName(), e);

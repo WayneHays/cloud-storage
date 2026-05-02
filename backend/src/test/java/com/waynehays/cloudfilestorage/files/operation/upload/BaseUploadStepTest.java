@@ -13,8 +13,8 @@ import java.util.List;
 abstract class BaseUploadStepTest {
     protected static final Long USER_ID = 1L;
 
-    UploadContext uploadContext(UploadObjectDto... objects) {
-        return new UploadContext(USER_ID, List.of(objects));
+    Context uploadContext(UploadObjectDto... objects) {
+        return new Context(USER_ID,List.of(objects));
     }
 
     UploadObjectDto uploadObject(String storageKey, String fullPath, long size) {

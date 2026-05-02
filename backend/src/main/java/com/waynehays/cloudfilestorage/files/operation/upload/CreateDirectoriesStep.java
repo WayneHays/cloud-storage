@@ -20,7 +20,7 @@ class CreateDirectoriesStep implements UploadStep {
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
-    public void execute(UploadContext context) {
+    public void execute(Context context) {
         Set<String> allDirectoryPaths = context.getResult().stream()
                 .flatMap(r -> PathUtils.getAllAncestorDirectories(r.path()).stream())
                 .collect(Collectors.toSet());
@@ -40,6 +40,6 @@ class CreateDirectoriesStep implements UploadStep {
         missingPaths.forEach(context::addSavedToDbPath);
 
         List<ResourceDto> createdDirectories = resourceDtoMapper.directoriesFromPaths(missingPaths);
-        context.addResult(createdDirectories);
+        context.addToResult(createdDirectories);
     }
 }

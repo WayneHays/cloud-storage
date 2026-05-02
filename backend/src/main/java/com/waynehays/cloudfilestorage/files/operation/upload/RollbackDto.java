@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import java.util.List;
 
-record UploadRollbackDto(
+record RollbackDto(
         Long userId,
         long totalSize,
         boolean quotaReserved,

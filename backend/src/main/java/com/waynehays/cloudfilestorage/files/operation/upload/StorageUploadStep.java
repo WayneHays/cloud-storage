@@ -22,13 +22,13 @@ class StorageUploadStep implements UploadStep {
     private final ExecutorService uploadExecutor;
 
     @Override
-    public void execute(UploadContext context) {
+    public void execute(Context context) {
         List<CompletableFuture<Void>> futures = context.getObjects().stream()
                 .map(o -> CompletableFuture.runAsync(() -> {
                     storageService.putObject(context.getUserId(), o.storageKey(), o.size(), o.contentType(), o.inputStreamSupplier());
                     context.addUploadedStorageKey(o.storageKey());
                     ResourceDto result = resourceDtoMapper.fileFromPath(o.fullPath(), o.size());
-                    context.addResult(result);
+                    context.addToResult(result);
                 }, uploadExecutor))
                 .toList();
 
@@ -46,12 +46,12 @@ class StorageUploadStep implements UploadStep {
     }
 
     @Override
-    public void rollback(UploadRollbackDto rollbackDto) {
+    public void rollback(RollbackDto rollbackDto) {
         storageService.deleteObjects(Map.of(rollbackDto.userId(), rollbackDto.uploadedStorageKeys()));
     }
 
     @Override
-    public boolean requiresRollback(UploadRollbackDto rollbackDto) {
+    public boolean requiresRollback(RollbackDto rollbackDto) {
         return rollbackDto.hasUploadedStorageKeys();
     }
 }

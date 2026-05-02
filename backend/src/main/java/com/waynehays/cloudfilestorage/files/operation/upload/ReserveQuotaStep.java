@@ -10,18 +10,18 @@ class ReserveQuotaStep implements UploadStep {
     private final StorageQuotaServiceApi quotaService;
 
     @Override
-    public void execute(UploadContext context) {
+    public void execute(Context context) {
         quotaService.reserveSpace(context.getUserId(), context.getTotalSize());
         context.markQuotaReserved();
     }
 
     @Override
-    public void rollback(UploadRollbackDto snapshot) {
-        quotaService.releaseSpace(snapshot.userId(), snapshot.totalSize());
+    public void rollback(RollbackDto rollbackDto) {
+        quotaService.releaseSpace(rollbackDto.userId(), rollbackDto.totalSize());
     }
 
     @Override
-    public boolean requiresRollback(UploadRollbackDto snapshot) {
-        return snapshot.quotaReserved();
+    public boolean requiresRollback(RollbackDto rollbackDto) {
+        return rollbackDto.quotaReserved();
     }
 }
