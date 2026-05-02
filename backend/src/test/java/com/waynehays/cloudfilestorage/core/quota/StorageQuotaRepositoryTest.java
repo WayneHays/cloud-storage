@@ -4,7 +4,7 @@ import com.waynehays.cloudfilestorage.AbstractRepositoryTest;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadata;
 import com.waynehays.cloudfilestorage.core.quota.dto.SpaceReleaseDto;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

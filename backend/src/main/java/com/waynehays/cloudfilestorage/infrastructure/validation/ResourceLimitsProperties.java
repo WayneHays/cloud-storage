@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.infrastructure.path;
+package com.waynehays.cloudfilestorage.infrastructure.validation;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;

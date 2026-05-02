@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.files.api.resource.dto;
 
-import com.waynehays.cloudfilestorage.infrastructure.path.ValidPath;
+import com.waynehays.cloudfilestorage.infrastructure.validation.ValidPath;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record UploadRequest(

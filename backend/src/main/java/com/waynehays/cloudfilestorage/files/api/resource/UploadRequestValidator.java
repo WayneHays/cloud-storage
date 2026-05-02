@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
+import com.waynehays.cloudfilestorage.core.utils.ValidationUtils;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.infrastructure.path.ResourceLimitsProperties;
-import com.waynehays.cloudfilestorage.infrastructure.path.ValidationUtils;
+import com.waynehays.cloudfilestorage.infrastructure.validation.ResourceLimitsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

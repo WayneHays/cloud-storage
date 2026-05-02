@@ -2,8 +2,8 @@ package com.waynehays.cloudfilestorage.files.operation;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import org.mapstruct.Mapper;
 
 import java.util.List;

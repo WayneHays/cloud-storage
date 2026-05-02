@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.infrastructure.path;
+package com.waynehays.cloudfilestorage.core.utils;
 
 import lombok.experimental.UtilityClass;
 

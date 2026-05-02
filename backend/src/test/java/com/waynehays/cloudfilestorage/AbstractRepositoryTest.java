@@ -3,7 +3,7 @@ package com.waynehays.cloudfilestorage;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadata;
 import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.user.User;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;

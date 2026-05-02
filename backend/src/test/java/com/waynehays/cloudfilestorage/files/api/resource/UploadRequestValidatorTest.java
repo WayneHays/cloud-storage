@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.infrastructure.path.ResourceLimitsProperties;
+import com.waynehays.cloudfilestorage.infrastructure.validation.ResourceLimitsProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,5 +1,6 @@
-package com.waynehays.cloudfilestorage.infrastructure.path;
+package com.waynehays.cloudfilestorage.infrastructure.validation;
 
+import com.waynehays.cloudfilestorage.core.utils.ValidationUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;

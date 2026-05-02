@@ -6,7 +6,7 @@ import com.waynehays.cloudfilestorage.core.metadata.dto.FileRowDto;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

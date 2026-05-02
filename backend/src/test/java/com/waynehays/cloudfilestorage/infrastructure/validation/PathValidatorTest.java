@@ -1,4 +1,4 @@
-package com.waynehays.cloudfilestorage.infrastructure.path;
+package com.waynehays.cloudfilestorage.infrastructure.validation;
 
 import jakarta.validation.Payload;
 import org.junit.jupiter.api.BeforeEach;

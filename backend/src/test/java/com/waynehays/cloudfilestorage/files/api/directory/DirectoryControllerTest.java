@@ -2,7 +2,7 @@ package com.waynehays.cloudfilestorage.files.api.directory;
 
 import com.waynehays.cloudfilestorage.AbstractControllerTest;
 
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

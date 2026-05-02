@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.files.api.resource;
 
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;

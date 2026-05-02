@@ -2,9 +2,9 @@ package com.waynehays.cloudfilestorage.files.operation.upload;
 
 import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DirectoryRowDto;
+import com.waynehays.cloudfilestorage.core.utils.PathUtils;
 import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
 import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.infrastructure.path.PathUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
