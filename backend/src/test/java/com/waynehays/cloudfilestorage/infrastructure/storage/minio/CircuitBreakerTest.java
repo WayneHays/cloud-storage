@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageTransientException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.minio.GetObjectArgs;

@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.files.operation.info;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.api.support.ResourceResponseMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 class ResourceInfoServiceTest {
 
     @Mock
-    private ResourceDtoMapper mapper;
+    private ResourceResponseMapper mapper;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -38,13 +38,13 @@ class ResourceInfoServiceTest {
         ResourceMetadataDto metadata = new ResourceMetadataDto(
                 1L, USER_ID, "storage-key","docs/file.txt", "docs/", "file.txt",
                 100L, ResourceType.FILE);
-        ResourceDto expected = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
+        ResourceResponse expected = new ResourceResponse("docs/", "file.txt", 100L, ResourceType.FILE);
 
         when(metadataService.findByPath(USER_ID, "docs/file.txt")).thenReturn(metadata);
         when(mapper.fromResourceMetadataDto(metadata)).thenReturn(expected);
 
         // when
-        ResourceDto result = service.getInfo(USER_ID, "docs/file.txt");
+        ResourceResponse result = service.getInfo(USER_ID, "docs/file.txt");
 
         // then
         assertThat(result).isEqualTo(expected);

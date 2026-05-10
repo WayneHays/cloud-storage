@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-resource-metadata-table
+      author: waynehays
+      changes:
+        - renameTable:
+            oldTableName: resource_metadata
+            newTableName: resource_metadatas
+
+  - changeSet:
+      id: add-not-null-to-storage-quotas-updated-at
+      author: waynehays
+      changes:
+        - addNotNullConstraint:
+            tableName: storage_quotas
+            columnName: updated_at
+            defaultNullValue: NOW()
+
+  - changeSet:
+      id: fix-storage-limit-max-check
+      author: waynehays
+      changes:
+        - sql:
+            comment: "Drop the old check that allowed 100GB"
+            sql: >
+              ALTER TABLE storage_quotas
+              DROP CONSTRAINT chk_storage_limit_max
+        - sql:
+            comment: "Storage limit must be <= 10GB"
+            sql: >
+              ALTER TABLE storage_quotas
+              ADD CONSTRAINT chk_storage_limit_max CHECK (storage_limit <= 10::bigint * 1024 * 1024 * 1024)

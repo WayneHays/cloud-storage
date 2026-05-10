@@ -19,7 +19,7 @@ record MinioSecurityProperties(
         String accessKey,
 
         @NotBlank(message = "Secret key must be set")
-        @Length(min = 5, max = 100, message = "Secrete key must be >= 5 and <= 100 characters")
+        @Length(min = 5, max = 100, message = "Secret key must be >= 5 and <= 100 characters")
         String secretKey
 ) {
 }

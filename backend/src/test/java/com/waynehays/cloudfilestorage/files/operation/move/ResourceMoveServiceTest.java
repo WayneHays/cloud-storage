@@ -1,12 +1,13 @@
 package com.waynehays.cloudfilestorage.files.operation.move;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.api.support.ResourceResponseMapper;
+import com.waynehays.cloudfilestorage.files.operation.move.exception.InvalidMoveException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +31,7 @@ class ResourceMoveServiceTest {
     private static final Long USER_ID = 1L;
 
     @Mock
-    private ResourceDtoMapper resourceDtoMapper;
+    private ResourceResponseMapper responseMapper;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -39,21 +40,21 @@ class ResourceMoveServiceTest {
     private ResourceMoveService moveService;
 
     @Test
-    @DisplayName("Should update metadata and return result with size")
+    @DisplayName("Should update metadata and return mapped result")
     void shouldUpdateMetadataAndReturnResult() {
         // given
         ResourceMetadataDto moved = new ResourceMetadataDto(
                 1L, USER_ID, "key-123", "images/file.txt", "images/",
                 "file.txt", 100L, ResourceType.FILE);
-        ResourceDto expected = new ResourceDto("images/", "file.txt", 100L, ResourceType.FILE);
+        ResourceResponse expected = new ResourceResponse("images/", "file.txt", 100L, ResourceType.FILE);
 
         when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(true);
         when(metadataService.existsByPath(USER_ID, "images/file.txt")).thenReturn(false);
         when(metadataService.findByPath(USER_ID, "images/file.txt")).thenReturn(moved);
-        when(resourceDtoMapper.fileFromPath("images/file.txt", 100L)).thenReturn(expected);
+        when(responseMapper.fromResourceMetadataDto(moved)).thenReturn(expected);
 
         // when
-        ResourceDto result = moveService.move(USER_ID, "docs/file.txt", "images/file.txt");
+        ResourceResponse result = moveService.move(USER_ID, "docs/file.txt", "images/file.txt");
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/file.txt", "images/file.txt");
@@ -62,20 +63,23 @@ class ResourceMoveServiceTest {
     }
 
     @Test
-    @DisplayName("Should update metadata without extra query for directory")
+    @DisplayName("Should update metadata and return mapped result for directory")
     void shouldUpdateMetadataForDirectory() {
         // given
-        ResourceDto expected = new ResourceDto("", "images/", null, ResourceType.DIRECTORY);
+        ResourceMetadataDto movedDir = new ResourceMetadataDto(
+                2L, USER_ID, null, "images/", "", "images", null, ResourceType.DIRECTORY);
+        ResourceResponse expected = new ResourceResponse("", "images/", null, ResourceType.DIRECTORY);
 
         when(metadataService.existsByPath(USER_ID, "images/")).thenReturn(false);
-        when(resourceDtoMapper.directoryFromPath("images/")).thenReturn(expected);
+        when(metadataService.findByPath(USER_ID, "images/")).thenReturn(movedDir);
+        when(responseMapper.fromResourceMetadataDto(movedDir)).thenReturn(expected);
 
         // when
-        ResourceDto result = moveService.move(USER_ID, "docs/", "images/");
+        ResourceResponse result = moveService.move(USER_ID, "docs/", "images/");
 
         // then
         verify(metadataService).moveMetadata(USER_ID, "docs/", "images/");
-        verify(metadataService, never()).findByPath(anyLong(), anyString());
+        verify(metadataService).findByPath(USER_ID, "images/");
         assertThat(result).isEqualTo(expected);
     }
 

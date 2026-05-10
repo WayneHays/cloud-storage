@@ -1,9 +1,9 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageApi;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageTransientException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.minio.GetObjectArgs;
@@ -75,6 +75,8 @@ class MinioResourceStorage implements ResourceStorageApi {
     }
 
     @Override
+    @Retry(name = RETRY_NAME)
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME)
     public void putObject(InputStream inputStream, String storageKey, long size, String contentType) {
         executeWithExceptionHandling(
                 () -> minioClient.putObject(

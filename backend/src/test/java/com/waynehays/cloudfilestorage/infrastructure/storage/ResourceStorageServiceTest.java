@@ -1,5 +1,7 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage;
 
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -7,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.InputStreamSource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,10 +46,10 @@ class ResourceStorageServiceTest {
             String fullPath = "docs/file.txt";
             long size = 100L;
             String contentType = "text/plain";
-            InputStreamSupplier inputStreamSupplier = InputStream::nullInputStream;
+            InputStreamSource inputStreamSource = InputStream::nullInputStream;
 
             // when
-            service.putObject(USER_ID, fullPath, size, contentType, inputStreamSupplier);
+            service.putObject(USER_ID, fullPath, size, contentType, inputStreamSource);
 
             // then
             verify(storage).putObject(

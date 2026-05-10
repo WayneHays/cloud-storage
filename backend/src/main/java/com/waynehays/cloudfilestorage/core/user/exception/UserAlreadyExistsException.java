@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.core.user.exception;
 
-import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ApplicationException;
+import com.waynehays.cloudfilestorage.core.exception.ApplicationException;
 
 public class UserAlreadyExistsException extends ApplicationException {
 

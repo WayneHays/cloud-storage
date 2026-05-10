@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.core.user.api;
 
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
-import com.waynehays.cloudfilestorage.core.user.UserMapper;
-import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.core.user.api.dto.response.UserResponse;
+import com.waynehays.cloudfilestorage.core.user.mapper.UserMapper;
+import com.waynehays.cloudfilestorage.infrastructure.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ class UserController implements UserControllerApi{
 
     @Override
     @GetMapping("/me")
-    public UserDto me(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return mapper.toDto(userDetails);
+    public UserResponse me(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return mapper.toResponse(userDetails);
     }
 }

@@ -2,6 +2,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  cache:
+    type: none
 minio:
   storage:
     bucket-name: test-bucket
@@ -10,3 +12,5 @@ minio:
     read-timeout: 10s
     write-timeout: 10s
     call-timeout: 20s
+bucket4j:
+  enabled: false

@@ -1,7 +1,10 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage;
 
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -19,12 +22,12 @@ class ResourceStorageService implements ResourceStorageServiceApi {
     private final ResourceStorageApi storage;
 
     @Override
-    public void putObject(Long userId, String storageKey, long size, String contentType, InputStreamSupplier inputStreamSupplier) {
+    public void putObject(Long userId, String storageKey, long size, String contentType, InputStreamSource inputStreamSource) {
         log.debug("Start upload object to storage: path={}", storageKey);
 
         String key = resolveKey(userId, storageKey);
 
-        try (InputStream inputStream = inputStreamSupplier.get()) {
+        try (InputStream inputStream = inputStreamSource.getInputStream()) {
             storage.putObject(inputStream, key, size, contentType);
         } catch (IOException e) {
             throw new ResourceStorageException("Failed to put object to storage", e);

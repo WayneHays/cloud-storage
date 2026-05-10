@@ -7,3 +7,7 @@ databaseChangeLog:
       file: db/changelog/changelogs/003_create_storage_quotas_table.yaml
   - include:
       file: db/changelog/changelogs/004_add_storage_key_to_resource_metadata_table.yaml
+  - include:
+      file: db/changelog/changelogs/005_switch_to_sequence_generation.yaml
+  - include:
+      file: db/changelog/changelogs/006_fix_inconsistencies.yaml

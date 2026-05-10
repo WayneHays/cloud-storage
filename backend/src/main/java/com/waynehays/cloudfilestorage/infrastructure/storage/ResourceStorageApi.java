@@ -1,5 +1,7 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage;
 
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;

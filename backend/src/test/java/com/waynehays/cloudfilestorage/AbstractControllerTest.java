@@ -1,14 +1,15 @@
 package com.waynehays.cloudfilestorage;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataRepository;
-import com.waynehays.cloudfilestorage.core.quota.StorageQuotaRepository;
-import com.waynehays.cloudfilestorage.core.user.UserRepository;
+import com.waynehays.cloudfilestorage.core.metadata.repository.ResourceMetadataRepository;
+import com.waynehays.cloudfilestorage.core.quota.repository.StorageQuotaRepository;
+import com.waynehays.cloudfilestorage.core.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@Import({PostgresTestContainerConfig.class, RedisTestContainerConfig.class})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 public abstract class AbstractControllerTest {
@@ -49,11 +51,6 @@ public abstract class AbstractControllerTest {
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", PostgresTestContainer::getJdbcUrl);
-        registry.add("spring.datasource.username", PostgresTestContainer::getUsername);
-        registry.add("spring.datasource.password", PostgresTestContainer::getPassword);
-        registry.add("spring.data.redis.host", RedisTestContainer::getHost);
-        registry.add("spring.data.redis.port", RedisTestContainer::getPort);
         registry.add("minio.security.url", MinioTestContainer::getUrl);
         registry.add("minio.security.access-key", MinioTestContainer::getUsername);
         registry.add("minio.security.secret-key", MinioTestContainer::getPassword);
@@ -111,17 +108,7 @@ public abstract class AbstractControllerTest {
     }
 
     protected ResultActions uploadFile(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                PARAM_FILES,
-                filename,
-                "text/plain",
-                content);
-
-        return mockMvc.perform(multipart(PATH_RESOURCE)
-                .with(csrf())
-                .file(file)
-                .param(PARAM_PATH, directory)
-                .cookie(sessionCookie));
+        return performUpload(sessionCookie, directory, multipartFile(filename, content));
     }
 
     protected void uploadFileAndExpectIsCreated(Cookie sessionCookie, String directory, String filename, byte[] content) throws Exception {
@@ -144,7 +131,7 @@ public abstract class AbstractControllerTest {
     }
 
     protected long getUsedSpaceForDefaultUser() {
-        Long userId = userRepository.findByUsername(AbstractControllerTest.DEFAULT_USER)
+        Long userId = userRepository.findByUsername(DEFAULT_USER)
                 .orElseThrow()
                 .getId();
         return quotaRepository.findAll().stream()

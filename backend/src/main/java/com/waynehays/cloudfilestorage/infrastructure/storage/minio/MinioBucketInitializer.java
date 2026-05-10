@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageException;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;

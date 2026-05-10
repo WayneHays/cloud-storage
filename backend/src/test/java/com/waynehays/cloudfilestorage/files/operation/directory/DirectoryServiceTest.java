@@ -1,12 +1,12 @@
 package com.waynehays.cloudfilestorage.files.operation.directory;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.api.support.ResourceResponseMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 class DirectoryServiceTest {
 
     @Mock
-    private ResourceDtoMapper mapper;
+    private ResourceResponseMapper responseMapper;
 
     @Mock
     private ResourceMetadataServiceApi metadataService;
@@ -54,16 +54,16 @@ class DirectoryServiceTest {
             ResourceMetadataDto dir = new ResourceMetadataDto(
                     2L, USER_ID, null, "docs/sub/", "docs/", "sub",
                     null, ResourceType.DIRECTORY);
-            ResourceDto fileDto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-            ResourceDto dirDto = new ResourceDto("docs/", "sub/", null, ResourceType.DIRECTORY);
+            ResourceResponse fileDto = new ResourceResponse("docs/", "file.txt", 100L, ResourceType.FILE);
+            ResourceResponse dirDto = new ResourceResponse("docs/", "sub/", null, ResourceType.DIRECTORY);
 
             when(metadataService.findDirectoryContent(USER_ID, "docs/"))
                     .thenReturn(List.of(file, dir));
-            when(mapper.fromResourceMetadataDto(List.of(file, dir)))
+            when(responseMapper.fromResourceMetadataDto(List.of(file, dir)))
                     .thenReturn(List.of(fileDto, dirDto));
 
             // when
-            List<ResourceDto> result = directoryService.getContent(USER_ID, "docs/");
+            List<ResourceResponse> result = directoryService.getContent(USER_ID, "docs/");
 
             // then
             assertThat(result).hasSize(2);
@@ -81,7 +81,7 @@ class DirectoryServiceTest {
                     .thenReturn(List.of());
 
             // when
-            List<ResourceDto> result = directoryService.getContent(USER_ID, "empty/");
+            List<ResourceResponse> result = directoryService.getContent(USER_ID, "empty/");
 
             // then
             assertThat(result).isEmpty();
@@ -97,13 +97,16 @@ class DirectoryServiceTest {
         void shouldSaveAndReturnDto() {
             // given
             String path = "docs/reports/";
-            ResourceDto expected = new ResourceDto("docs/", "reports/", null, ResourceType.DIRECTORY);
+            ResourceMetadataDto savedDto = new ResourceMetadataDto(
+                    1L, USER_ID, null, path, "docs/", "reports", null, ResourceType.DIRECTORY);
+            ResourceResponse expected = new ResourceResponse("docs/", "reports/", null, ResourceType.DIRECTORY);
 
             when(metadataService.existsByPath(USER_ID, "docs/")).thenReturn(true);
-            when(mapper.directoryFromPath(path)).thenReturn(expected);
+            when(metadataService.saveDirectory(USER_ID, path)).thenReturn(savedDto);
+            when(responseMapper.toCreatedDirectoryResponse(savedDto)).thenReturn(expected);
 
             // when
-            ResourceDto result = directoryService.createDirectory(USER_ID, path);
+            ResourceResponse result = directoryService.createDirectory(USER_ID, path);
 
             // then
             verify(metadataService).saveDirectory(USER_ID, path);
@@ -140,12 +143,15 @@ class DirectoryServiceTest {
         void shouldAllowRootLevelDirectoryWithoutParentCheck() {
             // given
             String path = "docs/";
-            ResourceDto expected = new ResourceDto("", "docs/", null, ResourceType.DIRECTORY);
+            ResourceMetadataDto savedDto = new ResourceMetadataDto(
+                    1L, USER_ID, null, path, "", "docs", null, ResourceType.DIRECTORY);
+            ResourceResponse expected = new ResourceResponse("", "docs/", null, ResourceType.DIRECTORY);
 
-            when(mapper.directoryFromPath(path)).thenReturn(expected);
+            when(metadataService.saveDirectory(USER_ID, path)).thenReturn(savedDto);
+            when(responseMapper.toCreatedDirectoryResponse(savedDto)).thenReturn(expected);
 
             // when
-            ResourceDto result = directoryService.createDirectory(USER_ID, path);
+            ResourceResponse result = directoryService.createDirectory(USER_ID, path);
 
             // then
             verify(metadataService).saveDirectory(USER_ID, path);

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.infrastructure.filter;
 
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
+import com.waynehays.cloudfilestorage.infrastructure.security.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

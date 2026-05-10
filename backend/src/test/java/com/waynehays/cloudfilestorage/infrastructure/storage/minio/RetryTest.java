@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageTransientException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageException;
+import com.waynehays.cloudfilestorage.infrastructure.storage.exception.ResourceStorageTransientException;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;

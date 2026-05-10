@@ -1,10 +1,11 @@
 package com.waynehays.cloudfilestorage.files.operation.search;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.api.support.ResourceResponseMapper;
+import com.waynehays.cloudfilestorage.files.operation.search.config.SearchProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.when;
 class ResourceSearchServiceTest {
 
     @Mock
-    private ResourceDtoMapper mapper;
+    private ResourceResponseMapper mapper;
 
     @Mock
     private SearchProperties properties;
@@ -41,7 +42,7 @@ class ResourceSearchServiceTest {
         ResourceMetadataDto metadata = new ResourceMetadataDto(
                 1L, USER_ID, "storage-key","docs/report.pdf", "docs/", "report.pdf",
                 2048L, ResourceType.FILE);
-        ResourceDto expected = new ResourceDto("docs/", "report.pdf", 2048L, ResourceType.FILE);
+        ResourceResponse expected = new ResourceResponse("docs/", "report.pdf", 2048L, ResourceType.FILE);
 
         when(properties.limit()).thenReturn(20);
         when(metadataService.findByNameContaining(USER_ID, "report", 20))
@@ -49,7 +50,7 @@ class ResourceSearchServiceTest {
         when(mapper.fromResourceMetadataDto(metadata)).thenReturn(expected);
 
         // when
-        List<ResourceDto> result = service.search(USER_ID, "report");
+        List<ResourceResponse> result = service.search(USER_ID, "report");
 
         // then
         assertThat(result).hasSize(1);
@@ -65,7 +66,7 @@ class ResourceSearchServiceTest {
                 .thenReturn(List.of());
 
         // when
-        List<ResourceDto> result = service.search(USER_ID, "nonexistent");
+        List<ResourceResponse> result = service.search(USER_ID, "nonexistent");
 
         // then
         assertThat(result).isEmpty();

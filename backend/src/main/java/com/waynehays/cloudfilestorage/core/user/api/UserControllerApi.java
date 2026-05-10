@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.core.user.api;
 
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
-import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
-import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ErrorDto;
+import com.waynehays.cloudfilestorage.core.exception.ErrorResponse;
+import com.waynehays.cloudfilestorage.core.user.api.dto.response.UserResponse;
+import com.waynehays.cloudfilestorage.infrastructure.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -17,12 +17,12 @@ interface UserControllerApi {
             description = "Returns information about currently authenticated user")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User information retrieved",
-                    content = @Content(schema = @Schema(implementation = UserDto.class))),
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorDto.class),
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(value = """
                                     {"message": "Invalid credentials"}
                                     """)))
     })
-    UserDto me(@AuthenticationPrincipal CustomUserDetails userDetails);
+    UserResponse me(@AuthenticationPrincipal CustomUserDetails userDetails);
 }

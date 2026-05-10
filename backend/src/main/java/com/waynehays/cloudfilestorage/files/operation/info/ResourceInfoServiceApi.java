@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation.info;
 
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
 
 public interface ResourceInfoServiceApi {
 
-    ResourceDto getInfo(Long userId, String path);
+    ResourceResponse getInfo(Long userId, String path);
 }

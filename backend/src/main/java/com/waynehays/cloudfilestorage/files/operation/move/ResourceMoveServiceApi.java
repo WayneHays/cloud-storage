@@ -1,8 +1,8 @@
 package com.waynehays.cloudfilestorage.files.operation.move;
 
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
 
 public interface ResourceMoveServiceApi {
 
-    ResourceDto move(Long userId, String pathFrom, String pathTo);
+    ResourceResponse move(Long userId, String pathFrom, String pathTo);
 }

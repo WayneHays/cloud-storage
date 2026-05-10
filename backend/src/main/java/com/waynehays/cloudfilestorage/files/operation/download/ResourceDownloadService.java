@@ -1,15 +1,17 @@
 package com.waynehays.cloudfilestorage.files.operation.download;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.core.utils.PathUtils;
-import com.waynehays.cloudfilestorage.files.dto.internal.DownloadResult;
-import com.waynehays.cloudfilestorage.infrastructure.storage.InputStreamSupplier;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.operation.download.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.files.operation.download.dto.ArchiveItem;
+import com.waynehays.cloudfilestorage.files.operation.download.dto.DownloadResult;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +30,7 @@ class ResourceDownloadService implements ResourceDownloadServiceApi {
     @Override
     public DownloadResult download(Long userId, String path) {
         ResourceMetadataDto metadata = metadataService.findByPath(userId, path);
-        String resourceName = PathUtils.extractDisplayName(path);
+        String resourceName = PathUtils.getName(path);
 
         if (metadata.isFile()) {
             return downloadFile(userId, metadata, resourceName);
@@ -40,7 +42,7 @@ class ResourceDownloadService implements ResourceDownloadServiceApi {
     private DownloadResult downloadFile(Long userId, ResourceMetadataDto metadata, String filename) {
         log.info("Start prepare file for download: {}", metadata.path());
 
-        InputStreamSupplier contentSupplier = () -> {
+        InputStreamSource inputStreamSource = () -> {
             Optional<StorageItem> item = storageService.getObject(userId, metadata.storageKey());
 
             if (item.isEmpty()) {
@@ -51,7 +53,7 @@ class ResourceDownloadService implements ResourceDownloadServiceApi {
             return item.get().inputStream();
         };
 
-        return new DownloadResult.File(contentSupplier, filename, DEFAULT_CONTENT_TYPE);
+        return new DownloadResult.File(inputStreamSource, filename, DEFAULT_CONTENT_TYPE);
     }
 
     private DownloadResult downloadDirectory(Long userId, String path, String directoryName) {

@@ -1,13 +1,14 @@
 package com.waynehays.cloudfilestorage.files.operation.delete;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.quota.service.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -15,11 +16,12 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 class ResourceDeletionService implements ResourceDeletionServiceApi {
-    private final ResourceStorageServiceApi storageService;
     private final StorageQuotaServiceApi quotaService;
+    private final ResourceStorageServiceApi storageService;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
+    @Transactional
     public void delete(Long userId, String path) {
         ResourceMetadataDto metadata = metadataService.findByPath(userId, path);
 
@@ -35,7 +37,7 @@ class ResourceDeletionService implements ResourceDeletionServiceApi {
 
         metadataService.markForDeletion(userId, metadata.path());
         storageService.deleteObject(userId, metadata.storageKey());
-        metadataService.deleteFileByPath(userId, metadata.path());
+        metadataService.deleteFileMetadata(userId, metadata.path());
         quotaService.releaseSpace(userId, metadata.size());
 
         log.info("Finished delete file: {}", metadata.path());
@@ -47,7 +49,7 @@ class ResourceDeletionService implements ResourceDeletionServiceApi {
         DeleteDirectoryResult result = metadataService.markDirectoryForDeletionAndCollectKeys(userId, path);
 
         if (result.hasKeys()) {
-            storageService.deleteObjects(Map.of(userId, result.storageKeys()));
+            storageService.deleteObjects(Map.of(userId, result.deletedStorageKeys()));
         }
 
         metadataService.deleteDirectoryMetadata(userId, path);

@@ -1,6 +1,6 @@
 package com.waynehays.cloudfilestorage.core.metadata.exception;
 
-import com.waynehays.cloudfilestorage.infrastructure.errorhandling.ApplicationException;
+import com.waynehays.cloudfilestorage.core.exception.ApplicationException;
 import lombok.Getter;
 
 import java.util.List;

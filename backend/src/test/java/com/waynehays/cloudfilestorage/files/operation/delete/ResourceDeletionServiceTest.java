@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.files.operation.delete;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.DeleteDirectoryResult;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.core.quota.service.StorageQuotaServiceApi;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -62,7 +62,7 @@ class ResourceDeletionServiceTest {
             InOrder inOrder = inOrder(metadataService, storageService, quotaService);
             inOrder.verify(metadataService).markForDeletion(USER_ID, "docs/file.txt");
             inOrder.verify(storageService).deleteObject(USER_ID, "abc-123");
-            inOrder.verify(metadataService).deleteFileByPath(USER_ID, "docs/file.txt");
+            inOrder.verify(metadataService).deleteFileMetadata(USER_ID, "docs/file.txt");
             inOrder.verify(quotaService).releaseSpace(USER_ID, 500L);
         }
     }

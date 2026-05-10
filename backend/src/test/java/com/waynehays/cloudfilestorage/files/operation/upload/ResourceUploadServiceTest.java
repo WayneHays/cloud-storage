@@ -1,191 +1,112 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
-import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceAlreadyExistsException;
-import com.waynehays.cloudfilestorage.core.quota.StorageQuotaServiceApi;
-import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageException;
-import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
-import org.junit.jupiter.api.BeforeEach;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.Context;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.RollbackDto;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.files.operation.upload.step.UploadStep;
+import com.waynehays.cloudfilestorage.utils.PathUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class ResourceUploadServiceTest {
     private static final Long USER_ID = 1L;
 
-    @Mock
-    private ResourceMetadataServiceApi metadataService;
-
-    @Mock
-    private StorageQuotaServiceApi quotaService;
-
-    @Mock
-    private ResourceStorageServiceApi storageService;
-
-    @Mock
-    private ResourceDtoMapper resourceDtoMapper;
-
-    @Mock
-    private BatchInsertMapper batchInsertMapper;
-
-    private ResourceUploadService service;
-
-    @BeforeEach
-    void setUp() {
-        List<UploadStep> steps = List.of(
-                new ValidateStep(metadataService),
-                new ReserveQuotaStep(quotaService),
-                new StorageUploadStep(storageService, resourceDtoMapper,
-                        Executors.newSingleThreadExecutor()),
-                new SaveMetadataStep(batchInsertMapper, metadataService),
-                new CreateDirectoriesStep(batchInsertMapper, resourceDtoMapper, metadataService)
-        );
-        service = new ResourceUploadService(steps);
-    }
-
     private UploadObjectDto uploadObject(String storageKey, String fullPath, long size) {
         return new UploadObjectDto(
-                storageKey, "file.txt", "file.txt", "", fullPath,
+                storageKey, "file.txt", "file.txt",
+                PathUtils.getParentPath(fullPath), fullPath,
                 size, "text/plain", InputStream::nullInputStream);
     }
 
+    private ResourceUploadService serviceWith(UploadStep... steps) {
+        return new ResourceUploadService(new UploadPipeline(List.of(steps)));
+    }
+
     @Nested
-    class SuccessfulUpload {
+    @DisplayName("execute")
+    class Execute {
 
         @Test
-        @DisplayName("Should execute all steps and return results")
-        void shouldExecuteAllStepsAndReturnResults() {
+        @DisplayName("Should execute all steps in order")
+        void shouldExecuteAllStepsInOrder() {
             // given
-            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
-            when(metadataService.findMissingPaths(eq(USER_ID), anySet())).thenReturn(Set.of());
+            UploadStep step1 = mock(UploadStep.class);
+            UploadStep step2 = mock(UploadStep.class);
+            UploadStep step3 = mock(UploadStep.class);
+            ResourceUploadService service = serviceWith(step1, step2, step3);
 
             // when
-            List<ResourceDto> result = service.upload(USER_ID, List.of(obj));
+            service.upload(USER_ID, List.of(uploadObject("key-1", "docs/file.txt", 100)));
 
             // then
-            assertThat(result).containsExactly(dto);
-            verify(quotaService).reserveSpace(USER_ID, 100L);
-            verify(storageService).putObject(eq(USER_ID), eq("key-1"), eq(100L), eq("text/plain"), any());
-            verify(metadataService).saveFiles(eq(USER_ID), anyList());
+            var inOrder = inOrder(step1, step2, step3);
+            inOrder.verify(step1).execute(any(Context.class));
+            inOrder.verify(step2).execute(any(Context.class));
+            inOrder.verify(step3).execute(any(Context.class));
         }
     }
 
     @Nested
-    class ValidationFailure {
+    @DisplayName("rollback")
+    class Rollback {
 
         @Test
-        @DisplayName("Should throw and not reserve quota when duplicates found")
-        void shouldThrowWithoutReservingQuota() {
+        @DisplayName("Should rollback executed steps in reverse order when a step fails")
+        void shouldRollbackInReverseOrder_whenStepFails() {
             // given
-            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            doThrow(new ResourceAlreadyExistsException("Resources already exist", List.of("docs/file.txt")))
-                    .when(metadataService).throwIfAnyExists(eq(USER_ID), any());
+            UploadStep step1 = mock(UploadStep.class);
+            UploadStep step2 = mock(UploadStep.class);
+            UploadStep step3 = mock(UploadStep.class);
+
+            when(step1.requiresRollback(any(RollbackDto.class))).thenReturn(true);
+            doThrow(new RuntimeException("fail")).when(step2).execute(any());
+            when(step2.requiresRollback(any(RollbackDto.class))).thenReturn(true);
+
+            ResourceUploadService service = serviceWith(step1, step2, step3);
 
             // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
-                    .isInstanceOf(ResourceAlreadyExistsException.class);
-            verify(quotaService, never()).reserveSpace(anyLong(), anyLong());
-            verify(storageService, never()).putObject(any(), any(), anyLong(), any(), any());
-        }
-    }
-
-    @Nested
-    class StorageFailure {
-
-        @Test
-        @DisplayName("Should rollback quota when storage upload fails")
-        void shouldRollbackQuotaWhenStorageFails() {
-            // given
-            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            doThrow(new ResourceStorageException("MinIO error"))
-                    .when(storageService).putObject(any(), any(), anyLong(), any(), any());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
-                    .isInstanceOf(ResourceStorageException.class);
-            verify(quotaService).releaseSpace(USER_ID, 100L);
-            verify(metadataService, never()).saveFiles(anyLong(), anyList());
-        }
-
-        @Test
-        @DisplayName("Should rollback partially uploaded files when one storage upload fails")
-        void shouldRollbackPartialStorageUpload() {
-            // given
-            UploadObjectDto obj1 = uploadObject("key-1", "docs/a.txt", 100);
-            UploadObjectDto obj2 = uploadObject("key-2", "docs/b.txt", 200);
-            ResourceDto dto1 = new ResourceDto("docs/", "a.txt", 100L, ResourceType.FILE);
-
-            when(resourceDtoMapper.fileFromPath("docs/a.txt", 100L)).thenReturn(dto1);
-            doNothing().when(storageService).putObject(eq(USER_ID), eq("key-1"), eq(100L), eq("text/plain"), any());
-            doThrow(new ResourceStorageException("MinIO error"))
-                    .when(storageService).putObject(eq(USER_ID), eq("key-2"), eq(200L), eq("text/plain"), any());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj1, obj2)))
-                    .isInstanceOf(ResourceStorageException.class);
-
-            verify(storageService).deleteObjects(argThat(map ->
-                    map.containsKey(USER_ID)
-                    && map.get(USER_ID).contains("key-1")
-            ));
-            verify(quotaService).releaseSpace(USER_ID, 300L);
-            verify(metadataService, never()).saveFiles(anyLong(), anyList());
-        }
-    }
-
-    @Nested
-    class MetadataFailure {
-
-        @Test
-        @DisplayName("Should rollback storage and quota when metadata save fails")
-        void shouldRollbackStorageAndQuotaWhenMetadataFails() {
-            // given
-            UploadObjectDto obj = uploadObject("key-1", "docs/file.txt", 100);
-            ResourceDto dto = new ResourceDto("docs/", "file.txt", 100L, ResourceType.FILE);
-
-            when(resourceDtoMapper.fileFromPath("docs/file.txt", 100L)).thenReturn(dto);
-            doThrow(new RuntimeException("DB error"))
-                    .when(metadataService).saveFiles(eq(USER_ID), anyList());
-
-            // when & then
-            assertThatThrownBy(() -> service.upload(USER_ID, List.of(obj)))
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(uploadObject("key-1", "docs/file.txt", 100))))
                     .isInstanceOf(RuntimeException.class);
 
-            verify(storageService).deleteObjects(argThat(map ->
-                    map.containsKey(USER_ID)
-                    && map.get(USER_ID).contains("key-1")
-            ));
-            verify(quotaService).releaseSpace(USER_ID, 100L);
+            var inOrder = inOrder(step2, step1);
+            inOrder.verify(step2).rollback(any(RollbackDto.class));
+            inOrder.verify(step1).rollback(any(RollbackDto.class));
+            verify(step3, never()).execute(any());
+            verify(step3, never()).rollback(any());
+        }
+
+        @Test
+        @DisplayName("Should not rollback a failed step when requiresRollback returns false")
+        void shouldSkipRollback_whenRequiresRollbackIsFalse() {
+            // given
+            UploadStep step1 = mock(UploadStep.class);
+            UploadStep step2 = mock(UploadStep.class);
+
+            when(step1.requiresRollback(any(RollbackDto.class))).thenReturn(true);
+            doThrow(new RuntimeException("fail")).when(step2).execute(any());
+            when(step2.requiresRollback(any(RollbackDto.class))).thenReturn(false);
+
+            ResourceUploadService service = serviceWith(step1, step2);
+
+            // when & then
+            assertThatThrownBy(() -> service.upload(USER_ID, List.of(uploadObject("key-1", "docs/file.txt", 100))))
+                    .isInstanceOf(RuntimeException.class);
+
+            verify(step1).rollback(any(RollbackDto.class));
+            verify(step2, never()).rollback(any());
         }
     }
 }

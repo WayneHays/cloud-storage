@@ -1,11 +1,11 @@
 package com.waynehays.cloudfilestorage.core.user.api;
 
-import com.waynehays.cloudfilestorage.core.user.CustomUserDetails;
-import com.waynehays.cloudfilestorage.core.user.UserMapper;
-import com.waynehays.cloudfilestorage.core.user.UserServiceApi;
-import com.waynehays.cloudfilestorage.core.user.api.dto.SignInRequest;
-import com.waynehays.cloudfilestorage.core.user.api.dto.SignUpRequest;
-import com.waynehays.cloudfilestorage.core.user.dto.response.UserDto;
+import com.waynehays.cloudfilestorage.core.user.api.dto.request.SignInRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.request.SignUpRequest;
+import com.waynehays.cloudfilestorage.core.user.api.dto.response.UserResponse;
+import com.waynehays.cloudfilestorage.core.user.mapper.UserMapper;
+import com.waynehays.cloudfilestorage.core.user.service.UserServiceApi;
+import com.waynehays.cloudfilestorage.infrastructure.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -38,22 +38,22 @@ class AuthController implements AuthControllerApi {
     @Override
     @PostMapping("/sign-up")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto signUp(@RequestBody @Valid SignUpRequest signUpRequest,
-                          HttpServletRequest request,
-                          HttpServletResponse response) {
-        UserDto registeredUser = userService.signUp(signUpRequest);
+    public UserResponse signUp(@RequestBody @Valid SignUpRequest signUpRequest,
+                               HttpServletRequest request,
+                               HttpServletResponse response) {
+        UserResponse registeredUser = userService.signUp(signUpRequest);
         processLogin(signUpRequest.username(), signUpRequest.password(), request, response);
         return registeredUser;
     }
 
     @Override
     @PostMapping("/sign-in")
-    public UserDto signIn(@RequestBody @Valid SignInRequest signInRequest,
-                          HttpServletRequest request,
-                          HttpServletResponse response) {
+    public UserResponse signIn(@RequestBody @Valid SignInRequest signInRequest,
+                               HttpServletRequest request,
+                               HttpServletResponse response) {
         Authentication authentication = processLogin(signInRequest.username(), signInRequest.password(), request, response);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return userMapper.toDto(userDetails);
+        return userMapper.toResponse(userDetails);
     }
 
     private Authentication processLogin(String username, String password,

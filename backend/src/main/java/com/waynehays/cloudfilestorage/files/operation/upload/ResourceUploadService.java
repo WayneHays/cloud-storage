@@ -1,29 +1,31 @@
 package com.waynehays.cloudfilestorage.files.operation.upload;
 
-import com.waynehays.cloudfilestorage.files.dto.internal.UploadObjectDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.Context;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.RollbackDto;
+import com.waynehays.cloudfilestorage.files.operation.upload.dto.UploadObjectDto;
+import com.waynehays.cloudfilestorage.files.operation.upload.step.UploadStep;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 class ResourceUploadService implements ResourceUploadServiceApi {
-    private final List<UploadStep> uploadSteps;
+    private final UploadPipeline pipeline;
 
     @Override
-    public List<ResourceDto> upload(Long userId, List<UploadObjectDto> objects) {
+    public List<ResourceResponse> upload(Long userId, List<UploadObjectDto> objects) {
         log.info("Upload started: files count={}", objects.size());
 
         Context context = new Context(userId, objects);
         List<UploadStep> executedSteps = new ArrayList<>();
 
-        for (UploadStep step : uploadSteps) {
+        for (UploadStep step : pipeline.getSteps()) {
             try {
                 step.execute(context);
                 executedSteps.add(step);
@@ -41,19 +43,17 @@ class ResourceUploadService implements ResourceUploadServiceApi {
             }
         }
 
-        log.info("Upload completed: files count={}", context.getResult().size());
-        return context.getResult();
+        List<ResourceResponse> result = context.getResult();
+        log.info("Upload completed: files count={}", result.size());
+        return result;
     }
 
     private void rollback(List<UploadStep> executedSteps, RollbackDto rollbackDto) {
-        ListIterator<UploadStep> iterator = executedSteps.listIterator(executedSteps.size());
-        while (iterator.hasPrevious()) {
-            UploadStep step = iterator.previous();
+        for (UploadStep step : executedSteps.reversed()) {
             try {
                 step.rollback(rollbackDto);
             } catch (Exception e) {
-                log.error("Rollback failed at step={}",
-                        step.getClass().getSimpleName(), e);
+                log.error("Rollback failed at step={}", step.getClass().getSimpleName(), e);
             }
         }
     }

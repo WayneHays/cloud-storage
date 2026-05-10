@@ -1,21 +1,21 @@
 package com.waynehays.cloudfilestorage.files.operation.info;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
-import com.waynehays.cloudfilestorage.files.dto.response.ResourceDto;
-import com.waynehays.cloudfilestorage.files.operation.ResourceDtoMapper;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.api.dto.response.ResourceResponse;
+import com.waynehays.cloudfilestorage.files.api.support.ResourceResponseMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 class ResourceInfoService implements ResourceInfoServiceApi {
-    private final ResourceDtoMapper mapper;
+    private final ResourceResponseMapper responseMapper;
     private final ResourceMetadataServiceApi metadataService;
 
     @Override
-    public ResourceDto getInfo(Long userId, String path) {
+    public ResourceResponse getInfo(Long userId, String path) {
         ResourceMetadataDto dto = metadataService.findByPath(userId, path);
-        return mapper.fromResourceMetadataDto(dto);
+        return responseMapper.fromResourceMetadataDto(dto);
     }
 }

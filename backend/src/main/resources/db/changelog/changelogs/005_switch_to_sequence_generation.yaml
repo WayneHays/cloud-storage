@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: switch-to-sequence-generation
+      author: waynehays
+      changes:
+        - createSequence:
+            sequenceName: resource_metadata_seq
+            startValue: 1
+            incrementBy: 50
+        - createSequence:
+            sequenceName: storage_quotas_seq
+            startValue: 1
+            incrementBy: 50
+        - sql:
+            comment: "Set resource_metadata sequence to max existing id"
+            sql: >
+              SELECT setval('resource_metadata_seq',
+                COALESCE((SELECT MAX(id) + 50 FROM resource_metadata), 1))
+        - sql:
+            comment: "Set storage_quotas sequence to max existing id"
+            sql: >
+              SELECT setval('storage_quotas_seq',
+                COALESCE((SELECT MAX(id) + 50 FROM storage_quotas), 1))

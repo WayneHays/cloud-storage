@@ -1,7 +1,7 @@
 package com.waynehays.cloudfilestorage.infrastructure.storage.minio;
 
 import com.waynehays.cloudfilestorage.MinioTestContainer;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;

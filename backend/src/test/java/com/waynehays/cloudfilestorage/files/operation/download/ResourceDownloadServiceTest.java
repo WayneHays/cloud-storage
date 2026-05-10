@@ -1,12 +1,13 @@
 package com.waynehays.cloudfilestorage.files.operation.download;
 
-import com.waynehays.cloudfilestorage.core.metadata.ResourceMetadataServiceApi;
-import com.waynehays.cloudfilestorage.core.metadata.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.dto.ResourceMetadataDto;
+import com.waynehays.cloudfilestorage.core.metadata.entity.ResourceType;
 import com.waynehays.cloudfilestorage.core.metadata.exception.ResourceNotFoundException;
-import com.waynehays.cloudfilestorage.files.dto.internal.DownloadResult;
+import com.waynehays.cloudfilestorage.core.metadata.service.ResourceMetadataServiceApi;
+import com.waynehays.cloudfilestorage.files.operation.download.archiver.ArchiverApi;
+import com.waynehays.cloudfilestorage.files.operation.download.dto.DownloadResult;
 import com.waynehays.cloudfilestorage.infrastructure.storage.ResourceStorageServiceApi;
-import com.waynehays.cloudfilestorage.infrastructure.storage.StorageItem;
+import com.waynehays.cloudfilestorage.infrastructure.storage.dto.StorageItem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -92,7 +93,7 @@ class ResourceDownloadServiceTest {
             DownloadResult result = service.download(USER_ID, "docs/report.pdf");
             verifyNoInteractions(storageService);
 
-            InputStream stream = ((DownloadResult.File) result).contentSupplier().get();
+            InputStream stream = ((DownloadResult.File) result).contentSupplier().getInputStream();
 
             // then
             verify(storageService).getObject(USER_ID, "storage-key");
@@ -115,7 +116,7 @@ class ResourceDownloadServiceTest {
             DownloadResult.File fileResult = (DownloadResult.File) result;
 
             // when & then
-            assertThatThrownBy(() -> fileResult.contentSupplier().get())
+            assertThatThrownBy(() -> fileResult.contentSupplier().getInputStream())
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
